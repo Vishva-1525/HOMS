@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { DashboardBackground } from '@/components/layout/DashboardBackground'
 import { MobileDrawer } from '@/components/layout/MobileDrawer'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
@@ -32,7 +33,7 @@ export function AppShell({
   const userName = profile.full_name
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <DashboardBackground>
       <Sidebar
         collapsed={collapsed}
         navItems={navItems}
@@ -68,7 +69,7 @@ export function AppShell({
           notificationSlot={notificationSlot}
         />
 
-        <main className="flex-1 px-4 py-4 pb-20 md:px-6 md:py-6 md:pb-6">
+        <main className="flex-1 px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-6">
           <div className="mx-auto max-w-[1280px]">
             <Outlet />
           </div>
@@ -76,6 +77,6 @@ export function AppShell({
       </div>
 
       <BottomNav items={mobileNavItems} />
-    </div>
+    </DashboardBackground>
   )
 }

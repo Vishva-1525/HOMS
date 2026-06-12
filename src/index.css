@@ -81,13 +81,6 @@
 }
 
 @layer utilities {
-  .dashboard-bg {
-    background-image: url("/campus-bg.jpg");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-  }
-
   .dashboard-shell {
     --card: oklch(1 0 0 / 72%);
     --popover: oklch(1 0 0 / 82%);

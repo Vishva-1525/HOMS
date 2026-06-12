@@ -5,9 +5,9 @@ interface ShellPagePlaceholderProps {
 
 export function ShellPagePlaceholder({ title, description }: ShellPagePlaceholderProps) {
   return (
-    <div className="rounded-lg border border-[#E5E7EB] bg-white p-6">
-      <h1 className="text-xl font-semibold text-[#1A1A2E]">{title}</h1>
-      {description && <p className="mt-2 text-sm text-[#4B5563]">{description}</p>}
+    <div className="glass-panel-strong p-6">
+      <h1 className="dashboard-heading text-xl font-semibold">{title}</h1>
+      {description && <p className="dashboard-subheading mt-2 text-sm">{description}</p>}
     </div>
   )
 }
