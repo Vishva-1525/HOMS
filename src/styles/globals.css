@@ -1,0 +1,102 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@import "./tokens.css";
+
+/* ── Base reset ───────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--svce-font-sans);
+  font-size: var(--svce-text-body);
+  font-weight: var(--svce-weight-body);
+  line-height: var(--svce-leading-body);
+  color: var(--svce-text-primary);
+  background-color: var(--svce-page-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: var(--svce-weight-heading);
+  color: var(--svce-text-primary);
+}
+
+h1 {
+  font-size: var(--svce-text-h1);
+}
+
+h2 {
+  font-size: var(--svce-text-h2);
+}
+
+h3 {
+  font-size: var(--svce-text-h3);
+}
+
+h4 {
+  font-size: var(--svce-text-h4);
+}
+
+p {
+  margin: 0;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--svce-font-mono);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--svce-scrollbar-thumb) var(--svce-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--svce-scrollbar-width);
+  height: var(--svce-scrollbar-width);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--svce-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--svce-scrollbar-thumb);
+  border-radius: var(--radius-full);
+}
+
+/* ── Focus ring (never remove outlines) ───────────────────────────────────── */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--svce-focus-ring-width) solid var(--svce-focus-ring-color);
+  outline-offset: var(--svce-focus-ring-offset);
+}
+
+/* ── Selection highlight ──────────────────────────────────────────────────── */
+
+::selection {
+  background-color: var(--svce-selection-bg);
+  color: var(--svce-selection-text);
+}

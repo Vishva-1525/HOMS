@@ -26,5 +26,56 @@ export function buildPassQrPayload(
 }
 
 export function buildPassQrValue(pass: OutpassRequest, regNumber: string): string {
-  return JSON.stringify(buildPassQrPayload(pass, regNumber))
+  return JSON.stringify({
+    outpass_id: pass.id,
+    reg_number: regNumber,
+    pass_type: pass.pass_type,
+    departure_at: pass.departure_at,
+    return_by: pass.return_by,
+  })
+}
+
+export interface ScannedPassQrPayload {
+  outpass_id: string
+  reg_number: string
+  pass_type: PassType
+  departure_at: string
+  return_by: string
+}
+
+export function parsePassQrValue(raw: string): ScannedPassQrPayload | null {
+  try {
+    const parsed = JSON.parse(raw.trim()) as Partial<ScannedPassQrPayload>
+    if (
+      typeof parsed.outpass_id === 'string'
+      && typeof parsed.reg_number === 'string'
+      && typeof parsed.pass_type === 'string'
+      && typeof parsed.departure_at === 'string'
+      && typeof parsed.return_by === 'string'
+    ) {
+      return parsed as ScannedPassQrPayload
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/** Accepts full QR JSON or a raw outpass UUID for manual entry. */
+export function parseScanInput(raw: string): { outpass_id: string; reg_number?: string } | null {
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+
+  const fromQr = parsePassQrValue(trimmed)
+  if (fromQr) {
+    return { outpass_id: fromQr.outpass_id, reg_number: fromQr.reg_number }
+  }
+
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (uuidPattern.test(trimmed)) {
+    return { outpass_id: trimmed }
+  }
+
+  return null
 }

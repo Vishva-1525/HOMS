@@ -1,29 +1,61 @@
-import { IconMapPin } from '@tabler/icons-react'
+import { useState } from 'react'
+import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
+import { Button } from '@/components/ui/button'
+import { PassQrSheet } from '@/components/student/PassQrSheet'
 import { useCountdown } from '@/hooks/useCountdown'
 import { formatReturnTime } from '@/lib/outpass'
-import type { OutpassRequest } from '@/lib/types'
+import type { OutpassRequest, Student } from '@/lib/types'
 
-export function ActivePassBanner({ pass }: { pass: OutpassRequest }) {
+interface ActivePassBannerProps {
+  pass: OutpassRequest
+  student: Student | null
+}
+
+export function ActivePassBanner({ pass, student }: ActivePassBannerProps) {
   const countdown = useCountdown(pass.return_by)
+  const [qrOpen, setQrOpen] = useState(false)
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-green-700 p-4 text-white shadow-xl shadow-emerald-900/25 ring-1 ring-white/20">
-      <p className="text-xs font-semibold uppercase tracking-wider text-green-100">
-        Active Pass — Checked Out
-      </p>
-      <div className="mt-2 flex items-start gap-2">
-        <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-green-100" stroke={1.75} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{pass.destination}</p>
-          <p className="mt-0.5 text-sm text-green-100">
+    <>
+      <div className="relative rounded-xl border border-[#2E8B44] bg-[#EBF7EE] p-4">
+        <span className="absolute right-3 top-3 rounded-[var(--radius-full)] bg-[var(--svce-green-tint)] px-2.5 py-0.5 text-[length:var(--svce-text-small)] font-medium text-[#166534]">
+          Active pass
+        </span>
+
+        <div className="pr-24">
+          <p className="text-sm font-medium text-[#166534]">{pass.destination}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <PassTypeBadge type={pass.pass_type} />
+          </div>
+          <p className="mt-2 text-sm text-[#4B5563]">
             Return by {formatReturnTime(pass.return_by)}
           </p>
+          <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-[#1A1A2E]">
+            {countdown}
+          </p>
         </div>
+
+        {student && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="mt-3 w-full sm:w-auto"
+            onClick={() => setQrOpen(true)}
+          >
+            View QR
+          </Button>
+        )}
       </div>
-      <div className="mt-3 flex items-center justify-between rounded-lg bg-green-700/50 px-3 py-2">
-        <span className="text-xs text-green-100">Time remaining</span>
-        <span className="font-mono text-lg font-bold tabular-nums tracking-wider">{countdown}</span>
-      </div>
-    </div>
+
+      {student && (
+        <PassQrSheet
+          open={qrOpen}
+          pass={pass}
+          regNumber={student.reg_number}
+          onClose={() => setQrOpen(false)}
+        />
+      )}
+    </>
   )
 }

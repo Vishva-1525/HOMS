@@ -2,15 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { PassDetailSheet } from '@/components/student/PassDetailSheet'
 import { PassFilterChips } from '@/components/student/PassFilterChips'
 import { PassListCard } from '@/components/student/PassListCard'
+import { PassQrSheet } from '@/components/student/PassQrSheet'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/spinner'
 import { useStudentPasses } from '@/hooks/useStudentPasses'
-import { filterPasses, type PassFilter } from '@/lib/pass-filters'
+import { filterPasses, isQrEligibleStatus, type PassFilter } from '@/lib/pass-filters'
 import type { OutpassRequest } from '@/lib/types'
 
-export function MyPassesTab() {
+export function StudentPassesPage() {
   const { passes, gateLogs, extensions, student, loading, error, refetch } = useStudentPasses()
   const [filter, setFilter] = useState<PassFilter>('all')
   const [selectedPass, setSelectedPass] = useState<OutpassRequest | null>(null)
+  const [qrPass, setQrPass] = useState<OutpassRequest | null>(null)
 
   const filteredPasses = useMemo(
     () => filterPasses(passes, filter, gateLogs),
@@ -26,14 +29,14 @@ export function MyPassesTab() {
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner label="Loading passes..." />
+        <Spinner label="Loading passes…" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+      <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]">
         {error}
       </div>
     )
@@ -41,18 +44,16 @@ export function MyPassesTab() {
 
   return (
     <>
-      <div className="mb-4">
-        <h1 className="text-xl font-semibold tracking-tight">My Passes</h1>
-        <p className="text-sm text-muted-foreground">
-          {passes.length} request{passes.length !== 1 ? 's' : ''} total
-        </p>
-      </div>
+      <PageHeader
+        title="My passes"
+        subtitle={`${passes.length} request${passes.length !== 1 ? 's' : ''} total`}
+      />
 
       <PassFilterChips value={filter} onChange={setFilter} />
 
       <div className="mt-4 space-y-3">
         {filteredPasses.length === 0 ? (
-          <div className="glass-panel border-dashed p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-[var(--svce-border-default)] bg-white p-8 text-center text-sm text-[var(--svce-text-muted)]">
             No passes match this filter.
           </div>
         ) : (
@@ -62,6 +63,11 @@ export function MyPassesTab() {
               pass={pass}
               gateLogs={gateLogs}
               onClick={() => setSelectedPass(pass)}
+              onViewQr={
+                isQrEligibleStatus(pass.status)
+                  ? () => setQrPass(pass)
+                  : undefined
+              }
             />
           ))
         )}
@@ -71,9 +77,19 @@ export function MyPassesTab() {
         pass={selectedPass}
         student={student}
         extensions={extensions}
+        gateLogs={gateLogs}
         onClose={() => setSelectedPass(null)}
         onUpdated={refetch}
       />
+
+      {student && qrPass && (
+        <PassQrSheet
+          open={Boolean(qrPass)}
+          pass={qrPass}
+          regNumber={student.reg_number}
+          onClose={() => setQrPass(null)}
+        />
+      )}
     </>
   )
 }

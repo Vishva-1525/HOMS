@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
+import { fetchStudentRecord } from '@/lib/student-data'
 import { supabase } from '@/lib/supabase'
-import { formatSupabaseError } from '@/lib/supabase-errors'
 import type { ExtensionRequest, GateLog, OutpassRequest, Student } from '@/lib/types'
 
 interface StudentPassesData {
@@ -29,7 +29,7 @@ export function useStudentPasses(): StudentPassesData {
     setError(null)
 
     const [studentResult, passesResult] = await Promise.all([
-      supabase.from('students').select('*').eq('id', user.id).maybeSingle(),
+      fetchStudentRecord(user.id),
       supabase
         .from('outpass_requests')
         .select('*')
@@ -38,18 +38,7 @@ export function useStudentPasses(): StudentPassesData {
     ])
 
     if (studentResult.error) {
-      setError(
-        formatSupabaseError(
-          studentResult.error,
-          'Your student record was not found. Please contact the hostel office.',
-        ),
-      )
-      setLoading(false)
-      return
-    }
-
-    if (!studentResult.data) {
-      setError('Your student record was not found. Please contact the hostel office.')
+      setError(studentResult.error)
       setLoading(false)
       return
     }
@@ -61,7 +50,7 @@ export function useStudentPasses(): StudentPassesData {
     }
 
     const allPasses = (passesResult.data ?? []) as OutpassRequest[]
-    setStudent(studentResult.data as Student)
+    setStudent(studentResult.student)
     setPasses(allPasses)
 
     const passIds = allPasses.map((p) => p.id)

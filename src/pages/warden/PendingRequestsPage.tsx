@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react'
-import { PassRequestDetails } from '@/components/warden/PassRequestDetails'
-import { PassTypeBadge } from '@/components/student/PassTypeBadge'
+import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
+import { DataTable } from '@/components/ui/DataTable'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
-import { FieldError } from '@/components/ui/field-error'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Modal, ModalFooter } from '@/components/ui/modal'
 import { Spinner } from '@/components/ui/spinner'
+import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
-import { PASS_TYPE_LABELS, formatReturnTime } from '@/lib/outpass'
+import { PASS_TYPE_LABELS } from '@/lib/outpass'
+import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
+import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
 import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
-import { supabase } from '@/lib/supabase'
 import type { OutpassWithStudent, PassType } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -20,20 +21,28 @@ type PassTypeFilter = 'all' | PassType
 export function PendingRequestsPage() {
   const { user } = useAuth()
   const { passes, loading, error, refetch } = useWardenDataContext()
+  const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<PassTypeFilter>('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [approveTarget, setApproveTarget] = useState<OutpassWithStudent | null>(null)
-  const [rejectTarget, setRejectTarget] = useState<OutpassWithStudent | null>(null)
+  const [drawerMode, setDrawerMode] = useState<'approve' | 'reject' | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<OutpassWithStudent | null>(null)
   const [remarks, setRemarks] = useState('')
-  const [rejectRemarks, setRejectRemarks] = useState('')
-  const [rejectError, setRejectError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [fadingIds, setFadingIds] = useState<Set<string>>(new Set())
 
   const pendingPasses = useMemo(() => {
     return passes
       .filter((p) => p.status === 'pending')
       .filter((p) => typeFilter === 'all' || p.pass_type === typeFilter)
+      .filter((p) => {
+        if (!search.trim()) return true
+        const q = search.trim().toLowerCase()
+        const name = getStudentName(p.students).toLowerCase()
+        const reg = getStudentReg(p.students).toLowerCase()
+        return name.includes(q) || reg.includes(q)
+      })
       .filter((p) => {
         if (!dateFrom && !dateTo) return true
         const created = new Date(p.created_at).getTime()
@@ -45,85 +54,88 @@ export function PendingRequestsPage() {
         }
         return true
       })
-  }, [passes, typeFilter, dateFrom, dateTo])
+  }, [passes, typeFilter, search, dateFrom, dateTo])
 
-  async function handleApprove() {
-    if (!approveTarget || !user) return
-    setSubmitting(true)
-
-    const { error: updateError } = await supabase
-      .from('outpass_requests')
-      .update({
-        status: 'approved',
-        approved_by: user.id,
-        qr_code_data: crypto.randomUUID(),
-        approved_at: new Date().toISOString(),
-        warden_remark: remarks.trim() || null,
-      })
-      .eq('id', approveTarget.id)
-
-    setSubmitting(false)
-
-    if (!updateError) {
-      setApproveTarget(null)
-      setRemarks('')
-      refetch()
-    }
+  function openDrawer(request: OutpassWithStudent, mode: 'approve' | 'reject') {
+    setSelectedRequest(request)
+    setDrawerMode(mode)
+    setRemarks('')
+    setActionError(null)
   }
 
-  async function handleReject() {
-    if (!rejectTarget || !user) return
+  function closeDrawer() {
+    if (submitting) return
+    setDrawerMode(null)
+    setSelectedRequest(null)
+    setRemarks('')
+    setActionError(null)
+  }
 
-    if (!rejectRemarks.trim()) {
-      setRejectError('Remarks are required when rejecting a request.')
+  async function handleDecision(action: 'approve' | 'reject') {
+    if (!selectedRequest || !user) return
+
+    if (action === 'reject' && !remarks.trim()) {
+      setActionError('Remarks are required when rejecting a request.')
       return
     }
 
     setSubmitting(true)
-    setRejectError(null)
+    setActionError(null)
 
-    const { error: updateError } = await supabase
-      .from('outpass_requests')
-      .update({
-        status: 'rejected',
-        approved_by: user.id,
-        warden_remark: rejectRemarks.trim(),
-      })
-      .eq('id', rejectTarget.id)
+    const result =
+      action === 'approve'
+        ? await approveOutpassRequest(selectedRequest, user.id, remarks)
+        : await rejectOutpassRequest(selectedRequest, user.id, remarks)
 
-    setSubmitting(false)
-
-    if (!updateError) {
-      setRejectTarget(null)
-      setRejectRemarks('')
-      refetch()
+    if (result.error) {
+      setActionError(result.error)
+      setSubmitting(false)
+      return
     }
+
+    setFadingIds((prev) => new Set(prev).add(selectedRequest.id))
+    setSubmitting(false)
+    closeDrawer()
+
+    window.setTimeout(() => {
+      setFadingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(selectedRequest.id)
+        return next
+      })
+      refetch()
+    }, 300)
   }
 
   if (loading) {
     return (
-      <div className="flex h-full min-h-[50vh] items-center justify-center">
-        <Spinner label="Loading requests..." />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Spinner label="Loading requests…" />
       </div>
     )
   }
 
   return (
-    <div className="p-8">
-      <div className="dashboard-page-header mb-6">
-        <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Pending Requests</h1>
-        <p className="dashboard-subheading mt-2 text-sm">
-          {pendingPasses.length} request{pendingPasses.length !== 1 ? 's' : ''} awaiting review
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Pending requests"
+        subtitle={`${pendingPasses.length} awaiting review`}
+      />
 
       {error && (
-        <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
           {error}
         </div>
       )}
 
-      <div className="glass-panel mb-4 flex flex-wrap items-end gap-3 p-4">
+      <div className="space-y-4 rounded-xl border border-[var(--svce-border-default)] bg-white p-4">
+        <Input
+          placeholder="Search by name or register number…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+
         <div className="flex flex-wrap gap-2">
           {(['all', 'outpass', 'staypass', 'night_pass'] as const).map((type) => (
             <button
@@ -131,17 +143,18 @@ export function PendingRequestsPage() {
               type="button"
               onClick={() => setTypeFilter(type)}
               className={cn(
-                'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                'rounded-[var(--radius-full)] px-3.5 py-1.5 text-xs font-medium transition-colors',
                 typeFilter === type
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                  : 'border border-white/45 bg-white/45 text-muted-foreground hover:bg-white/60',
+                  ? 'bg-[#1A5CA0] text-white'
+                  : 'border border-[var(--svce-border-default)] bg-white text-[#4B5563]',
               )}
             >
               {type === 'all' ? 'All' : PASS_TYPE_LABELS[type]}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-end gap-2">
+
+        <div className="flex flex-wrap items-end gap-3">
           <div>
             <Label htmlFor="date-from" className="text-xs">
               From
@@ -151,7 +164,7 @@ export function PendingRequestsPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="h-9 w-36"
+              className="mt-1 h-9 w-40"
             />
           </div>
           <div>
@@ -163,155 +176,78 @@ export function PendingRequestsPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="h-9 w-36"
+              className="mt-1 h-9 w-40"
             />
           </div>
         </div>
       </div>
 
-      <div className="glass-panel-strong overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3">Student</th>
-                <th className="px-4 py-3">Reg No</th>
-                <th className="px-4 py-3">Room</th>
-                <th className="px-4 py-3">Pass type</th>
-                <th className="px-4 py-3">Destination</th>
-                <th className="px-4 py-3">Reason</th>
-                <th className="px-4 py-3">Departure</th>
-                <th className="px-4 py-3">Return by</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingPasses.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
-                    No pending requests match your filters.
-                  </td>
-                </tr>
-              ) : (
-                pendingPasses.map((request) => (
-                  <tr key={request.id} className="border-b last:border-0 hover:bg-muted/20">
-                    <td className="px-4 py-3 font-medium">
-                      {getStudentName(request.students)}
-                    </td>
-                    <td className="px-4 py-3">{getStudentReg(request.students)}</td>
-                    <td className="px-4 py-3">{getStudentRoom(request.students)}</td>
-                    <td className="px-4 py-3">
-                      <PassTypeBadge type={request.pass_type} />
-                    </td>
-                    <td className="max-w-[140px] truncate px-4 py-3">{request.destination}</td>
-                    <td className="max-w-[140px] truncate px-4 py-3">{request.reason}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {formatReturnTime(request.departure_at)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {formatReturnTime(request.return_by)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => {
-                            setRemarks('')
-                            setApproveTarget(request)
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="bg-destructive hover:bg-destructive/90"
-                          onClick={() => {
-                            setRejectRemarks('')
-                            setRejectError(null)
-                            setRejectTarget(request)
-                          }}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white">
+        <DataTable
+          columns={[
+            { header: 'Student', accessor: 'id', render: (row) => getStudentName(row.students) },
+            { header: 'Reg No', accessor: 'id', render: (row) => getStudentReg(row.students) },
+            { header: 'Room', accessor: 'id', render: (row) => getStudentRoom(row.students) },
+            {
+              header: 'Type',
+              accessor: 'pass_type',
+              render: (row) => <PassTypeBadge type={row.pass_type} />,
+            },
+            { header: 'Destination', accessor: 'destination' },
+            { header: 'Reason', accessor: 'reason' },
+            {
+              header: 'Duration',
+              accessor: 'departure_at',
+              render: (row) => formatPassDuration(row.departure_at, row.return_by),
+            },
+            {
+              header: 'Submitted',
+              accessor: 'created_at',
+              render: (row) => formatRelativeTime(row.created_at),
+            },
+            {
+              header: 'Actions',
+              accessor: 'id',
+              render: (row) => (
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
+                    Approve
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="text-[#DC2626] hover:bg-[#FEF2F2]"
+                    onClick={() => openDrawer(row, 'reject')}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+          data={pendingPasses}
+          emptyMessage="No pending requests match your filters."
+          getRowKey={(row) => row.id}
+          getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
+        />
       </div>
 
-      <Modal
-        open={!!approveTarget}
-        title="Approve request"
-        onClose={() => !submitting && setApproveTarget(null)}
-        footer={
-          <ModalFooter
-            onCancel={() => setApproveTarget(null)}
-            onConfirm={handleApprove}
-            confirmLabel="Confirm approval"
-            loading={submitting}
-          />
-        }
-      >
-        {approveTarget && (
-          <div className="space-y-4">
-            <PassRequestDetails request={approveTarget} />
-            <div className="space-y-2">
-              <Label htmlFor="approve-remarks">Remarks (optional)</Label>
-              <Input
-                id="approve-remarks"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Any notes for the student"
-                disabled={submitting}
-              />
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={!!rejectTarget}
-        title="Reject request"
-        onClose={() => !submitting && setRejectTarget(null)}
-        footer={
-          <ModalFooter
-            onCancel={() => setRejectTarget(null)}
-            onConfirm={handleReject}
-            confirmLabel="Confirm rejection"
-            confirmVariant="destructive"
-            loading={submitting}
-            confirmDisabled={!rejectRemarks.trim()}
-          />
-        }
-      >
-        {rejectTarget && (
-          <div className="space-y-4">
-            <PassRequestDetails request={rejectTarget} />
-            <div className="space-y-2">
-              <Label htmlFor="reject-remarks">Remarks *</Label>
-              <Input
-                id="reject-remarks"
-                value={rejectRemarks}
-                onChange={(e) => {
-                  setRejectRemarks(e.target.value)
-                  setRejectError(null)
-                }}
-                placeholder="Reason for rejection"
-                disabled={submitting}
-                required
-              />
-              <FieldError message={rejectError ?? undefined} />
-            </div>
-          </div>
-        )}
-      </Modal>
+      <WardenReviewDrawer
+        open={drawerMode !== null}
+        mode={drawerMode ?? 'approve'}
+        request={selectedRequest}
+        remarks={remarks}
+        onRemarksChange={setRemarks}
+        onClose={closeDrawer}
+        onPrimaryAction={() => handleDecision(drawerMode ?? 'approve')}
+        onSecondaryAction={() => {
+          if (drawerMode === 'reject') closeDrawer()
+          else setDrawerMode('reject')
+        }}
+        submitting={submitting}
+        error={actionError}
+      />
     </div>
   )
 }

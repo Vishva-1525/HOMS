@@ -1,5 +1,10 @@
-import { RolePlaceholder } from '@/components/layout/RolePlaceholder'
+import { ShellPagePlaceholder } from '@/components/layout/ShellPagePlaceholder'
 
 export function AdminDashboard() {
-  return <RolePlaceholder title="Admin Dashboard" />
+  return (
+    <ShellPagePlaceholder
+      title="Admin Dashboard"
+      description="System overview and administrative controls."
+    />
+  )
 }

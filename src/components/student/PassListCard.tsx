@@ -1,7 +1,9 @@
-import { PassTypeBadge } from '@/components/student/PassTypeBadge'
-import { StatusChip } from '@/components/student/StatusChip'
+import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
+import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Button } from '@/components/ui/button'
 import { formatPassDate, formatReturnTime } from '@/lib/outpass'
-import { isPassOverdue } from '@/lib/pass-filters'
+import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
+import { isQrEligibleStatus } from '@/lib/pass-filters'
 import type { GateLog, OutpassRequest } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -9,42 +11,52 @@ interface PassListCardProps {
   pass: OutpassRequest
   gateLogs: GateLog[]
   onClick: () => void
+  onViewQr?: () => void
 }
 
-export function PassListCard({ pass, gateLogs, onClick }: PassListCardProps) {
-  const overdue = isPassOverdue(pass, gateLogs)
+export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCardProps) {
+  const displayStatus = getPassDisplayStatus(pass, gateLogs)
+  const label = getPassStatusLabel(pass.status, gateLogs, pass)
+  const showQr = isQrEligibleStatus(pass.status)
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       className={cn(
-        'glass-panel w-full p-4 text-left transition-all duration-200',
-        'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl active:scale-[0.99]',
+        'rounded-xl border border-[var(--svce-border-default)] bg-white p-4',
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <PassTypeBadge type={pass.pass_type} />
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
-          {overdue && (
-            <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-800 dark:bg-red-900/30 dark:text-red-300">
-              Overdue
+      <button type="button" onClick={onClick} className="w-full text-left">
+        <div className="flex items-center justify-between gap-2">
+          <PassTypeBadge type={pass.pass_type} />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[var(--svce-text-muted)]">
+              {formatPassDate(pass.created_at)}
             </span>
-          )}
-          <StatusChip status={pass.status} />
+            <StatusBadge status={displayStatus} label={label} />
+          </div>
         </div>
-      </div>
 
-      <p className="mt-2 truncate font-medium">{pass.destination}</p>
+        <p className="mt-2 text-sm font-medium text-[#1A1A2E]">{pass.destination}</p>
 
-      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <p>Departs {formatReturnTime(pass.departure_at)}</p>
-        <p>Returns {formatReturnTime(pass.return_by)}</p>
-      </div>
+        <p className="mt-1 text-xs text-[var(--svce-text-muted)]">
+          {formatReturnTime(pass.departure_at)} → {formatReturnTime(pass.return_by)}
+        </p>
+      </button>
 
-      <p className="mt-2 text-[10px] text-muted-foreground">
-        Requested {formatPassDate(pass.created_at)}
-      </p>
-    </button>
+      {showQr && onViewQr && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="mt-3 w-full"
+          onClick={(e) => {
+            e.stopPropagation()
+            onViewQr()
+          }}
+        >
+          View QR
+        </Button>
+      )}
+    </div>
   )
 }

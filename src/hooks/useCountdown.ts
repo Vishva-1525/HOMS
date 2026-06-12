@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 
 function formatCountdown(ms: number): string {
-  if (ms <= 0) return '00:00:00'
-
-  const totalSeconds = Math.floor(ms / 1000)
+  const totalSeconds = Math.floor(Math.abs(ms) / 1000)
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
@@ -12,13 +10,15 @@ function formatCountdown(ms: number): string {
 }
 
 export function useCountdown(targetIso: string): string {
-  const [remaining, setRemaining] = useState(() =>
-    formatCountdown(new Date(targetIso).getTime() - Date.now()),
-  )
+  const [remaining, setRemaining] = useState(() => {
+    const diff = new Date(targetIso).getTime() - Date.now()
+    return diff > 0 ? formatCountdown(diff) : `+${formatCountdown(diff)}`
+  })
 
   useEffect(() => {
     const tick = () => {
-      setRemaining(formatCountdown(new Date(targetIso).getTime() - Date.now()))
+      const diff = new Date(targetIso).getTime() - Date.now()
+      setRemaining(diff > 0 ? formatCountdown(diff) : `+${formatCountdown(diff)}`)
     }
 
     tick()

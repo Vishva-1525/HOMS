@@ -118,3 +118,38 @@ export const INITIAL_NEW_REQUEST_FORM: NewRequestFormValues = {
   departureAt: '',
   returnBy: '',
 }
+
+function toDatetimeLocalValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+export function getReturnDatetimeBounds(
+  passType: PassType | null,
+  departureAt: string,
+): { min?: string; max?: string } {
+  if (!passType || !departureAt) return {}
+
+  const departure = new Date(departureAt)
+  if (Number.isNaN(departure.getTime())) return {}
+
+  const min = new Date(departure.getTime() + 60_000)
+
+  switch (passType) {
+    case 'outpass': {
+      const endOfDay = new Date(departure)
+      endOfDay.setHours(23, 59, 0, 0)
+      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(endOfDay) }
+    }
+    case 'staypass': {
+      const max = new Date(departure)
+      max.setDate(max.getDate() + 2)
+      max.setHours(23, 59, 0, 0)
+      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
+    }
+    case 'night_pass': {
+      const max = new Date(departure.getTime() + NIGHT_PASS_MAX_HOURS * HOUR_MS)
+      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
+    }
+  }
+}

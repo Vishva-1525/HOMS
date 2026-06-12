@@ -1,26 +1,30 @@
+import { Moon, MoonStar, Sun } from 'lucide-react'
 import type { PassType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { FieldError } from '@/components/ui/field-error'
 
 const PASS_OPTIONS: {
   type: PassType
   label: string
   description: string
+  icon: typeof Sun
 }[] = [
   {
     type: 'outpass',
     label: 'Outpass',
-    description: 'Day trip, return same day',
+    description: 'Day trip — return same day',
+    icon: Sun,
   },
   {
     type: 'staypass',
     label: 'Staypass',
-    description: 'Overnight, return next day',
+    description: 'Overnight — return in 1–2 days',
+    icon: Moon,
   },
   {
     type: 'night_pass',
     label: 'Night Pass',
-    description: 'Up to 78 hours',
+    description: 'Extended leave — up to 78 hours',
+    icon: MoonStar,
   },
 ]
 
@@ -34,9 +38,9 @@ interface PassTypeSelectorProps {
 export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeSelectorProps) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">Pass Type</p>
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {PASS_OPTIONS.map((option) => {
+          const Icon = option.icon
           const isSelected = value === option.type
           return (
             <button
@@ -45,22 +49,24 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
               disabled={disabled}
               onClick={() => onChange(option.type)}
               className={cn(
-                'rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                'flex flex-col items-center rounded-xl border-2 p-4 text-center transition-colors',
                 isSelected
-                  ? 'border-primary bg-primary/10 shadow-md shadow-primary/10 ring-1 ring-primary/20'
-                  : 'glass-panel border-white/50 hover:border-primary/40 hover:shadow-lg',
+                  ? 'border-[#1A5CA0] bg-[#EBF3FF]'
+                  : 'border-[var(--svce-border-default)] bg-white hover:border-[#1A5CA0]/40',
                 disabled && 'pointer-events-none opacity-50',
               )}
             >
-              <p className={cn('font-semibold', isSelected && 'text-primary')}>
-                {option.label}
-              </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{option.description}</p>
+              <Icon
+                className={cn('h-8 w-8', isSelected ? 'text-[#1A5CA0]' : 'text-[#4B5563]')}
+                strokeWidth={1.5}
+              />
+              <p className="mt-2 text-sm font-semibold text-[#1A1A2E]">{option.label}</p>
+              <p className="mt-1 text-xs text-[#4B5563]">{option.description}</p>
             </button>
           )
         })}
       </div>
-      <FieldError message={error} />
+      {error && <p className="text-sm text-[#DC2626]">{error}</p>}
     </div>
   )
 }

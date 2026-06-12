@@ -1,16 +1,16 @@
-import { useState, type FormEvent } from 'react'
-import { IconCircleCheck } from '@tabler/icons-react'
+import { useMemo, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { CheckCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { PassTypeSelector } from '@/components/student/PassTypeSelector'
-import type { StudentTab } from '@/components/student/StudentBottomNav'
-import { BottomSheet } from '@/components/ui/bottom-sheet'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { FieldError } from '@/components/ui/field-error'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   INITIAL_NEW_REQUEST_FORM,
+  getReturnDatetimeBounds,
   isNewRequestFormDirty,
   validateNewRequestForm,
   type NewRequestFormErrors,
@@ -18,17 +18,19 @@ import {
 } from '@/lib/outpass-request-validation'
 import { supabase } from '@/lib/supabase'
 
-interface NewRequestTabProps {
-  onTabChange: (tab: StudentTab) => void
-}
-
-export function NewRequestTab({ onTabChange }: NewRequestTabProps) {
+export function StudentNewRequestPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [form, setForm] = useState<NewRequestFormValues>(INITIAL_NEW_REQUEST_FORM)
   const [errors, setErrors] = useState<NewRequestFormErrors>({})
   const [submitting, setSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+
+  const returnBounds = useMemo(
+    () => getReturnDatetimeBounds(form.passType, form.departureAt),
+    [form.passType, form.departureAt],
+  )
 
   function updateField<K extends keyof NewRequestFormValues>(
     key: K,
@@ -47,15 +49,8 @@ export function NewRequestTab({ onTabChange }: NewRequestTabProps) {
     if (isNewRequestFormDirty(form)) {
       setShowDiscardDialog(true)
     } else {
-      onTabChange('home')
+      navigate('/student/dashboard')
     }
-  }
-
-  function discardAndLeave() {
-    setShowDiscardDialog(false)
-    setForm(INITIAL_NEW_REQUEST_FORM)
-    setErrors({})
-    onTabChange('home')
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -93,21 +88,37 @@ export function NewRequestTab({ onTabChange }: NewRequestTabProps) {
     setShowSuccess(true)
   }
 
-  function handleViewStatus() {
-    setShowSuccess(false)
-    onTabChange('my-passes')
+  if (showSuccess) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EBF7EE]">
+          <CheckCircle className="h-9 w-9 text-[#2E8B44]" strokeWidth={1.5} />
+        </div>
+        <h1 className="mt-5 text-xl font-semibold text-[#1A1A2E]">Request submitted!</h1>
+        <p className="mt-2 text-sm text-[#4B5563]">Your warden will review it shortly.</p>
+        <Button
+          type="button"
+          className="mt-8 w-full max-w-xs"
+          onClick={() => navigate('/student/passes')}
+        >
+          Go to my passes
+        </Button>
+      </div>
+    )
   }
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">New Request</h1>
-        <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
-          Cancel
-        </Button>
-      </div>
+      <PageHeader
+        title="New outpass request"
+        actions={
+          <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
+            Cancel
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6 pb-4" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-5 pb-6" noValidate>
         <PassTypeSelector
           value={form.passType}
           onChange={(type) => updateField('passType', type)}
@@ -125,28 +136,29 @@ export function NewRequestTab({ onTabChange }: NewRequestTabProps) {
             value={form.destination}
             onChange={(e) => updateField('destination', e.target.value)}
             disabled={submitting}
-            aria-invalid={!!errors.destination}
           />
-          <FieldError message={errors.destination} />
+          {errors.destination && (
+            <p className="text-sm text-[#DC2626]">{errors.destination}</p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="reason">Reason</Label>
-          <Input
+          <textarea
             id="reason"
-            type="text"
+            rows={3}
             placeholder="Purpose of visit"
             required
             value={form.reason}
             onChange={(e) => updateField('reason', e.target.value)}
             disabled={submitting}
-            aria-invalid={!!errors.reason}
+            className="flex w-full rounded-[var(--radius-md)] border border-[var(--svce-border-default)] bg-white px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-2 disabled:opacity-50"
           />
-          <FieldError message={errors.reason} />
+          {errors.reason && <p className="text-sm text-[#DC2626]">{errors.reason}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="departure-at">Departure Date &amp; Time</Label>
+          <Label htmlFor="departure-at">Departure date &amp; time</Label>
           <Input
             id="departure-at"
             type="datetime-local"
@@ -154,55 +166,49 @@ export function NewRequestTab({ onTabChange }: NewRequestTabProps) {
             value={form.departureAt}
             onChange={(e) => updateField('departureAt', e.target.value)}
             disabled={submitting}
-            aria-invalid={!!errors.departureAt}
           />
-          <FieldError message={errors.departureAt} />
+          {errors.departureAt && (
+            <p className="text-sm text-[#DC2626]">{errors.departureAt}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="return-by">Return Date &amp; Time</Label>
+          <Label htmlFor="return-by">Expected return date &amp; time</Label>
           <Input
             id="return-by"
             type="datetime-local"
             required
+            min={returnBounds.min}
+            max={returnBounds.max}
             value={form.returnBy}
             onChange={(e) => updateField('returnBy', e.target.value)}
-            disabled={submitting}
-            aria-invalid={!!errors.returnBy}
+            disabled={submitting || !form.passType}
           />
-          <FieldError message={errors.returnBy} />
+          {errors.returnBy && <p className="text-sm text-[#DC2626]">{errors.returnBy}</p>}
         </div>
 
-        <FieldError message={errors.submit} />
+        {errors.submit && <p className="text-sm text-[#DC2626]">{errors.submit}</p>}
 
-        <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-          {submitting ? 'Submitting...' : 'Submit Request'}
+        <Button type="submit" className="w-full" loading={submitting} disabled={submitting}>
+          Submit request
         </Button>
       </form>
 
-      <ConfirmDialog
+      <ConfirmModal
         open={showDiscardDialog}
         title="Discard request?"
         description="You have unsaved changes. Are you sure you want to leave without submitting?"
         confirmLabel="Discard"
         cancelLabel="Keep editing"
-        onConfirm={discardAndLeave}
+        variant="danger"
+        onConfirm={() => {
+          setShowDiscardDialog(false)
+          setForm(INITIAL_NEW_REQUEST_FORM)
+          setErrors({})
+          navigate('/student/dashboard')
+        }}
         onCancel={() => setShowDiscardDialog(false)}
       />
-
-      <BottomSheet
-        open={showSuccess}
-        title="Request submitted!"
-        description="Your warden will review it shortly."
-        actionLabel="View status"
-        onAction={handleViewStatus}
-      >
-        <div className="mt-4 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-            <IconCircleCheck className="h-8 w-8 text-green-600 dark:text-green-400" stroke={1.5} />
-          </div>
-        </div>
-      </BottomSheet>
     </>
   )
 }

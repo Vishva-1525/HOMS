@@ -1,0 +1,99 @@
+/**
+ * HOMS Design Tokens — Sri Venkateswara College of Engineering (SVCE)
+ * Flat design system: borders only, no shadows.
+ */
+
+:root {
+  /* ── Colour palette ───────────────────────────────────────────────────── */
+
+  --svce-primary-blue: #1a5ca0;
+  --svce-dark-blue: #0d3f72;
+  --svce-blue-tint: #ebf3ff;
+
+  --svce-accent-orange: #e87722;
+  --svce-orange-tint: #fff3e8;
+
+  --svce-accent-green: #2e8b44;
+  --svce-green-tint: #ebf7ee;
+
+  --svce-white: #ffffff;
+  --svce-page-bg: #f5f7fa;
+
+  --svce-text-primary: #1a1a2e;
+  --svce-text-secondary: #4b5563;
+  --svce-text-muted: #9ca3af;
+
+  --svce-border-default: #e5e7eb;
+  --svce-border-strong: #d1d5db;
+
+  --svce-success: #2e8b44;
+  --svce-success-tint: #ebf7ee;
+
+  --svce-warning: #d97706;
+  --svce-warning-tint: #fff8e1;
+
+  --svce-danger: #dc2626;
+  --svce-danger-tint: #fef2f2;
+
+  --svce-info: #1a5ca0;
+  --svce-info-tint: #ebf3ff;
+
+  /* ── Typography ─────────────────────────────────────────────────────────── */
+
+  --svce-font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --svce-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --svce-text-h1: 28px;
+  --svce-text-h2: 22px;
+  --svce-text-h3: 18px;
+  --svce-text-h4: 15px;
+  --svce-text-body: 14px;
+  --svce-text-small: 12px;
+
+  --svce-leading-body: 1.6;
+  --svce-weight-heading: 600;
+  --svce-weight-body: 400;
+  --svce-weight-label: 500;
+
+  /* ── Spacing scale ────────────────────────────────────────────────────── */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* ── Border radius ────────────────────────────────────────────────────── */
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── Component tokens ─────────────────────────────────────────────────── */
+
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  --topbar-height: 60px;
+  --card-padding: 20px;
+  --table-row-height: 52px;
+
+  /* ── Focus & selection ────────────────────────────────────────────────── */
+
+  --svce-focus-ring-color: var(--svce-primary-blue);
+  --svce-focus-ring-width: 2px;
+  --svce-focus-ring-offset: 2px;
+
+  --svce-selection-bg: var(--svce-blue-tint);
+  --svce-selection-text: var(--svce-dark-blue);
+
+  /* ── Scrollbar ────────────────────────────────────────────────────────── */
+
+  --svce-scrollbar-width: 4px;
+  --svce-scrollbar-thumb: var(--svce-border-strong);
+  --svce-scrollbar-track: transparent;
+}

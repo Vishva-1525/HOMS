@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { isPassActive } from '@/lib/outpass'
 import { getCurrentSemesterRange, isWithinSemester } from '@/lib/semester'
+import { fetchStudentRecord } from '@/lib/student-data'
 import { supabase } from '@/lib/supabase'
-import { formatSupabaseError } from '@/lib/supabase-errors'
 import type { GateLog, OutpassRequest, Student } from '@/lib/types'
 
 export interface SemesterStats {
@@ -22,6 +22,7 @@ interface DashboardData {
   semesterPasses: OutpassRequest[]
   recentPasses: OutpassRequest[]
   activeCheckedOutPass: ActiveCheckedOutPass | null
+  activePass: OutpassRequest | null
   stats: SemesterStats
   loading: boolean
   error: string | null
@@ -69,7 +70,7 @@ export function useStudentDashboardData(): DashboardData {
     setError(null)
 
     const [studentResult, passesResult] = await Promise.all([
-      supabase.from('students').select('*').eq('id', user.id).maybeSingle(),
+      fetchStudentRecord(user.id),
       supabase
         .from('outpass_requests')
         .select('*')
@@ -78,18 +79,7 @@ export function useStudentDashboardData(): DashboardData {
     ])
 
     if (studentResult.error) {
-      setError(
-        formatSupabaseError(
-          studentResult.error,
-          'Your student record was not found. Please contact the hostel office.',
-        ),
-      )
-      setLoading(false)
-      return
-    }
-
-    if (!studentResult.data) {
-      setError('Your student record was not found. Please contact the hostel office.')
+      setError(studentResult.error)
       setLoading(false)
       return
     }
@@ -101,7 +91,7 @@ export function useStudentDashboardData(): DashboardData {
     }
 
     const allPasses = (passesResult.data ?? []) as OutpassRequest[]
-    setStudent(studentResult.data as Student)
+    setStudent(studentResult.student)
     setPasses(allPasses)
 
     const activePassIds = allPasses.filter(isPassActive).map((p) => p.id)
@@ -169,7 +159,9 @@ export function useStudentDashboardData(): DashboardData {
     [passes],
   )
 
-  const recentPasses = useMemo(() => passes.slice(0, 3), [passes])
+  const recentPasses = useMemo(() => passes.slice(0, 5), [passes])
+
+  const activePass = useMemo(() => passes.find(isPassActive) ?? null, [passes])
 
   const stats = useMemo(() => computeStats(semesterPasses), [semesterPasses])
 
@@ -183,6 +175,7 @@ export function useStudentDashboardData(): DashboardData {
     semesterPasses,
     recentPasses,
     activeCheckedOutPass,
+    activePass,
     stats,
     loading,
     error,

@@ -68,17 +68,17 @@ export function ModalFooter({
 }) {
   return (
     <div className="flex justify-end gap-3">
-      <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+      <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
         {cancelLabel}
       </Button>
       <Button
         type="button"
-        variant={confirmVariant === 'destructive' ? 'default' : 'default'}
-        className={confirmVariant === 'destructive' ? 'bg-destructive text-white hover:bg-destructive/90' : ''}
+        variant={confirmVariant === 'destructive' ? 'danger' : 'primary'}
         onClick={onConfirm}
-        disabled={loading || confirmDisabled}
+        loading={loading}
+        disabled={confirmDisabled}
       >
-        {loading ? 'Saving...' : confirmLabel}
+        {confirmLabel}
       </Button>
     </div>
   )

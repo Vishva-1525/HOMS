@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
-import { IconDownload } from '@tabler/icons-react'
-import { WardenStatCard } from '@/components/warden/WardenStatCard'
-import { PassTypeBadge } from '@/components/student/PassTypeBadge'
-import { StatusChip } from '@/components/student/StatusChip'
+import { Download } from 'lucide-react'
+import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
+import { DataTable } from '@/components/ui/DataTable'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { StatCard } from '@/components/ui/StatCard'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,17 +27,27 @@ import {
   reportRowToArray,
 } from '@/lib/warden-reports'
 import { getEntryTime, getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
+import type { OutpassStatus, OutpassWithStudent } from '@/lib/types'
+import type { StatusBadgeStatus } from '@/components/ui/StatusBadge'
+
+function outpassStatusToBadge(status: OutpassStatus): StatusBadgeStatus {
+  if (status === 'extended') return 'completed'
+  return status
+}
 import { cn } from '@/lib/utils'
 
-const PERIOD_TABS: { id: ReportPeriod; label: string }[] = [
+type ReportTab = ReportPeriod | 'custom'
+
+const PERIOD_TABS: { id: ReportTab; label: string }[] = [
   { id: 'daily', label: 'Daily' },
   { id: 'weekly', label: 'Weekly' },
   { id: 'monthly', label: 'Monthly' },
+  { id: 'custom', label: 'Custom range' },
 ]
 
 export function ReportsPage() {
   const { passes, gateLogs, loading, error } = useWardenDataContext()
-  const [period, setPeriod] = useState<ReportPeriod>('daily')
+  const [activeTab, setActiveTab] = useState<ReportTab>('daily')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
   const [exporting, setExporting] = useState(false)
@@ -46,11 +58,16 @@ export function ReportsPage() {
   )
 
   const activeRange = useMemo(() => {
-    if (customRange) return customRange
-    return getRangeForPeriod(period)
-  }, [customRange, period])
+    if (activeTab === 'custom') {
+      return customRange ?? getRangeForPeriod('daily')
+    }
+    return getRangeForPeriod(activeTab)
+  }, [activeTab, customRange])
 
-  const exportPeriodLabel = customRange ? 'Custom' : period.charAt(0).toUpperCase() + period.slice(1)
+  const exportPeriodLabel =
+    activeTab === 'custom'
+      ? 'Custom'
+      : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
 
   const filteredPasses = useMemo(
     () => filterPassesByRange(passes, activeRange),
@@ -80,49 +97,46 @@ export function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full min-h-[50vh] items-center justify-center">
-        <Spinner label="Loading report data..." />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Spinner label="Loading report data…" />
       </div>
     )
   }
 
   return (
-    <div className="p-8">
-      <div className="dashboard-page-header mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Reports</h1>
-          <p className="dashboard-subheading mt-2 text-sm">
-            {formatRangeLabel(activeRange)}
-            {customRange && ' (custom range)'}
-          </p>
-        </div>
-        <Button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting || tableRows.length === 0}
-        >
-          <IconDownload className="h-4 w-4" stroke={1.75} />
-          {exporting ? 'Exporting...' : 'Export to Excel'}
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Reports"
+        subtitle={formatRangeLabel(activeRange)}
+        actions={
+          <Button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || tableRows.length === 0}
+          >
+            <Download className="h-4 w-4" strokeWidth={1.75} />
+            {exporting ? 'Exporting…' : 'Export to Excel'}
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
           {error}
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {PERIOD_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setPeriod(tab.id)}
+            onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-              !customRange && period === tab.id
-                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                : 'border border-white/45 bg-white/45 text-muted-foreground hover:bg-white/60',
+              'rounded-[var(--radius-full)] px-3.5 py-1.5 text-xs font-medium transition-colors',
+              activeTab === tab.id
+                ? 'bg-[#1A5CA0] text-white'
+                : 'border border-[var(--svce-border-default)] bg-white text-[#4B5563]',
             )}
           >
             {tab.label}
@@ -130,133 +144,135 @@ export function ReportsPage() {
         ))}
       </div>
 
-      <div className="glass-panel mb-6 flex flex-wrap items-end gap-3 p-4">
-        <p className="w-full text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Custom date range
-        </p>
-        <div>
-          <Label htmlFor="report-from" className="text-xs">
-            From
-          </Label>
-          <Input
-            id="report-from"
-            type="date"
-            value={customFrom}
-            onChange={(e) => setCustomFrom(e.target.value)}
-            className="h-9 w-40"
-          />
+      {activeTab === 'custom' && (
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--svce-border-default)] bg-white p-4">
+          <div>
+            <Label htmlFor="report-from" className="text-xs">
+              From
+            </Label>
+            <Input
+              id="report-from"
+              type="date"
+              value={customFrom}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="mt-1 h-9 w-40"
+            />
+          </div>
+          <div>
+            <Label htmlFor="report-to" className="text-xs">
+              To
+            </Label>
+            <Input
+              id="report-to"
+              type="date"
+              value={customTo}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="mt-1 h-9 w-40"
+            />
+          </div>
+          {(customFrom || customTo) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCustomFrom('')
+                setCustomTo('')
+              }}
+            >
+              Clear
+            </Button>
+          )}
         </div>
-        <div>
-          <Label htmlFor="report-to" className="text-xs">
-            To
-          </Label>
-          <Input
-            id="report-to"
-            type="date"
-            value={customTo}
-            onChange={(e) => setCustomTo(e.target.value)}
-            className="h-9 w-40"
-          />
-        </div>
-        {(customFrom || customTo) && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setCustomFrom('')
-              setCustomTo('')
-            }}
-          >
-            Clear
-          </Button>
-        )}
-      </div>
+      )}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <WardenStatCard label="Total requests" value={stats.total} />
-        <WardenStatCard
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <StatCard label="Total requests" value={stats.total} iconTone="blue" />
+        <StatCard
           label="Approved"
           value={stats.approved}
-          valueClassName="text-green-600"
+          iconTone="green"
+          valueClassName="text-[#166534]"
         />
-        <WardenStatCard
+        <StatCard
           label="Rejected"
           value={stats.rejected}
-          valueClassName="text-red-600"
+          iconTone="red"
+          valueClassName="text-[#991B1B]"
         />
-        <WardenStatCard
+        <StatCard
           label="Overdue"
           value={stats.overdue}
-          valueClassName="text-amber-600"
+          iconTone="amber"
+          valueClassName="text-[#D97706]"
         />
-        <WardenStatCard
+        <StatCard
           label="Currently out"
           value={stats.currentlyOut}
-          valueClassName="text-blue-600"
+          iconTone="blue"
+          valueClassName="text-[#1A5CA0]"
         />
       </div>
 
-      <div className="glass-panel-strong overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3">Student</th>
-                <th className="px-4 py-3">Reg No</th>
-                <th className="px-4 py-3">Room</th>
-                <th className="px-4 py-3">Pass type</th>
-                <th className="px-4 py-3">Destination</th>
-                <th className="px-4 py-3">Departure</th>
-                <th className="px-4 py-3">Return by</th>
-                <th className="px-4 py-3">Actual entry</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Warden remark</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPasses.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground">
-                    No outpass records in this period.
-                  </td>
-                </tr>
-              ) : (
-                filteredPasses.map((pass) => {
-                  const entryTime = getEntryTime(pass.id, gateLogs)
-                  return (
-                    <tr key={pass.id} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="px-4 py-3 font-medium">
-                        {getStudentName(pass.students)}
-                      </td>
-                      <td className="px-4 py-3">{getStudentReg(pass.students)}</td>
-                      <td className="px-4 py-3">{getStudentRoom(pass.students)}</td>
-                      <td className="px-4 py-3">
-                        <PassTypeBadge type={pass.pass_type} />
-                      </td>
-                      <td className="max-w-[160px] truncate px-4 py-3">{pass.destination}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {formatReturnTime(pass.departure_at)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {formatReturnTime(pass.return_by)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {entryTime ? formatReturnTime(entryTime) : '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusChip status={pass.status} />
-                      </td>
-                      <td className="max-w-[180px] truncate px-4 py-3 text-muted-foreground">
-                        {pass.warden_remark ?? '—'}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white">
+        <DataTable
+          columns={[
+            {
+              header: 'Student',
+              accessor: 'id',
+              render: (row: OutpassWithStudent) => getStudentName(row.students),
+            },
+            {
+              header: 'Reg No',
+              accessor: 'id',
+              render: (row) => getStudentReg(row.students),
+            },
+            {
+              header: 'Room',
+              accessor: 'id',
+              render: (row) => getStudentRoom(row.students),
+            },
+            {
+              header: 'Pass type',
+              accessor: 'pass_type',
+              render: (row) => <PassTypeBadge type={row.pass_type} />,
+            },
+            { header: 'Destination', accessor: 'destination' },
+            {
+              header: 'Departure',
+              accessor: 'departure_at',
+              render: (row) => formatReturnTime(row.departure_at),
+            },
+            {
+              header: 'Return by',
+              accessor: 'return_by',
+              render: (row) => formatReturnTime(row.return_by),
+            },
+            {
+              header: 'Actual entry',
+              accessor: 'id',
+              render: (row) => {
+                const entry = getEntryTime(row.id, gateLogs)
+                return entry ? formatReturnTime(entry) : '—'
+              },
+            },
+            {
+              header: 'Status',
+              accessor: 'status',
+              render: (row) => (
+                <StatusBadge status={outpassStatusToBadge(row.status)} />
+              ),
+            },
+            {
+              header: 'Warden remark',
+              accessor: 'warden_remark',
+              render: (row) => row.warden_remark ?? '—',
+            },
+          ]}
+          data={filteredPasses}
+          emptyMessage="No outpass records in this period."
+          getRowKey={(row) => row.id}
+        />
       </div>
     </div>
   )
