@@ -36,7 +36,7 @@ export function StudentsOutPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading students out…" />
       </div>
     )
@@ -62,7 +62,7 @@ export function StudentsOutPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white">
+      <div className="dashboard-surface">
         <DataTable
           columns={[
             { header: 'Student', accessor: 'id', render: (row) => getStudentName(row.students) },

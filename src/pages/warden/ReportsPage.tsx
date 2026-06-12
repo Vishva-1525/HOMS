@@ -97,7 +97,7 @@ export function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading report data…" />
       </div>
     )
@@ -133,10 +133,7 @@ export function ReportsPage() {
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'rounded-[var(--radius-full)] px-3.5 py-1.5 text-xs font-medium transition-colors',
-              activeTab === tab.id
-                ? 'bg-[#1A5CA0] text-white'
-                : 'border border-[var(--svce-border-default)] bg-white text-[#4B5563]',
+              activeTab === tab.id ? 'dashboard-filter-chip-active' : 'dashboard-filter-chip',
             )}
           >
             {tab.label}
@@ -145,7 +142,7 @@ export function ReportsPage() {
       </div>
 
       {activeTab === 'custom' && (
-        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--svce-border-default)] bg-white p-4">
+        <div className="dashboard-surface-muted flex flex-wrap items-end gap-3 p-4">
           <div>
             <Label htmlFor="report-from" className="text-xs">
               From
@@ -214,7 +211,7 @@ export function ReportsPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white">
+      <div className="dashboard-surface">
         <DataTable
           columns={[
             {

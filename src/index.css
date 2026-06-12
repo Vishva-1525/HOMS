@@ -134,7 +134,38 @@
   }
 
   .dashboard-surface {
-    @apply rounded-2xl border border-white/70 bg-white/92 text-slate-900 shadow-xl shadow-slate-900/12 backdrop-blur-2xl;
+    @apply overflow-hidden rounded-2xl border border-white/70 bg-white/92 text-slate-900 shadow-xl shadow-slate-900/12 backdrop-blur-2xl;
+  }
+
+  .dashboard-surface-muted {
+    @apply overflow-hidden rounded-2xl border border-white/60 bg-white/88 shadow-lg shadow-slate-900/10 backdrop-blur-xl;
+  }
+
+  .dashboard-loading-panel {
+    @apply flex min-h-[40vh] items-center justify-center rounded-2xl border border-white/70 bg-white/92 p-8 shadow-xl shadow-slate-900/12 backdrop-blur-2xl;
+  }
+
+  .dashboard-section-bar {
+    @apply mb-3 flex items-center justify-between rounded-xl border border-white/55 bg-white/60 px-4 py-3 backdrop-blur-xl;
+  }
+
+  .dashboard-link {
+    @apply font-semibold text-[#0D3F72] hover:text-[#1A5CA0] hover:underline;
+  }
+
+  .dashboard-filter-chip {
+    @apply rounded-full border border-white/55 bg-white/55 px-3.5 py-1.5 text-xs font-medium text-slate-700 backdrop-blur-md transition-colors hover:bg-white/70;
+  }
+
+  .dashboard-filter-chip-active {
+    @apply rounded-full bg-[#1A5CA0] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm;
+  }
+
+  .dashboard-shell .glass-panel .text-muted-foreground,
+  .dashboard-shell .glass-panel-strong .text-muted-foreground,
+  .dashboard-shell .dashboard-surface .text-muted-foreground,
+  .dashboard-shell .dashboard-surface-muted .text-muted-foreground {
+    @apply text-slate-600;
   }
 }
 

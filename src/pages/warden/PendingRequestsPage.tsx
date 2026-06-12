@@ -109,7 +109,7 @@ export function PendingRequestsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading requests…" />
       </div>
     )
@@ -128,7 +128,7 @@ export function PendingRequestsPage() {
         </div>
       )}
 
-      <div className="space-y-4 rounded-xl border border-[var(--svce-border-default)] bg-white p-4">
+      <div className="dashboard-surface-muted space-y-4 p-4">
         <Input
           placeholder="Search by name or register number…"
           value={search}
@@ -143,10 +143,7 @@ export function PendingRequestsPage() {
               type="button"
               onClick={() => setTypeFilter(type)}
               className={cn(
-                'rounded-[var(--radius-full)] px-3.5 py-1.5 text-xs font-medium transition-colors',
-                typeFilter === type
-                  ? 'bg-[#1A5CA0] text-white'
-                  : 'border border-[var(--svce-border-default)] bg-white text-[#4B5563]',
+                typeFilter === type ? 'dashboard-filter-chip-active' : 'dashboard-filter-chip',
               )}
             >
               {type === 'all' ? 'All' : PASS_TYPE_LABELS[type]}
@@ -182,7 +179,7 @@ export function PendingRequestsPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white">
+      <div className="dashboard-surface">
         <DataTable
           columns={[
             { header: 'Student', accessor: 'id', render: (row) => getStudentName(row.students) },

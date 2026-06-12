@@ -28,7 +28,7 @@ export function StudentPassesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading passes…" />
       </div>
     )
@@ -53,7 +53,7 @@ export function StudentPassesPage() {
 
       <div className="mt-4 space-y-3">
         {filteredPasses.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300/80 bg-white/75 p-8 text-center text-sm text-slate-700 backdrop-blur-sm">
+          <div className="glass-panel border-dashed p-8 text-center text-sm text-slate-700">
             No passes match this filter.
           </div>
         ) : (

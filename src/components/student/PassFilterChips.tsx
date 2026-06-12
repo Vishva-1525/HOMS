@@ -15,10 +15,8 @@ export function PassFilterChips({ value, onChange }: PassFilterChipsProps) {
           type="button"
           onClick={() => onChange(filter.id)}
           className={cn(
-            'shrink-0 rounded-[var(--radius-full)] px-3.5 py-1.5 text-xs font-medium transition-colors',
-            value === filter.id
-              ? 'bg-[#1A5CA0] text-white'
-              : 'bg-white text-[#4B5563] border border-[var(--svce-border-default)]',
+            'shrink-0',
+            value === filter.id ? 'dashboard-filter-chip-active' : 'dashboard-filter-chip',
           )}
         >
           {filter.label}

@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Flashlight, FlashlightOff, Loader2 } from 'lucide-react'
 import { ScanFrameOverlay } from '@/components/security/ScanFrameOverlay'
-import { useHtml5QrcodeScript } from '@/hooks/security/useHtml5QrcodeScript'
-
-const READER_ID = 'security-qr-reader'
+import { startQrScannerEngine, type QrScannerEngineControls } from '@/lib/qr-scanner-engine'
 
 interface QrScannerProps {
   active: boolean
@@ -10,58 +9,126 @@ interface QrScannerProps {
 }
 
 export function QrScanner({ active, onScan }: QrScannerProps) {
-  const { ready, error: scriptError } = useHtml5QrcodeScript()
-  const scannerRef = useRef<Html5Qrcode | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const engineRef = useRef<QrScannerEngineControls | null>(null)
   const handledRef = useRef(false)
   const onScanRef = useRef(onScan)
+  const [starting, setStarting] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [torchAvailable, setTorchAvailable] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
+
   onScanRef.current = onScan
 
   useEffect(() => {
-    if (!ready || !active) return
+    if (!active) {
+      handledRef.current = false
+      setCameraError(null)
+      setTorchOn(false)
+      setTorchAvailable(false)
+      engineRef.current?.stop()
+      engineRef.current = null
+      return
+    }
+
+    const video = videoRef.current
+    if (!video) return
 
     handledRef.current = false
     let mounted = true
-    const scanner = new Html5Qrcode(READER_ID)
-    scannerRef.current = scanner
 
-    scanner
-      .start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 240, height: 240 } },
-        (decodedText) => {
-          if (handledRef.current) return
-          handledRef.current = true
-          onScanRef.current(decodedText)
-        },
-        () => {},
-      )
-      .catch((err: Error) => {
-        if (mounted) console.error('Camera start failed:', err)
+    setStarting(true)
+    setCameraError(null)
+
+    startQrScannerEngine({
+      video,
+      onDecode: (text) => {
+        if (!mounted || handledRef.current || !text.trim()) return
+        handledRef.current = true
+        onScanRef.current(text)
+      },
+      onError: (message) => {
+        if (mounted) setCameraError(message)
+      },
+    })
+      .then((controls) => {
+        if (!mounted) {
+          controls.stop()
+          return
+        }
+        engineRef.current = controls
+        setTorchAvailable(controls.torchAvailable)
+        setStarting(false)
+      })
+      .catch(() => {
+        if (mounted) setStarting(false)
       })
 
     return () => {
       mounted = false
-      scanner
-        .stop()
-        .then(() => scanner.clear())
-        .catch(() => {})
-      scannerRef.current = null
+      engineRef.current?.stop()
+      engineRef.current = null
     }
-  }, [ready, active])
+  }, [active])
+
+  async function handleTorchToggle() {
+    const next = await engineRef.current?.toggleTorch?.()
+    if (typeof next === 'boolean') setTorchOn(next)
+  }
+
+  const showCamera = active && !cameraError && !starting
 
   return (
-    <div className="relative min-h-[220px] flex-1 overflow-hidden rounded-t-[inherit] bg-black">
-      <div id={READER_ID} className="h-full min-h-[220px] w-full [&_video]:object-cover" />
+    <div className="relative min-h-[240px] flex-1 overflow-hidden rounded-t-[inherit] bg-black">
+      <video
+        ref={videoRef}
+        className="h-full min-h-[240px] w-full object-cover"
+        playsInline
+        muted
+        autoPlay
+      />
 
-      {active && <ScanFrameOverlay />}
+      {showCamera && <ScanFrameOverlay />}
 
-      {scriptError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4 text-center text-sm text-white">
-          Camera unavailable: {scriptError}
+      {active && starting && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70">
+          <Loader2 className="h-8 w-8 animate-spin text-white" aria-hidden />
+          <p className="text-sm text-white/90">Starting camera…</p>
         </div>
+      )}
+
+      {active && cameraError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/85 p-6 text-center">
+          <div>
+            <p className="text-sm font-medium text-white">Camera unavailable</p>
+            <p className="mt-2 text-sm text-white/75">{cameraError}</p>
+            <p className="mt-3 text-xs text-white/60">
+              Use manual pass ID entry below, or reload after granting permission.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showCamera && torchAvailable && (
+        <button
+          type="button"
+          onClick={handleTorchToggle}
+          className="absolute bottom-3 right-3 rounded-full bg-black/55 p-2.5 text-white backdrop-blur-sm"
+          aria-label={torchOn ? 'Turn torch off' : 'Turn torch on'}
+        >
+          {torchOn ? (
+            <FlashlightOff className="h-5 w-5" strokeWidth={1.75} />
+          ) : (
+            <Flashlight className="h-5 w-5" strokeWidth={1.75} />
+          )}
+        </button>
+      )}
+
+      {showCamera && (
+        <p className="pointer-events-none absolute left-0 right-0 top-3 text-center text-xs text-white/80">
+          Hold steady · works in low light
+        </p>
       )}
     </div>
   )
 }
-
-export { READER_ID }

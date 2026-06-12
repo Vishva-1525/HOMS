@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthProvider'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -20,7 +21,11 @@ import { StudentsOutPage } from '@/pages/warden/StudentsOutPage'
 import { WardenHomePage } from '@/pages/warden/WardenHomePage'
 import { ReportsPage } from '@/pages/warden/ReportsPage'
 import { WardenPlaceholderPage } from '@/pages/warden/WardenPlaceholderPage'
-import { SecurityScanPage } from '@/pages/security/SecurityScanPage'
+import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
+
+const SecurityScanPage = lazy(() =>
+  import('@/pages/security/SecurityScanPage').then((m) => ({ default: m.SecurityScanPage })),
+)
 import { ParentDashboard } from '@/pages/parent/ParentDashboard'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { ComponentGalleryPage } from '@/pages/dev/ComponentGalleryPage'
@@ -72,8 +77,22 @@ export default function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['security_guard']} />}>
             <Route element={<SecurityShell />}>
-              <Route path="/security/scan" element={<SecurityScanPage />} />
-              <Route path="/security/log" element={<SecurityScanPage />} />
+              <Route
+                path="/security/scan"
+                element={
+                  <Suspense fallback={<AuthLoadingScreen label="Loading gate scanner…" />}>
+                    <SecurityScanPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/security/log"
+                element={
+                  <Suspense fallback={<AuthLoadingScreen label="Loading gate scanner…" />}>
+                    <SecurityScanPage />
+                  </Suspense>
+                }
+              />
             </Route>
           </Route>
 

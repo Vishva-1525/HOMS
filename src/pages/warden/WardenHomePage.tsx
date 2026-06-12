@@ -84,7 +84,7 @@ export function WardenHomePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading dashboard…" />
       </div>
     )
@@ -92,11 +92,11 @@ export function WardenHomePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">
+      <div className="dashboard-page-header mb-0">
+        <h1 className="dashboard-heading text-2xl font-semibold">
           {getGreeting()}, {profile?.full_name?.split(/\s+/)[0] ?? 'Warden'}
         </h1>
-        <p className="mt-1 text-sm text-[#4B5563]">{formatTodayDate()}</p>
+        <p className="dashboard-subheading mt-1 text-sm">{formatTodayDate()}</p>
       </div>
 
       {error && (
@@ -137,14 +137,14 @@ export function WardenHomePage() {
       <OverdueAlertBanner count={stats.overdueReturns} />
 
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#1A1A2E]">Pending requests</h2>
-          <Link to="/warden/pending" className="text-sm font-medium text-[#1A5CA0] hover:underline">
+        <div className="dashboard-section-bar">
+          <h2 className="text-base font-semibold text-slate-900">Pending requests</h2>
+          <Link to="/warden/pending" className="dashboard-link text-sm">
             View all
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white">
+        <div className="dashboard-surface">
           <DataTable
             columns={[
               {

@@ -90,12 +90,12 @@ export function StudentNewRequestPage() {
 
   if (showSuccess) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="glass-panel-strong mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 py-10 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EBF7EE]">
           <CheckCircle className="h-9 w-9 text-[#2E8B44]" strokeWidth={1.5} />
         </div>
-        <h1 className="mt-5 text-xl font-semibold text-[#1A1A2E]">Request submitted!</h1>
-        <p className="mt-2 text-sm text-[#4B5563]">Your warden will review it shortly.</p>
+        <h1 className="dashboard-heading mt-5 text-xl font-semibold">Request submitted!</h1>
+        <p className="dashboard-subheading mt-2 text-sm">Your warden will review it shortly.</p>
         <Button
           type="button"
           className="mt-8 w-full max-w-xs"
@@ -118,7 +118,7 @@ export function StudentNewRequestPage() {
         }
       />
 
-      <form onSubmit={handleSubmit} className="space-y-5 pb-6" noValidate>
+      <form onSubmit={handleSubmit} className="glass-panel space-y-5 p-5 pb-6" noValidate>
         <PassTypeSelector
           value={form.passType}
           onChange={(type) => updateField('passType', type)}
@@ -152,7 +152,7 @@ export function StudentNewRequestPage() {
             value={form.reason}
             onChange={(e) => updateField('reason', e.target.value)}
             disabled={submitting}
-            className="flex w-full rounded-[var(--radius-md)] border border-[var(--svce-border-default)] bg-white px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-2 disabled:opacity-50"
+            className="flex w-full rounded-xl border border-white/55 bg-white/50 px-3 py-2 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
           {errors.reason && <p className="text-sm text-[#DC2626]">{errors.reason}</p>}
         </div>

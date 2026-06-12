@@ -22,7 +22,7 @@ export function StudentHomePage() {
 
   if (dashboard.loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading dashboard…" />
       </div>
     )

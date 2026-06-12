@@ -60,7 +60,7 @@ export function PassQrCode({ pass, regNumber }: PassQrCodeProps) {
           ref={canvasRef}
           value={qrValue}
           size={200}
-          level="M"
+          level="H"
           fgColor="#1A5CA0"
           bgColor="#FFFFFF"
         />

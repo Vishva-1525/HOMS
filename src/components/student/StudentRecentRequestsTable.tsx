@@ -21,7 +21,7 @@ export function StudentRecentRequestsTable({
         <h2 className="dashboard-heading text-sm">Recent requests</h2>
         <Link
           to="/student/passes"
-          className="text-xs font-semibold text-[#1A5CA0] underline-offset-4 hover:underline"
+          className="dashboard-link text-xs underline-offset-4"
         >
           View all
         </Link>

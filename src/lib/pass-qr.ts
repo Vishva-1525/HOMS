@@ -46,15 +46,17 @@ export interface ScannedPassQrPayload {
 export function parsePassQrValue(raw: string): ScannedPassQrPayload | null {
   try {
     const parsed = JSON.parse(raw.trim()) as Partial<ScannedPassQrPayload>
+    if (typeof parsed.outpass_id !== 'string') return null
+
     if (
-      typeof parsed.outpass_id === 'string'
-      && typeof parsed.reg_number === 'string'
+      typeof parsed.reg_number === 'string'
       && typeof parsed.pass_type === 'string'
       && typeof parsed.departure_at === 'string'
       && typeof parsed.return_by === 'string'
     ) {
       return parsed as ScannedPassQrPayload
     }
+
     return null
   } catch {
     return null
@@ -66,9 +68,16 @@ export function parseScanInput(raw: string): { outpass_id: string; reg_number?: 
   const trimmed = raw.trim()
   if (!trimmed) return null
 
-  const fromQr = parsePassQrValue(trimmed)
-  if (fromQr) {
-    return { outpass_id: fromQr.outpass_id, reg_number: fromQr.reg_number }
+  try {
+    const parsed = JSON.parse(trimmed) as { outpass_id?: string; reg_number?: string }
+    if (typeof parsed.outpass_id === 'string') {
+      return {
+        outpass_id: parsed.outpass_id,
+        reg_number: typeof parsed.reg_number === 'string' ? parsed.reg_number : undefined,
+      }
+    }
+  } catch {
+    // not JSON — try UUID below
   }
 
   const uuidPattern =

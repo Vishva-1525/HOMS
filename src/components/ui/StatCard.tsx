@@ -50,25 +50,20 @@ export function StatCard({
   const iconStyles = ICON_TONE_STYLES[iconTone]
 
   return (
-    <div
-      className={cn(
-        'rounded-[var(--radius-lg)] border border-[var(--svce-border-default)] bg-[var(--svce-white)] p-[var(--card-padding)]',
-        className,
-      )}
-    >
+    <div className={cn('glass-panel p-[var(--card-padding)]', className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[length:var(--svce-text-small)] text-[var(--svce-text-muted)]">{label}</p>
+          <p className="text-[length:var(--svce-text-small)] font-medium text-slate-600">{label}</p>
           <p
             className={cn(
-              'mt-1 text-[28px] font-semibold leading-tight tabular-nums text-[var(--svce-text-primary)]',
+              'mt-1 text-[28px] font-semibold leading-tight tabular-nums text-slate-900',
               valueClassName,
             )}
           >
             {value}
           </p>
           {subtext && (
-            <p className="mt-1 text-[length:var(--svce-text-small)] text-[var(--svce-text-secondary)]">
+            <p className="mt-1 text-[length:var(--svce-text-small)] text-slate-600">
               {subtext}
             </p>
           )}

@@ -18,6 +18,15 @@ export interface ScanValidationResult {
   reason?: string
 }
 
+export function getNextGateAction(gateLogs: GateLog[]): GateEventType {
+  const hasExit = gateLogs.some((log) => log.event_type === 'exit')
+  return hasExit ? 'entry' : 'exit'
+}
+
+export function hasExitLog(passId: string, gateLogs: GateLog[]): boolean {
+  return gateLogs.some((log) => log.outpass_id === passId && log.event_type === 'exit')
+}
+
 const OUTPASS_SELECT = `
   *,
   students (
@@ -76,15 +85,15 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
   }
 
   if (hasEntryLog(pass.id, gateLogs)) {
-    return { kind: 'invalid', reason: 'This pass has already been used.' }
+    return { kind: 'invalid', reason: 'This pass has already been completed.' }
   }
 
-  if (isPassOverdue(pass, gateLogs)) {
-    return { kind: 'overdue', pass, gateLogs }
-  }
+  const nextAction = getNextGateAction(gateLogs)
+  const overdue = isPassOverdue(pass, gateLogs)
 
-  const hasExit = gateLogs.some((log) => log.event_type === 'exit')
-  const nextAction: GateEventType = hasExit ? 'entry' : 'exit'
+  if (overdue) {
+    return { kind: 'overdue', pass, gateLogs, nextAction }
+  }
 
   return { kind: 'valid', pass, gateLogs, nextAction }
 }
@@ -93,14 +102,56 @@ export async function recordGateEvent(
   outpassId: string,
   scannedBy: string,
   eventType: GateEventType,
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; gateLogs?: GateLog[] }> {
+  const { pass, gateLogs, error: fetchError } = await fetchPassWithLogs(outpassId)
+  if (fetchError) {
+    return { error: fetchError }
+  }
+
+  if (!pass) {
+    return { error: 'Pass not found or not approved.' }
+  }
+
+  if (!isQrEligibleStatus(pass.status)) {
+    return { error: 'This pass is no longer active.' }
+  }
+
+  if (hasEntryLog(pass.id, gateLogs)) {
+    return { error: 'Entry has already been recorded for this pass.' }
+  }
+
+  const exitRecorded = hasExitLog(pass.id, gateLogs)
+  const expectedAction = getNextGateAction(gateLogs)
+
+  if (eventType === 'exit' && exitRecorded) {
+    return { error: 'Exit has already been recorded.' }
+  }
+
+  if (eventType === 'entry' && !exitRecorded) {
+    return { error: 'Record exit before allowing entry.' }
+  }
+
+  if (eventType !== expectedAction) {
+    return {
+      error:
+        expectedAction === 'exit'
+          ? 'This student must exit first.'
+          : 'This student must enter — exit was already recorded.',
+    }
+  }
+
   const { error } = await supabase.from('gate_logs').insert({
     outpass_id: outpassId,
     scanned_by: scannedBy,
     event_type: eventType,
   })
 
-  return error ? { error: error.message } : {}
+  if (error) {
+    return { error: error.message }
+  }
+
+  const { gateLogs: updatedLogs } = await fetchPassWithLogs(outpassId)
+  return { gateLogs: updatedLogs }
 }
 
 export async function alertWardenOverdue(pass: OutpassWithStudent): Promise<{ error?: string }> {

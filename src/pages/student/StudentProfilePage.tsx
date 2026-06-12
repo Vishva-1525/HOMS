@@ -50,7 +50,7 @@ export function StudentProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="dashboard-loading-panel">
         <Spinner label="Loading profile…" />
       </div>
     )
@@ -73,32 +73,32 @@ export function StudentProfilePage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <div className="flex flex-col items-center text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#EBF3FF] text-lg font-semibold text-[#1A5CA0]">
+      <div className="glass-panel-strong flex flex-col items-center p-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#EBF3FF] text-lg font-semibold text-[#0D3F72]">
           {profile?.full_name ? getInitials(profile.full_name) : <UserRound className="h-6 w-6" />}
         </div>
-        <h1 className="mt-3 text-lg font-semibold text-[#1A1A2E]">{profile?.full_name ?? 'Student'}</h1>
-        <p className="mt-1 text-sm text-[#4B5563]">{student?.reg_number ?? '—'}</p>
-        <p className="text-sm text-[#4B5563]">
+        <h1 className="dashboard-heading mt-3 text-lg font-semibold">{profile?.full_name ?? 'Student'}</h1>
+        <p className="dashboard-subheading mt-1 text-sm">{student?.reg_number ?? '—'}</p>
+        <p className="dashboard-subheading text-sm">
           Room {student?.room_number ?? '—'}
           {student?.hostel_block ? ` · ${student.hostel_block}` : ''}
         </p>
         {student?.department && (
-          <p className="text-sm text-[#4B5563]">
+          <p className="dashboard-subheading text-sm">
             {student.department} · Year {student.year_of_study}
           </p>
         )}
       </div>
 
-      <div className="rounded-xl border border-[var(--svce-border-default)] bg-white divide-y divide-[var(--svce-border-default)]">
+      <div className="glass-panel divide-y divide-white/50">
         {infoRows.map(({ icon: Icon, label, value }) => (
           <div key={label} className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--svce-page-bg)]">
-              <Icon className="h-4 w-4 text-[#1A5CA0]" strokeWidth={1.75} />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/55">
+              <Icon className="h-4 w-4 text-[#0D3F72]" strokeWidth={1.75} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-[var(--svce-text-muted)]">{label}</p>
-              <p className="truncate text-sm font-medium text-[#1A1A2E]">{value}</p>
+              <p className="text-xs font-medium text-slate-600">{label}</p>
+              <p className="truncate text-sm font-medium text-slate-900">{value}</p>
             </div>
           </div>
         ))}
@@ -125,9 +125,9 @@ export function StudentProfilePage() {
       ) : (
         <form
           onSubmit={handlePasswordSubmit}
-          className="space-y-4 rounded-xl border border-[var(--svce-border-default)] bg-white p-4"
+          className="glass-panel space-y-4 p-4"
         >
-          <h2 className="text-sm font-semibold text-[#1A1A2E]">Change password</h2>
+          <h2 className="dashboard-heading text-sm font-semibold">Change password</h2>
 
           <div className="space-y-2">
             <Label htmlFor="new-password">New password</Label>

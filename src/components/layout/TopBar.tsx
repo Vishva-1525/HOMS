@@ -72,7 +72,7 @@ export function TopBar({
         )}
 
         <p className={cn('hidden text-sm text-slate-600 sm:block')}>
-          {getGreeting()}, <span className="font-medium text-slate-900">{firstName}</span>
+          {getGreeting()}, <span className="font-semibold text-slate-900">{firstName}</span>
         </p>
 
         <UserAvatar name={userName} size="sm" className="hidden sm:flex" />

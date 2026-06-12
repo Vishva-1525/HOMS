@@ -48,11 +48,11 @@ export function DataTable<T extends object>({
     <div className={cn('overflow-x-auto', className)}>
       <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-[var(--svce-border-default)] bg-[var(--svce-page-bg)]">
+          <tr className="border-b border-white/50 bg-white/45">
             {columns.map((column) => (
               <th
                 key={String(column.accessor)}
-                className="px-4 py-3 text-[length:var(--svce-text-small)] font-medium uppercase tracking-wide text-[var(--svce-text-secondary)]"
+                className="px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700"
               >
                 {column.header}
               </th>
@@ -64,7 +64,7 @@ export function DataTable<T extends object>({
             Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
               <tr
                 key={`skeleton-${rowIndex}`}
-                className="h-[var(--table-row-height)] border-b border-[var(--svce-border-default)] bg-[var(--svce-white)]"
+                className="h-[var(--table-row-height)] border-b border-white/40 bg-transparent"
               >
                 {columns.map((column) => (
                   <td key={String(column.accessor)} className="px-4 py-3">
@@ -78,8 +78,8 @@ export function DataTable<T extends object>({
             <tr>
               <td colSpan={columns.length}>
                 <div className="flex flex-col items-center justify-center gap-2 py-12">
-                  <Inbox className="h-8 w-8 text-[var(--svce-text-muted)]" strokeWidth={1.5} />
-                  <p className="text-sm text-[var(--svce-text-muted)]">{emptyMessage}</p>
+                  <Inbox className="h-8 w-8 text-slate-500" strokeWidth={1.5} />
+                  <p className="text-sm text-slate-600">{emptyMessage}</p>
                 </div>
               </td>
             </tr>
@@ -90,14 +90,14 @@ export function DataTable<T extends object>({
               <tr
                 key={getRowKey?.(row, rowIndex) ?? rowIndex}
                 className={cn(
-                  'h-[var(--table-row-height)] border-b border-[var(--svce-border-default)] bg-[var(--svce-white)] transition-all duration-300 hover:bg-[var(--svce-page-bg)]',
+                  'h-[var(--table-row-height)] border-b border-white/40 bg-transparent transition-all duration-300 hover:bg-white/35',
                   getRowClassName?.(row, rowIndex),
                 )}
               >
                 {columns.map((column) => (
                   <td
                     key={String(column.accessor)}
-                    className="px-4 py-3 text-sm text-[var(--svce-text-primary)]"
+                    className="px-4 py-3 text-sm text-slate-800"
                   >
                     {column.render
                       ? column.render(row, rowIndex)
