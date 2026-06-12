@@ -50,8 +50,8 @@ export function QrScanner({ active, onScan }: QrScannerProps) {
   }, [ready, active])
 
   return (
-    <div className="relative flex-1 overflow-hidden bg-black">
-      <div id={READER_ID} className="h-full w-full [&_video]:object-cover" />
+    <div className="relative min-h-[220px] flex-1 overflow-hidden rounded-t-[inherit] bg-black">
+      <div id={READER_ID} className="h-full min-h-[220px] w-full [&_video]:object-cover" />
 
       {active && <ScanFrameOverlay />}
 

@@ -1,10 +1,11 @@
 import { Outlet } from 'react-router-dom'
+import { DashboardBackground } from '@/components/layout/DashboardBackground'
 
-/** Full-screen layout for security guards — no sidebar or bottom nav. */
+/** Full-screen layout for security guards — campus background, no sidebar. */
 export function SecurityShell() {
   return (
-    <div className="min-h-[100dvh] bg-[#0D3F72]">
+    <DashboardBackground>
       <Outlet />
-    </div>
+    </DashboardBackground>
   )
 }

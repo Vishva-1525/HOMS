@@ -1,47 +1,40 @@
+import { ClipboardList } from 'lucide-react'
+import { SvceEmblem } from '@/components/branding/SvceEmblem'
+import { UserAvatar } from '@/components/layout/UserAvatar'
 import { useAuth } from '@/contexts/AuthProvider'
-import { ShellLogo } from '@/components/layout/ShellLogo'
+import { SVCE_APP_SHORT } from '@/lib/branding'
 
 interface SecurityTopBarProps {
   onLogClick: () => void
-}
-
-function GuardAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-
-  return (
-    <div
-      className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-semibold text-white"
-      title={name}
-    >
-      {initials || 'G'}
-    </div>
-  )
 }
 
 export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
   const { profile } = useAuth()
 
   return (
-    <header className="relative flex h-[52px] shrink-0 items-center justify-between bg-[#0D3F72] px-4">
-      <ShellLogo className="h-7 w-auto" />
+    <header className="glass-nav sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between px-4 sm:px-5">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <SvceEmblem size="sm" withRing />
+        <div className="hidden min-w-0 leading-tight sm:block">
+          <p className="truncate text-xs font-semibold text-slate-900">{SVCE_APP_SHORT}</p>
+          <p className="truncate text-[10px] text-slate-600">Security</p>
+        </div>
+      </div>
 
-      <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-white">
+      <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold tracking-tight text-slate-900">
         Gate Scanner
       </h1>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={onLogClick}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/60 bg-white/50 px-3 py-1.5 text-sm font-medium text-slate-800 transition-colors hover:bg-white/70"
         >
-          Log
+          <ClipboardList className="h-4 w-4" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Log</span>
         </button>
-        <GuardAvatar name={profile?.full_name ?? 'Guard'} />
+        <UserAvatar name={profile?.full_name ?? 'Guard'} size="sm" />
       </div>
     </header>
   )

@@ -107,80 +107,90 @@ export function SecurityScanPage() {
       <SecurityTopBar onLogClick={openLog} />
 
       {phase === 'success-flash' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2E8B44] text-2xl font-bold text-white">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-600/95 text-2xl font-bold text-white backdrop-blur-sm">
           Recorded successfully
         </div>
       )}
 
       {phase !== 'ready-next' && (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex h-[55%] min-h-0 flex-col">
-            <QrScanner active={cameraActive} onScan={handleScan} />
-            {cameraActive && (
-              <p className="shrink-0 bg-[#0D3F72] py-2 text-center text-sm text-white">
-                Scanning for QR code…
-              </p>
-            )}
+        <div className="flex min-h-0 flex-1 flex-col px-3 pb-4 pt-3 sm:px-4 sm:pb-5">
+          <div className="glass-panel-strong flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-[1.05] flex-col">
+              <QrScanner active={cameraActive} onScan={handleScan} />
 
-            {cameraActive && (
-              <div className="shrink-0 bg-[#0D3F72] px-4 pb-3 text-center">
-                {!manualOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => setManualOpen(true)}
-                    className="text-xs text-white/80 underline underline-offset-2 hover:text-white"
-                  >
-                    Enter pass ID manually
-                  </button>
-                ) : (
-                  <form onSubmit={handleManualSubmit} className="mx-auto flex max-w-sm gap-2">
-                    <input
-                      type="text"
-                      value={manualId}
-                      onChange={(e) => setManualId(e.target.value)}
-                      placeholder="Paste pass UUID…"
-                      className="h-10 flex-1 rounded-md border-0 px-3 text-sm text-[#1A1A2E]"
-                    />
+              {cameraActive && (
+                <p className="dashboard-muted shrink-0 border-t border-slate-200/70 bg-white/60 py-2.5 text-center text-sm">
+                  Scanning for QR code…
+                </p>
+              )}
+
+              {cameraActive && (
+                <div className="shrink-0 border-t border-slate-200/70 bg-white/60 px-4 py-3 text-center">
+                  {!manualOpen ? (
                     <button
-                      type="submit"
-                      className="h-10 rounded-md bg-[#1A5CA0] px-3 text-sm font-medium text-white"
+                      type="button"
+                      onClick={() => setManualOpen(true)}
+                      className="text-xs font-medium text-[#1A5CA0] underline-offset-4 hover:underline"
                     >
-                      Look up
+                      Enter pass ID manually
                     </button>
-                  </form>
-                )}
-                {manualError && (
-                  <p className="mt-1 text-xs text-[#FCA5A5]">{manualError}</p>
-                )}
+                  ) : (
+                    <form onSubmit={handleManualSubmit} className="mx-auto flex max-w-sm gap-2">
+                      <input
+                        type="text"
+                        value={manualId}
+                        onChange={(e) => setManualId(e.target.value)}
+                        placeholder="Paste pass UUID…"
+                        className="h-10 flex-1 rounded-xl border border-white/60 bg-white/90 px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
+                      />
+                      <button
+                        type="submit"
+                        className="h-10 rounded-xl bg-[#1A5CA0] px-3 text-sm font-semibold text-white shadow-md hover:bg-[#164a85]"
+                      >
+                        Look up
+                      </button>
+                    </form>
+                  )}
+                  {manualError && (
+                    <p className="mt-1.5 text-xs font-medium text-red-700">{manualError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {phase === 'result' ? (
+              <ScanResultPanel
+                result={result}
+                visible
+                submitting={submitting}
+                onRecordExit={() => handleRecord('exit')}
+                onRecordEntry={() => handleRecord('entry')}
+                onAlertWarden={handleAlertWarden}
+                onScanAgain={resetScan}
+              />
+            ) : (
+              <div className="dashboard-muted flex flex-1 items-center justify-center border-t border-dashed border-slate-300/70 bg-white/40 px-6 py-8 text-center text-sm">
+                Scan a student pass QR to verify exit or entry
               </div>
             )}
           </div>
-
-          {phase === 'result' ? (
-            <ScanResultPanel
-              result={result}
-              visible
-              submitting={submitting}
-              onRecordExit={() => handleRecord('exit')}
-              onRecordEntry={() => handleRecord('entry')}
-              onAlertWarden={handleAlertWarden}
-              onScanAgain={resetScan}
-            />
-          ) : (
-            <div className="h-[45%] shrink-0 bg-[#0D3F72]" />
-          )}
         </div>
       )}
 
       {phase === 'ready-next' && (
-        <div className="flex flex-1 items-end bg-[#0D3F72] p-4">
-          <button
-            type="button"
-            onClick={resetScan}
-            className="h-16 w-full rounded-lg bg-[#1A5CA0] text-lg font-semibold text-white"
-          >
-            TAP TO SCAN NEXT PASS
-          </button>
+        <div className="flex flex-1 flex-col justify-end px-3 pb-4 pt-3 sm:px-4 sm:pb-5">
+          <div className="glass-panel-strong p-4 sm:p-5">
+            <p className="dashboard-muted mb-4 text-center text-sm">
+              Gate event recorded. Ready for the next student.
+            </p>
+            <button
+              type="button"
+              onClick={resetScan}
+              className="h-16 w-full rounded-xl bg-[#1A5CA0] text-lg font-semibold text-white shadow-lg transition-colors hover:bg-[#164a85]"
+            >
+              Tap to scan next pass
+            </button>
+          </div>
         </div>
       )}
 

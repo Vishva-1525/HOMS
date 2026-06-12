@@ -31,16 +31,16 @@ export function ScanResultPanel({
 
   if (result.kind === 'invalid') {
     return (
-      <div className="flex h-[45%] min-h-0 flex-col bg-white animate-[slideUpFull_0.3s_ease-out]">
-        <div className="bg-[#DC2626] px-4 py-3 text-center text-lg font-bold text-white">
-          ✗ INVALID PASS — DO NOT ALLOW
+      <div className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-200/80 animate-[slideUpFull_0.3s_ease-out]">
+        <div className="bg-red-600 px-4 py-3 text-center text-base font-bold text-white sm:text-lg">
+          Invalid pass — do not allow
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
-          <p className="text-center text-lg text-[#991B1B]">{result.reason}</p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6">
+          <p className="text-center text-base font-medium text-red-800 sm:text-lg">{result.reason}</p>
           <button
             type="button"
             onClick={onScanAgain}
-            className="h-14 w-full max-w-md rounded-lg bg-[#1A5CA0] text-base font-semibold text-white"
+            className="h-14 w-full max-w-md rounded-xl bg-[#1A5CA0] text-base font-semibold text-white shadow-md transition-colors hover:bg-[#164a85]"
           >
             Scan again
           </button>
@@ -57,9 +57,9 @@ export function ScanResultPanel({
 
   if (result.kind === 'overdue') {
     return (
-      <div className="flex h-[45%] min-h-0 flex-col bg-[#EBF7EE] animate-[slideUpFull_0.3s_ease-out]">
-        <div className="bg-[#D97706] px-4 py-3 text-center text-lg font-bold text-white">
-          ⚠ OVERDUE — ALERT WARDEN
+      <div className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-200/80 animate-[slideUpFull_0.3s_ease-out]">
+        <div className="bg-amber-600 px-4 py-3 text-center text-base font-bold text-white sm:text-lg">
+          Overdue — alert warden
         </div>
         <PassDetails
           regNo={regNo}
@@ -69,14 +69,14 @@ export function ScanResultPanel({
           returnBy={pass.return_by}
           passType={pass.pass_type}
         />
-        <div className="mt-auto border-t border-[#D1D5DB] p-4">
+        <div className="mt-auto border-t border-slate-200/80 p-4">
           <button
             type="button"
             disabled={submitting}
             onClick={onAlertWarden}
-            className="h-14 w-full rounded-lg bg-[#D97706] text-base font-semibold text-white disabled:opacity-50"
+            className="h-14 w-full rounded-xl bg-amber-600 text-base font-semibold text-white shadow-md disabled:opacity-50"
           >
-            {submitting ? 'Sending alert…' : 'Alert Warden'}
+            {submitting ? 'Sending alert…' : 'Alert warden'}
           </button>
         </div>
       </div>
@@ -87,9 +87,9 @@ export function ScanResultPanel({
   const allowLabel = nextAction === 'exit' ? 'EXIT' : 'ENTRY'
 
   return (
-    <div className="flex h-[45%] min-h-0 flex-col bg-[#EBF7EE] animate-[slideUpFull_0.3s_ease-out]">
-      <div className="bg-[#2E8B44] px-4 py-3 text-center text-lg font-bold text-white">
-        ✓ OUTPASS VERIFIED — ALLOW {allowLabel}
+    <div className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-200/80 animate-[slideUpFull_0.3s_ease-out]">
+      <div className="bg-emerald-600 px-4 py-3 text-center text-base font-bold text-white sm:text-lg">
+        Outpass verified — allow {allowLabel}
       </div>
       <PassDetails
         regNo={regNo}
@@ -99,32 +99,28 @@ export function ScanResultPanel({
         returnBy={pass.return_by}
         passType={pass.pass_type}
       />
-      <div className="mt-auto grid grid-cols-2 gap-3 border-t border-[#D1D5DB] p-4">
+      <div className="mt-auto grid grid-cols-2 gap-3 border-t border-slate-200/80 p-4">
         <button
           type="button"
           disabled={submitting || hasExit}
           onClick={onRecordExit}
           className={cn(
-            'h-14 rounded-lg text-base font-semibold text-white disabled:cursor-not-allowed',
-            !hasExit && nextAction === 'exit'
-              ? 'bg-[#1A5CA0]'
-              : 'bg-[#9CA3AF]',
+            'h-14 rounded-xl text-base font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60',
+            !hasExit && nextAction === 'exit' ? 'bg-[#1A5CA0] hover:bg-[#164a85]' : 'bg-slate-400',
           )}
         >
-          Record EXIT
+          Record exit
         </button>
         <button
           type="button"
           disabled={submitting || !hasExit}
           onClick={onRecordEntry}
           className={cn(
-            'h-14 rounded-lg text-base font-semibold text-white disabled:cursor-not-allowed',
-            hasExit && nextAction === 'entry'
-              ? 'bg-[#2E8B44]'
-              : 'bg-[#9CA3AF]',
+            'h-14 rounded-xl text-base font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60',
+            hasExit && nextAction === 'entry' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-400',
           )}
         >
-          Record ENTRY
+          Record entry
         </button>
       </div>
     </div>
@@ -148,15 +144,15 @@ function PassDetails({
 }) {
   return (
     <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
-      <p className="font-mono text-2xl font-bold text-[#1A1A2E]">{regNo}</p>
-      <p className="text-xl font-semibold text-[#1A1A2E]">{studentName}</p>
-      <p className="text-base text-[#4B5563]">{room}</p>
-      <p className="text-base text-[#1A1A2E]">
-        <span className="text-[#4B5563]">Destination: </span>
+      <p className="font-mono text-2xl font-bold tabular-nums text-slate-900">{regNo}</p>
+      <p className="text-xl font-semibold text-slate-900">{studentName}</p>
+      <p className="text-base text-slate-600">{room}</p>
+      <p className="text-base text-slate-900">
+        <span className="text-slate-600">Destination: </span>
         {destination}
       </p>
-      <div className="flex items-center gap-2 text-base font-medium text-[#1A1A2E]">
-        <Clock className="h-4 w-4 text-[#4B5563]" strokeWidth={1.75} />
+      <div className="flex items-center gap-2 text-base font-medium text-slate-900">
+        <Clock className="h-4 w-4 text-slate-500" strokeWidth={1.75} />
         Return by {formatReturnTime(returnBy)}
       </div>
       <PassTypeBadge type={passType} />
