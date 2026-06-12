@@ -1,0 +1,208 @@
+export type UserRole =
+  | 'student'
+  | 'warden'
+  | 'security_guard'
+  | 'parent'
+  | 'admin'
+
+export type PassType = 'outpass' | 'staypass' | 'night_pass'
+
+export type OutpassStatus = 'pending' | 'approved' | 'rejected' | 'extended' | 'cancelled'
+
+export type ExtensionStatus = 'pending' | 'approved' | 'rejected'
+
+export type GateEventType = 'exit' | 'entry'
+
+export interface Profile {
+  id: string
+  role: UserRole
+  full_name: string
+  phone: string
+  password_changed: boolean
+  created_at: string
+}
+
+export interface Student {
+  id: string
+  reg_number: string
+  room_number: string
+  hostel_block: string
+  date_of_birth: string | null
+  parent_phone: string
+  parent_email: string
+  department: string
+  year_of_study: number
+}
+
+export interface OutpassRequest {
+  id: string
+  student_id: string
+  pass_type: PassType
+  destination: string
+  reason: string
+  departure_at: string
+  return_by: string
+  status: OutpassStatus
+  warden_remark: string | null
+  approved_by: string | null
+  qr_code_data: string | null
+  approved_at: string | null
+  created_at: string
+}
+
+export interface StudentProfile {
+  reg_number: string
+  room_number: string
+  hostel_block: string
+  profiles: { full_name: string } | null
+}
+
+export interface OutpassWithStudent extends OutpassRequest {
+  students: StudentProfile | null
+}
+
+export interface ExtensionWithOutpass extends ExtensionRequest {
+  outpass_requests: (OutpassRequest & { students: StudentProfile | null }) | null
+}
+
+export interface GateLog {
+  id: string
+  outpass_id: string
+  scanned_by: string
+  event_type: GateEventType
+  scanned_at: string
+}
+
+export interface ExtensionRequest {
+  id: string
+  outpass_id: string
+  new_return_time: string
+  reason: string
+  status: ExtensionStatus
+  created_at: string
+}
+
+export interface Database {
+  __InternalSupabase: {
+    PostgrestVersion: '12'
+  }
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string
+          role: UserRole
+          full_name: string
+          phone: string
+          password_changed: boolean
+          created_at: string
+        }
+        Insert: {
+          id: string
+          role?: UserRole
+          full_name?: string
+          phone?: string
+          password_changed?: boolean
+          created_at?: string
+        }
+        Update: {
+          role?: UserRole
+          full_name?: string
+          phone?: string
+          password_changed?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: Student
+        Insert: Student
+        Update: {
+          reg_number?: string
+          room_number?: string
+          hostel_block?: string
+          date_of_birth?: string | null
+          parent_phone?: string
+          parent_email?: string
+          department?: string
+          year_of_study?: number
+        }
+        Relationships: []
+      }
+      outpass_requests: {
+        Row: OutpassRequest
+        Insert: {
+          id?: string
+          student_id: string
+          pass_type: PassType
+          destination: string
+          reason: string
+          departure_at: string
+          return_by: string
+          status?: OutpassStatus
+          warden_remark?: string | null
+          approved_by?: string | null
+          qr_code_data?: string | null
+          created_at?: string
+        }
+        Update: {
+          student_id?: string
+          pass_type?: PassType
+          destination?: string
+          reason?: string
+          departure_at?: string
+          return_by?: string
+          status?: OutpassStatus
+          warden_remark?: string | null
+          approved_by?: string | null
+          qr_code_data?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      gate_logs: {
+        Row: GateLog
+        Insert: {
+          id?: string
+          outpass_id: string
+          scanned_by: string
+          event_type: GateEventType
+          scanned_at?: string
+        }
+        Update: {
+          outpass_id?: string
+          scanned_by?: string
+          event_type?: GateEventType
+          scanned_at?: string
+        }
+        Relationships: []
+      }
+      extension_requests: {
+        Row: ExtensionRequest
+        Insert: {
+          id?: string
+          outpass_id: string
+          new_return_time: string
+          reason: string
+          status?: ExtensionStatus
+          created_at?: string
+        }
+        Update: {
+          outpass_id?: string
+          new_return_time?: string
+          reason?: string
+          status?: ExtensionStatus
+          created_at?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: Record<string, never>
+    Functions: {
+      get_student_login_email: {
+        Args: { reg_number_input: string }
+        Returns: string
+      }
+    }
+  }
+}
