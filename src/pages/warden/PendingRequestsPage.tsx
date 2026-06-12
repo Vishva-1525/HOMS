@@ -110,9 +110,9 @@ export function PendingRequestsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Pending Requests</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="dashboard-page-header mb-6">
+        <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Pending Requests</h1>
+        <p className="dashboard-subheading mt-2 text-sm">
           {pendingPasses.length} request{pendingPasses.length !== 1 ? 's' : ''} awaiting review
         </p>
       </div>
@@ -123,7 +123,7 @@ export function PendingRequestsPage() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4">
+      <div className="glass-panel mb-4 flex flex-wrap items-end gap-3 p-4">
         <div className="flex flex-wrap gap-2">
           {(['all', 'outpass', 'staypass', 'night_pass'] as const).map((type) => (
             <button
@@ -133,8 +133,8 @@ export function PendingRequestsPage() {
               className={cn(
                 'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
                 typeFilter === type
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                  : 'border border-white/45 bg-white/45 text-muted-foreground hover:bg-white/60',
               )}
             >
               {type === 'all' ? 'All' : PASS_TYPE_LABELS[type]}
@@ -169,7 +169,7 @@ export function PendingRequestsPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="glass-panel-strong overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-sm">
             <thead>

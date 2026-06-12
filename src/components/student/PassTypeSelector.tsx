@@ -45,10 +45,10 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
               disabled={disabled}
               onClick={() => onChange(option.type)}
               className={cn(
-                'rounded-xl border-2 p-4 text-left transition-colors',
+                'rounded-2xl border-2 p-4 text-left transition-all duration-200',
                 isSelected
-                  ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                  : 'border-border bg-card hover:border-primary/40',
+                  ? 'border-primary bg-primary/10 shadow-md shadow-primary/10 ring-1 ring-primary/20'
+                  : 'glass-panel border-white/50 hover:border-primary/40 hover:shadow-lg',
                 disabled && 'pointer-events-none opacity-50',
               )}
             >

@@ -42,7 +42,7 @@ export function MyPassesTab() {
   return (
     <>
       <div className="mb-4">
-        <h1 className="text-lg font-semibold">My Passes</h1>
+        <h1 className="text-xl font-semibold tracking-tight">My Passes</h1>
         <p className="text-sm text-muted-foreground">
           {passes.length} request{passes.length !== 1 ? 's' : ''} total
         </p>
@@ -52,7 +52,7 @@ export function MyPassesTab() {
 
       <div className="mt-4 space-y-3">
         {filteredPasses.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-muted/30 p-8 text-center text-sm text-muted-foreground">
+          <div className="glass-panel border-dashed p-8 text-center text-sm text-muted-foreground">
             No passes match this filter.
           </div>
         ) : (

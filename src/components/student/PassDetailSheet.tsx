@@ -62,7 +62,7 @@ export function PassDetailSheet({
       .from('profiles')
       .select('full_name')
       .eq('id', pass.approved_by)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         setWardenName(data?.full_name ?? null)
       })
@@ -147,7 +147,7 @@ export function PassDetailSheet({
         <div
           role="dialog"
           aria-modal="true"
-          className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl border bg-card shadow-lg"
+          className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-3xl border border-white/55 bg-card shadow-2xl shadow-slate-900/20 backdrop-blur-2xl"
         >
           <div className="flex items-center justify-between border-b px-5 py-4">
             <h2 className="text-lg font-semibold">Pass Details</h2>
@@ -167,7 +167,7 @@ export function PassDetailSheet({
               <StatusChip status={pass.status} />
             </div>
 
-            <div className="rounded-xl border bg-muted/30 p-4">
+            <div className="glass-panel p-4">
               <p className="font-semibold">{profile?.full_name ?? 'Student'}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {student?.reg_number ?? '—'} · Room {student?.room_number ?? '—'}
@@ -202,7 +202,7 @@ export function PassDetailSheet({
             )}
 
             {showExtensionForm && (
-              <form onSubmit={handleExtensionSubmit} className="mt-4 space-y-3 rounded-xl border p-4">
+              <form onSubmit={handleExtensionSubmit} className="glass-panel mt-4 space-y-3 p-4">
                 <p className="text-sm font-medium">Request extension</p>
                 <div className="space-y-2">
                   <Label htmlFor="extension-time">New return time</Label>

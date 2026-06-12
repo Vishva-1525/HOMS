@@ -19,8 +19,8 @@ export function PassListCard({ pass, gateLogs, onClick }: PassListCardProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        'w-full rounded-xl border bg-card p-4 text-left shadow-sm transition-colors',
-        'hover:border-primary/30 active:bg-muted/50',
+        'glass-panel w-full p-4 text-left transition-all duration-200',
+        'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl active:scale-[0.99]',
       )}
     >
       <div className="flex items-start justify-between gap-2">

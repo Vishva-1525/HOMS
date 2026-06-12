@@ -38,14 +38,16 @@ export function HomeTab({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border bg-card p-4 shadow-sm">
-        <p className="text-sm text-muted-foreground">{getGreeting()},</p>
-        <h1 className="mt-0.5 text-xl font-semibold tracking-tight">
+      <div className="glass-panel-strong p-5">
+        <p className="text-sm font-medium text-muted-foreground">{getGreeting()},</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {profile?.full_name || 'Student'}
         </h1>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          <span>{student?.reg_number ?? '—'}</span>
-          <span>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <span className="rounded-full bg-white/45 px-2.5 py-0.5 ring-1 ring-white/50">
+            {student?.reg_number ?? '—'}
+          </span>
+          <span className="rounded-full bg-white/45 px-2.5 py-0.5 ring-1 ring-white/50">
             Room {student?.room_number ?? '—'}
             {student?.hostel_block ? ` · ${student.hostel_block}` : ''}
           </span>
@@ -53,7 +55,7 @@ export function HomeTab({
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           This Semester ({semesterLabel})
         </h2>
         <div className="grid grid-cols-2 gap-3">
@@ -79,9 +81,9 @@ export function HomeTab({
       {activeCheckedOutPass && <ActivePassBanner pass={activeCheckedOutPass} />}
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Recent Requests</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Recent Requests</h2>
         {recentPasses.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+          <div className="glass-panel border-dashed p-6 text-center text-sm text-muted-foreground">
             No outpass requests yet.
           </div>
         ) : (

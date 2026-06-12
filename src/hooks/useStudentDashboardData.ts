@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { isPassActive } from '@/lib/outpass'
 import { getCurrentSemesterRange, isWithinSemester } from '@/lib/semester'
 import { supabase } from '@/lib/supabase'
+import { formatSupabaseError } from '@/lib/supabase-errors'
 import type { GateLog, OutpassRequest, Student } from '@/lib/types'
 
 export interface SemesterStats {
@@ -68,7 +69,7 @@ export function useStudentDashboardData(): DashboardData {
     setError(null)
 
     const [studentResult, passesResult] = await Promise.all([
-      supabase.from('students').select('*').eq('id', user.id).single(),
+      supabase.from('students').select('*').eq('id', user.id).maybeSingle(),
       supabase
         .from('outpass_requests')
         .select('*')
@@ -77,7 +78,18 @@ export function useStudentDashboardData(): DashboardData {
     ])
 
     if (studentResult.error) {
-      setError(studentResult.error.message)
+      setError(
+        formatSupabaseError(
+          studentResult.error,
+          'Your student record was not found. Please contact the hostel office.',
+        ),
+      )
+      setLoading(false)
+      return
+    }
+
+    if (!studentResult.data) {
+      setError('Your student record was not found. Please contact the hostel office.')
       setLoading(false)
       return
     }

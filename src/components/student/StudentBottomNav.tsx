@@ -17,8 +17,8 @@ interface StudentBottomNavProps {
 
 export function StudentBottomNav({ activeTab, onTabChange }: StudentBottomNavProps) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2">
+      <div className="glass-nav mx-auto flex max-w-lg items-stretch justify-around rounded-2xl border px-1 py-1 shadow-xl shadow-slate-900/10">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = activeTab === id
           return (
@@ -27,8 +27,10 @@ export function StudentBottomNav({ activeTab, onTabChange }: StudentBottomNavPro
               type="button"
               onClick={() => onTabChange(id)}
               className={cn(
-                'flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                'flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-medium transition-all duration-200',
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+                  : 'text-muted-foreground hover:bg-white/40 hover:text-foreground',
               )}
             >
               <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} stroke={1.75} />

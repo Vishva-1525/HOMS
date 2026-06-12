@@ -7,7 +7,7 @@ export function ActivePassBanner({ pass }: { pass: OutpassRequest }) {
   const countdown = useCountdown(pass.return_by)
 
   return (
-    <div className="rounded-xl bg-green-600 p-4 text-white shadow-sm">
+    <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-green-700 p-4 text-white shadow-xl shadow-emerald-900/25 ring-1 ring-white/20">
       <p className="text-xs font-semibold uppercase tracking-wider text-green-100">
         Active Pass — Checked Out
       </p>

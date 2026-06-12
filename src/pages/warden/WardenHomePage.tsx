@@ -25,9 +25,9 @@ export function WardenHomePage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="dashboard-page-header">
+        <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="dashboard-subheading mt-2 text-sm">
           Hostel outpass overview — updates live
         </p>
       </div>

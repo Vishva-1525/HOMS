@@ -17,8 +17,8 @@ export function PassFilterChips({ value, onChange }: PassFilterChipsProps) {
           className={cn(
             'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
             value === filter.id
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80',
+              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+              : 'border border-white/45 bg-white/45 text-muted-foreground hover:bg-white/60',
           )}
         >
           {filter.label}

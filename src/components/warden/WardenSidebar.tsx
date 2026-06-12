@@ -5,6 +5,7 @@ import {
   IconClockPause,
   IconDashboard,
   IconDoorExit,
+  IconLogout,
   IconSettings,
 } from '@tabler/icons-react'
 import { useAuth } from '@/contexts/AuthProvider'
@@ -33,15 +34,17 @@ export function WardenSidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-[220px] shrink-0 flex-col border-r bg-card">
-      <div className="border-b px-4 py-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+    <aside className="glass-nav flex h-screen w-[240px] shrink-0 flex-col border-r shadow-xl shadow-slate-900/5">
+      <div className="border-b border-white/40 px-5 py-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
           HOMS Warden
         </p>
-        <p className="mt-1 truncate text-sm font-medium">{profile?.full_name ?? 'Warden'}</p>
+        <p className="mt-2 truncate text-base font-semibold tracking-tight">
+          {profile?.full_name ?? 'Warden'}
+        </p>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {NAV_ITEMS.map(({ to, label, icon: Icon, end, badge }) => {
           const count = getBadgeCount(badge)
           return (
@@ -51,17 +54,17 @@ export function WardenSidebar() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                    : 'text-muted-foreground hover:bg-white/45 hover:text-foreground',
                 )
               }
             >
               <Icon className="h-4 w-4 shrink-0" stroke={1.75} />
               <span className="flex-1 truncate">{label}</span>
               {count > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
                   {count > 99 ? '99+' : count}
                 </span>
               )}
@@ -70,8 +73,15 @@ export function WardenSidebar() {
         })}
       </nav>
 
-      <div className="border-t p-3">
-        <Button type="button" variant="outline" className="w-full" size="sm" onClick={() => signOut()}>
+      <div className="border-t border-white/40 p-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full gap-2 border-white/55 bg-white/35 hover:bg-white/55"
+          size="sm"
+          onClick={() => signOut()}
+        >
+          <IconLogout className="h-4 w-4" stroke={1.75} />
           Sign out
         </Button>
       </div>

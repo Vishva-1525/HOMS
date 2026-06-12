@@ -101,7 +101,7 @@ export function NewRequestTab({ onTabChange }: NewRequestTabProps) {
   return (
     <>
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">New Request</h1>
+        <h1 className="text-xl font-semibold tracking-tight">New Request</h1>
         <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
           Cancel
         </Button>

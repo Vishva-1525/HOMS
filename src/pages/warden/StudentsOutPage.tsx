@@ -42,9 +42,9 @@ export function StudentsOutPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Students Out</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="dashboard-page-header mb-6">
+        <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Students Out</h1>
+        <p className="dashboard-subheading mt-2 text-sm">
           {studentsOut.length} student{studentsOut.length !== 1 ? 's' : ''} currently outside hostel
         </p>
       </div>
@@ -55,7 +55,7 @@ export function StudentsOutPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="glass-panel-strong overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-sm">
             <thead>

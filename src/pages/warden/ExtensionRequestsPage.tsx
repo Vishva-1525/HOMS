@@ -132,9 +132,9 @@ export function ExtensionRequestsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Extension Requests</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="dashboard-page-header mb-6">
+        <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Extension Requests</h1>
+        <p className="dashboard-subheading mt-2 text-sm">
           {extensions.length} pending extension{extensions.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -145,7 +145,7 @@ export function ExtensionRequestsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="glass-panel-strong overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm">
             <thead>

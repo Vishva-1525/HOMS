@@ -27,7 +27,7 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
         role="dialog"
         aria-modal="true"
         className={cn(
-          'relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl border bg-card shadow-lg',
+          'relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-white/55 bg-card shadow-2xl shadow-slate-900/20 backdrop-blur-2xl',
           className,
         )}
       >

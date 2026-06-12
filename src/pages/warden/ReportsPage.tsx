@@ -88,10 +88,10 @@ export function ReportsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div className="dashboard-page-header mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">Reports</h1>
+          <p className="dashboard-subheading mt-2 text-sm">
             {formatRangeLabel(activeRange)}
             {customRange && ' (custom range)'}
           </p>
@@ -121,8 +121,8 @@ export function ReportsPage() {
             className={cn(
               'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
               !customRange && period === tab.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                : 'border border-white/45 bg-white/45 text-muted-foreground hover:bg-white/60',
             )}
           >
             {tab.label}
@@ -130,7 +130,7 @@ export function ReportsPage() {
         ))}
       </div>
 
-      <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4">
+      <div className="glass-panel mb-6 flex flex-wrap items-end gap-3 p-4">
         <p className="w-full text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Custom date range
         </p>
@@ -197,7 +197,7 @@ export function ReportsPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="glass-panel-strong overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-sm">
             <thead>

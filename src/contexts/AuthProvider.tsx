@@ -37,14 +37,14 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('Failed to fetch profile:', error.message)
     return null
   }
 
-  return data as Profile
+  return data as Profile | null
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

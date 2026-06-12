@@ -33,7 +33,7 @@ export function BottomSheet({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-lg rounded-t-2xl border bg-card px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6 shadow-lg"
+        className="relative z-10 w-full max-w-lg rounded-t-3xl border border-white/55 bg-card px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6 shadow-2xl shadow-slate-900/20 backdrop-blur-2xl"
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted" />
         <h2 className="text-lg font-semibold">{title}</h2>
