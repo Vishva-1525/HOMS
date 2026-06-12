@@ -14,17 +14,17 @@ export function StudentDashboardStatCard({
   valueClassName,
 }: StudentDashboardStatCardProps) {
   return (
-    <div className="rounded-xl border border-[var(--svce-border-default)] bg-white p-4 shadow-sm">
-      <p className="text-xs text-[var(--svce-text-muted)]">{label}</p>
+    <div className="glass-panel p-4 sm:p-5">
+      <p className="dashboard-muted text-xs font-medium">{label}</p>
       <p
         className={cn(
-          'mt-1 text-[28px] font-semibold leading-none tabular-nums text-[#1A1A2E]',
+          'mt-1 text-[28px] font-semibold leading-none tabular-nums text-slate-900',
           valueClassName,
         )}
       >
         {value}
       </p>
-      <p className="mt-1.5 text-xs text-[var(--svce-text-secondary)]">{subtext}</p>
+      <p className="dashboard-muted mt-1.5 text-xs">{subtext}</p>
     </div>
   )
 }
@@ -49,19 +49,19 @@ export function StudentDashboardStats({
         label="Approved"
         value={approved}
         subtext="passes"
-        valueClassName="text-[#166534]"
+        valueClassName="text-emerald-700"
       />
       <StudentDashboardStatCard
         label="Pending"
         value={pending}
         subtext="awaiting approval"
-        valueClassName="text-[#D97706]"
+        valueClassName="text-amber-700"
       />
       <StudentDashboardStatCard
         label="Rejected"
         value={rejected}
         subtext="passes"
-        valueClassName="text-[#DC2626]"
+        valueClassName="text-red-700"
       />
     </div>
   )

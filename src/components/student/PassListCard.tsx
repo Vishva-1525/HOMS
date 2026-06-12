@@ -5,7 +5,6 @@ import { formatPassDate, formatReturnTime } from '@/lib/outpass'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
 import type { GateLog, OutpassRequest } from '@/lib/types'
-import { cn } from '@/lib/utils'
 
 interface PassListCardProps {
   pass: OutpassRequest
@@ -20,30 +19,24 @@ export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCard
   const showQr = isQrEligibleStatus(pass.status)
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-[var(--svce-border-default)] bg-white p-4',
-      )}
-    >
+    <div className="glass-panel p-4 sm:p-5">
       <button type="button" onClick={onClick} className="w-full text-left">
         <div className="flex items-center justify-between gap-2">
           <PassTypeBadge type={pass.pass_type} />
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--svce-text-muted)]">
-              {formatPassDate(pass.created_at)}
-            </span>
+            <span className="dashboard-muted text-xs">{formatPassDate(pass.created_at)}</span>
             <StatusBadge status={displayStatus} label={label} />
           </div>
         </div>
 
-        <p className="mt-2 text-sm font-medium text-[#1A1A2E]">{pass.destination}</p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">{pass.destination}</p>
 
-        <p className="mt-1 text-xs text-[var(--svce-text-muted)]">
+        <p className="dashboard-muted mt-1 text-xs">
           {formatReturnTime(pass.departure_at)} → {formatReturnTime(pass.return_by)}
         </p>
       </button>
 
-      {showQr && onViewQr && (
+      {showQr && onViewQr ? (
         <Button
           type="button"
           variant="secondary"
@@ -56,6 +49,10 @@ export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCard
         >
           View QR
         </Button>
+      ) : (
+        <p className="dashboard-muted mt-3 rounded-lg border border-dashed border-slate-300/80 bg-slate-50/70 px-3 py-2 text-center text-xs">
+          QR available after warden approval
+        </p>
       )}
     </div>
   )

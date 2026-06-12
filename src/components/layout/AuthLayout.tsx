@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
-import { Building2 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Link } from 'react-router-dom'
+import { AuthBackground } from '@/components/auth/AuthBackground'
+import { SvceEmblem } from '@/components/branding/SvceEmblem'
+import { LOGIN_PATH } from '@/lib/routes'
 
 interface AuthLayoutProps {
   children: ReactNode
@@ -14,20 +16,22 @@ export function AuthLayout({
   description = 'Sri Venkateswara College of Engineering',
 }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4 sm:p-6">
-      <Card className="w-full max-w-md border-border/60 shadow-md">
-        <CardHeader className="items-center text-center">
-          <div
-            className="mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary"
-            aria-hidden
-          >
-            <Building2 className="h-8 w-8" />
+    <AuthBackground>
+      <div className="flex min-h-[100dvh] items-center justify-center px-4 py-10 sm:px-6">
+        <div className="glass-panel-strong w-full max-w-md p-8 sm:p-9">
+          <div className="flex flex-col items-center text-center">
+            <SvceEmblem size="lg" withRing />
+            <h2 className="mt-6 text-xl font-semibold tracking-tight text-slate-900">{title}</h2>
+            <p className="mt-2 text-sm text-slate-600">{description}</p>
           </div>
-          <CardTitle className="text-xl sm:text-2xl">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-    </div>
+          <div className="mt-6">{children}</div>
+          <p className="mt-6 text-center text-sm">
+            <Link to={LOGIN_PATH} className="font-medium text-[#1A5CA0] underline-offset-4 hover:underline">
+              Back to sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </AuthBackground>
   )
 }

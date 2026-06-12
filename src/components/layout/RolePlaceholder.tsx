@@ -1,7 +1,8 @@
-import { IconBuildingCommunity, IconLogout } from '@tabler/icons-react'
 import { useAuth } from '@/contexts/AuthProvider'
+import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { DashboardBackground } from '@/components/layout/DashboardBackground'
 import { Button } from '@/components/ui/button'
+import { IconLogout } from '@tabler/icons-react'
 
 const ROLE_LABELS: Record<string, string> = {
   student: 'Student',
@@ -16,13 +17,13 @@ export function RolePlaceholder({ title }: { title: string }) {
 
   return (
     <DashboardBackground>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-        <div className="glass-panel-strong w-full max-w-md p-8 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-white/60">
-            <IconBuildingCommunity className="h-8 w-8" stroke={1.5} />
-          </div>
-          <h1 className="dashboard-heading text-3xl font-semibold tracking-tight">{title}</h1>
-          <p className="dashboard-subheading mt-3 text-lg">
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 p-6 sm:p-8">
+        <div className="glass-panel-strong w-full max-w-md p-8 text-center sm:p-10">
+          <SvceEmblem size="xl" withRing className="mx-auto" />
+          <h1 className="dashboard-heading mt-6 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {title}
+          </h1>
+          <p className="dashboard-subheading mt-3 text-base sm:text-lg">
             {profile?.full_name || 'User'} &mdash; {role ? ROLE_LABELS[role] : 'Unknown role'}
           </p>
           <Button

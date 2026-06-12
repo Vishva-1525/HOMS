@@ -53,7 +53,7 @@ export function StudentPassesPage() {
 
       <div className="mt-4 space-y-3">
         {filteredPasses.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--svce-border-default)] bg-white p-8 text-center text-sm text-[var(--svce-text-muted)]">
+          <div className="rounded-xl border border-dashed border-slate-300/80 bg-white/75 p-8 text-center text-sm text-slate-700 backdrop-blur-sm">
             No passes match this filter.
           </div>
         ) : (

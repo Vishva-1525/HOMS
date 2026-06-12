@@ -110,12 +110,6 @@ export function ForgotPasswordPage() {
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? 'Sending...' : 'Send reset instructions'}
           </Button>
-
-          <p className="text-center text-sm">
-            <Link to={LOGIN_PATH} className="text-primary underline-offset-4 hover:underline">
-              Back to sign in
-            </Link>
-          </p>
         </form>
       )}
 

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PASS_TYPE_LABELS, formatReturnTime } from '@/lib/outpass'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
-import { canRequestExtension, isQrEligibleStatus } from '@/lib/pass-filters'
+import { canRequestExtension } from '@/lib/pass-filters'
 import { supabase } from '@/lib/supabase'
 import type { ExtensionRequest, GateLog, OutpassRequest, Student } from '@/lib/types'
 import { useAuth } from '@/contexts/AuthProvider'
@@ -70,7 +70,6 @@ export function PassDetailSheet({
 
   if (!pass) return null
 
-  const showQr = isQrEligibleStatus(pass.status) && student
   const showExtensionButton =
     canRequestExtension(pass) && !pendingExtension && !showExtensionForm
   const showCancel = pass.status === 'pending'
@@ -190,14 +189,14 @@ export function PassDetailSheet({
               )}
             </div>
 
-            {showQr && (
+            {student ? (
               <div className="mt-6">
                 <p className="mb-3 text-center text-sm font-medium text-[#1A1A2E]">
                   Scan at gate
                 </p>
                 <PassQrCode pass={pass} regNumber={student.reg_number} />
               </div>
-            )}
+            ) : null}
 
             {pendingExtension && (
               <div className="mt-4 rounded-lg bg-[#FFF8E1] px-3 py-2.5 text-sm text-[#92400E]">

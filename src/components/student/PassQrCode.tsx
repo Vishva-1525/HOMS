@@ -1,7 +1,9 @@
 import { useRef } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Share2 } from 'lucide-react'
+import { PassQrPlaceholder } from '@/components/student/PassQrPlaceholder'
 import { Button } from '@/components/ui/button'
+import { isQrEligibleStatus } from '@/lib/pass-filters'
 import { buildPassQrValue } from '@/lib/pass-qr'
 import type { OutpassRequest } from '@/lib/types'
 
@@ -12,6 +14,11 @@ interface PassQrCodeProps {
 
 export function PassQrCode({ pass, regNumber }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  if (!isQrEligibleStatus(pass.status)) {
+    return <PassQrPlaceholder status={pass.status} />
+  }
+
   const qrValue = buildPassQrValue(pass, regNumber)
 
   async function getQrBlob(): Promise<Blob | null> {
@@ -48,7 +55,7 @@ export function PassQrCode({ pass, regNumber }: PassQrCodeProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="rounded-xl border border-[var(--svce-border-default)] bg-white p-4">
+      <div className="rounded-xl border border-white/60 bg-white p-4 shadow-md">
         <QRCodeCanvas
           ref={canvasRef}
           value={qrValue}

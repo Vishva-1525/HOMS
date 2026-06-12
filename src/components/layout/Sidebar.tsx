@@ -31,8 +31,8 @@ export function Sidebar({
         collapsed ? 'w-16' : 'w-60',
       )}
     >
-      <div className={cn('flex flex-col gap-3 border-b border-white/10 p-4', collapsed && 'items-center px-2')}>
-        <ShellLogo collapsed={collapsed} />
+      <div className={cn('flex flex-col gap-3 border-b border-white/10', collapsed ? 'items-center px-2 py-5' : 'px-5 py-5')}>
+        <ShellLogo collapsed={collapsed} showLabel={!collapsed} />
         {!collapsed && (
           <span className="inline-flex w-fit rounded-full bg-[#1A5CA0] px-2.5 py-0.5 text-xs font-medium text-white">
             {ROLE_LABELS[role]}

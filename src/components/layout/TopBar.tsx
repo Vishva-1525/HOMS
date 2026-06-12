@@ -32,7 +32,7 @@ export function TopBar({
       <button
         type="button"
         onClick={onOpenMobileMenu}
-        className="rounded-md p-2 text-[#4B5563] hover:bg-[#F5F7FA] md:hidden"
+        className="rounded-md p-2 text-slate-600 hover:bg-white/50 md:hidden"
         aria-label="Open menu"
       >
         <Menu className="h-5 w-5" strokeWidth={1.75} />
@@ -43,12 +43,12 @@ export function TopBar({
         <button
           type="button"
           onClick={onToggleSidebar}
-          className="rounded-md p-2 text-[#4B5563] hover:bg-[#F5F7FA]"
+          className="rounded-md p-2 text-slate-600 hover:bg-white/50"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <Menu className="h-5 w-5" strokeWidth={1.75} />
         </button>
-        <p className="truncate text-sm font-medium text-[#1A1A2E]">{breadcrumb}</p>
+        <p className="truncate text-sm font-semibold text-slate-900">{breadcrumb}</p>
       </div>
 
       {/* Mobile centre: logo */}
@@ -61,7 +61,7 @@ export function TopBar({
         {notificationSlot ?? (
           <button
             type="button"
-            className="relative rounded-md p-2 text-[#4B5563] hover:bg-[#F5F7FA]"
+            className="relative rounded-md p-2 text-slate-600 hover:bg-white/50"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" strokeWidth={1.75} />
@@ -71,8 +71,8 @@ export function TopBar({
           </button>
         )}
 
-        <p className={cn('hidden text-sm text-[#4B5563] sm:block')}>
-          {getGreeting()}, <span className="font-medium text-[#1A1A2E]">{firstName}</span>
+        <p className={cn('hidden text-sm text-slate-600 sm:block')}>
+          {getGreeting()}, <span className="font-medium text-slate-900">{firstName}</span>
         </p>
 
         <UserAvatar name={userName} size="sm" className="hidden sm:flex" />

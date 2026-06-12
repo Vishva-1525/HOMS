@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthProvider'
+import { AuthBackground } from '@/components/auth/AuthBackground'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
+import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { PasswordInput } from '@/components/auth/PasswordInput'
 import { PasswordStrengthBar } from '@/components/auth/PasswordStrengthBar'
 import { Button } from '@/components/ui/button'
@@ -60,67 +62,62 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--svce-page-bg)] px-4 py-10">
-      <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[var(--svce-border-default)] bg-white p-8">
-        <div className="flex justify-center">
-          <img
-            src="/svce-logo.png"
-            alt="Sri Venkateswara College of Engineering"
-            className="h-12 w-auto"
-          />
+    <AuthBackground>
+      <div className="flex min-h-[100dvh] items-center justify-center px-4 py-10 sm:px-6">
+        <div className="glass-panel-strong w-full max-w-md p-8 sm:p-9">
+          <div className="flex flex-col items-center text-center">
+            <SvceEmblem size="lg" withRing />
+            <h1 className="mt-6 text-xl font-semibold tracking-tight text-slate-900">
+              Set your new password
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              You must change your initial password before continuing.
+            </p>
+          </div>
+
+          {error && (
+            <div
+              className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">New password</Label>
+              <PasswordInput
+                id="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
+              />
+              <PasswordStrengthBar password={password} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm password</Label>
+              <PasswordInput
+                id="confirm-password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" loading={submitting} disabled={submitting}>
+              Update password
+            </Button>
+          </form>
         </div>
-
-        <h1 className="mt-6 text-center text-xl font-semibold text-[#1A1A2E]">
-          Set your new password
-        </h1>
-        <p className="mt-1 text-center text-sm text-[#4B5563]">
-          You must change your initial password before continuing.
-        </p>
-
-        {error && (
-          <div
-            className="mt-6 rounded-[var(--radius-md)] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">New password</Label>
-            <PasswordInput
-              id="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={submitting}
-              className="border-[var(--svce-border-default)]"
-            />
-            <PasswordStrengthBar password={password} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm password</Label>
-            <PasswordInput
-              id="confirm-password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={submitting}
-              className="border-[var(--svce-border-default)]"
-            />
-          </div>
-
-          <Button type="submit" className="w-full" loading={submitting} disabled={submitting}>
-            Update password
-          </Button>
-        </form>
       </div>
-    </div>
+    </AuthBackground>
   )
 }

@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthProvider'
+import { AuthBackground } from '@/components/auth/AuthBackground'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { LoginBrandPanel } from '@/components/auth/LoginBrandPanel'
+import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { PasswordInput } from '@/components/auth/PasswordInput'
 import { PostLoginRedirect } from '@/components/auth/PostLoginRedirect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SVCE_APP_SHORT } from '@/lib/branding'
 import { FORGOT_PASSWORD_PATH } from '@/lib/routes'
-import { cn } from '@/lib/utils'
 
 export function Login() {
   const { user, profile, loading, signInWithIdentifier } = useAuth()
@@ -44,39 +46,37 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <div className="hidden w-1/2 md:block">
-        <LoginBrandPanel />
-      </div>
+    <AuthBackground>
+      <div className="flex min-h-[100dvh] flex-col lg:flex-row">
+        <LoginBrandPanel className="hidden min-h-[100dvh] lg:flex lg:w-[46%] xl:w-1/2" />
 
-      <div className="flex w-full flex-col bg-white md:w-1/2">
-        <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-12 lg:px-16">
-          <div className="mb-8 flex justify-center md:hidden">
-            <img
-              src="/svce-logo.png"
-              alt="Sri Venkateswara College of Engineering"
-              className="w-20"
-            />
-          </div>
-
-          <div className="mx-auto w-full max-w-md">
-            <h1 className="text-2xl font-semibold text-[#1A1A2E]">Welcome back</h1>
-            <p className="mt-1 text-sm text-[#4B5563]">Sign in to HOMS</p>
+        <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
+          <div className="glass-panel-strong w-full max-w-[440px] p-7 sm:p-9">
+            <div className="mb-8 flex flex-col items-center text-center lg:items-start lg:text-left">
+              <SvceEmblem size="lg" withRing className="lg:hidden" />
+              <div className="mt-5 lg:mt-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  {SVCE_APP_SHORT}
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                  Welcome back
+                </h1>
+                <p className="mt-1.5 text-sm text-slate-600">Sign in to continue to your dashboard</p>
+              </div>
+            </div>
 
             {error && (
               <div
-                className="mt-6 rounded-[var(--radius-md)] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]"
+                className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
                 role="alert"
               >
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className={cn('mt-6 space-y-4', error && 'mt-4')}>
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="identifier" className="text-[#1A1A2E]">
-                  Email or Register Number
-                </Label>
+                <Label htmlFor="identifier">Email or Register Number</Label>
                 <Input
                   id="identifier"
                   type="text"
@@ -86,18 +86,15 @@ export function Login() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={submitting}
-                  className="border-[var(--svce-border-default)] focus-visible:ring-[var(--svce-primary-blue)]"
                 />
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-[#1A1A2E]">
-                    Password
-                  </Label>
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="password">Password</Label>
                   <Link
                     to={FORGOT_PASSWORD_PATH}
-                    className="text-xs text-[#1A5CA0] underline-offset-4 hover:underline"
+                    className="text-xs font-medium text-[#1A5CA0] underline-offset-4 hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -109,7 +106,6 @@ export function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting}
-                  className="border-[var(--svce-border-default)] focus-visible:ring-[var(--svce-primary-blue)]"
                 />
               </div>
 
@@ -118,12 +114,12 @@ export function Login() {
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-xs text-[var(--svce-text-muted)]">
-              Having trouble? Contact your hostel warden.
+            <p className="mt-6 text-center text-xs leading-relaxed text-slate-500 lg:text-left">
+              Having trouble? Contact your hostel warden office.
             </p>
           </div>
         </div>
       </div>
-    </div>
+    </AuthBackground>
   )
 }

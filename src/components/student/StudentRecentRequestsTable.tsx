@@ -16,28 +16,31 @@ export function StudentRecentRequestsTable({
   onSelectPass,
 }: StudentRecentRequestsTableProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-[var(--svce-border-default)] px-4 py-3">
-        <h2 className="text-sm font-semibold text-[#1A1A2E]">Recent requests</h2>
-        <Link to="/student/passes" className="text-xs font-medium text-[#1A5CA0] hover:underline">
+    <div className="dashboard-surface overflow-hidden">
+      <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 sm:px-5">
+        <h2 className="dashboard-heading text-sm">Recent requests</h2>
+        <Link
+          to="/student/passes"
+          className="text-xs font-semibold text-[#1A5CA0] underline-offset-4 hover:underline"
+        >
           View all
         </Link>
       </div>
 
       {passes.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-[var(--svce-text-muted)]">
+        <p className="dashboard-muted px-4 py-10 text-center text-sm sm:px-5">
           No outpass requests yet.
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-[var(--svce-border-default)] bg-[var(--svce-page-bg)] text-left text-xs font-medium uppercase tracking-wide text-[var(--svce-text-secondary)]">
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Destination</th>
-                <th className="px-4 py-3">Departure</th>
-                <th className="px-4 py-3">Return</th>
-                <th className="px-4 py-3">Status</th>
+              <tr className="border-b border-slate-200/80 bg-slate-50/80 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <th className="px-4 py-3 sm:px-5">Type</th>
+                <th className="px-4 py-3 sm:px-5">Destination</th>
+                <th className="px-4 py-3 sm:px-5">Departure</th>
+                <th className="px-4 py-3 sm:px-5">Return</th>
+                <th className="px-4 py-3 sm:px-5">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -48,22 +51,22 @@ export function StudentRecentRequestsTable({
                 return (
                   <tr
                     key={pass.id}
-                    className="cursor-pointer border-b border-[var(--svce-border-default)] last:border-0 hover:bg-[var(--svce-page-bg)]"
+                    className="cursor-pointer border-b border-slate-200/60 last:border-0 hover:bg-slate-50/70"
                     onClick={() => onSelectPass(pass)}
                   >
-                    <td className="whitespace-nowrap px-4 py-3.5 text-[#1A1A2E]">
+                    <td className="whitespace-nowrap px-4 py-3.5 font-medium text-slate-900 sm:px-5">
                       {PASS_TYPE_LABELS[pass.pass_type]}
                     </td>
-                    <td className="max-w-[180px] truncate px-4 py-3.5 text-[#1A1A2E]">
+                    <td className="max-w-[180px] truncate px-4 py-3.5 text-slate-800 sm:px-5">
                       {pass.destination}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-[#1A1A2E]">
+                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-800 sm:px-5">
                       {formatTableDateTime(pass.departure_at)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-[#1A1A2E]">
+                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-800 sm:px-5">
                       {formatTableDateTime(pass.return_by)}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 sm:px-5">
                       <StatusBadge status={displayStatus} label={label} />
                     </td>
                   </tr>

@@ -46,9 +46,14 @@ export function MobileDrawer({
         aria-label="Close menu"
         onClick={onClose}
       />
-      <aside className="relative flex h-full w-[min(280px,85vw)] flex-col bg-[#0D3F72] shadow-lg">
-        <div className="flex items-center justify-between border-b border-white/10 p-4">
-          <ShellLogo />
+      <aside className="relative flex h-full w-[min(280px,85vw)] flex-col bg-[#0D3F72]/95 shadow-xl backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-5">
+          <div>
+            <ShellLogo />
+            <span className="mt-3 inline-flex rounded-full bg-[#1A5CA0] px-2.5 py-0.5 text-xs font-medium text-white">
+              {ROLE_LABELS[role]}
+            </span>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -57,12 +62,6 @@ export function MobileDrawer({
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
-
-        <div className="px-4 pt-3">
-          <span className="inline-flex rounded-full bg-[#1A5CA0] px-2.5 py-0.5 text-xs font-medium text-white">
-            {ROLE_LABELS[role]}
-          </span>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
