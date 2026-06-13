@@ -27,6 +27,7 @@ const SecurityScanPage = lazy(() =>
   import('@/pages/security/SecurityScanPage').then((m) => ({ default: m.SecurityScanPage })),
 )
 import { ParentDashboard } from '@/pages/parent/ParentDashboard'
+import { ParentHistoryPage } from '@/pages/parent/ParentHistoryPage'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { ComponentGalleryPage } from '@/pages/dev/ComponentGalleryPage'
 
@@ -99,15 +100,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
             <Route element={<AppShell />}>
               <Route path="/parent/dashboard" element={<ParentDashboard />} />
-              <Route
-                path="/parent/history"
-                element={
-                  <ShellPagePlaceholder
-                    title="Pass History"
-                    description="Your ward's outpass history will appear here."
-                  />
-                }
-              />
+              <Route path="/parent/history" element={<ParentHistoryPage />} />
             </Route>
           </Route>
 

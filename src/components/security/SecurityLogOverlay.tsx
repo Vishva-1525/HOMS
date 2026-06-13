@@ -2,12 +2,19 @@ import { X } from 'lucide-react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { Spinner } from '@/components/ui/spinner'
 import { useSecurityGateLog } from '@/hooks/security/useSecurityGateLog'
-import { formatTodayDate } from '@/lib/relative-time'
 import { cn } from '@/lib/utils'
 
 interface SecurityLogOverlayProps {
   open: boolean
   onClose: () => void
+}
+
+function formatLogDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 function formatLogTime(iso: string): string {
@@ -19,17 +26,19 @@ function formatLogTime(iso: string): string {
 }
 
 export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
-  const { logs, summary, loading, error, getStudentName, getStudentRoom } = useSecurityGateLog()
+  const { logsByDate, summary, loading, error } = useSecurityGateLog(open)
 
   if (!open) return null
+
+  const totalLogs = logsByDate.reduce((sum, [, rows]) => sum + rows.length, 0)
 
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-slate-900/40 p-3 backdrop-blur-sm animate-[slideUpFull_0.3s_ease-out] sm:p-4">
       <div className="dashboard-surface flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-5">
           <div>
-            <h2 className="dashboard-heading text-base sm:text-lg">Today&apos;s gate log</h2>
-            <p className="dashboard-muted mt-0.5 text-xs">{formatTodayDate()}</p>
+            <h2 className="dashboard-heading text-base sm:text-lg">Gate history</h2>
+            <p className="dashboard-muted mt-0.5 text-xs">Last 30 days · newest first</p>
           </div>
           <button
             type="button"
@@ -43,7 +52,7 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 border-b border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm text-slate-800 sm:px-5">
           <span>
-            <strong>{summary.exits}</strong> exits
+            Today: <strong>{summary.exits}</strong> exits
           </span>
           <span className="text-slate-300">·</span>
           <span>
@@ -51,7 +60,11 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
           </span>
           <span className="text-slate-300">·</span>
           <span>
-            <strong>{summary.currentlyOutside}</strong> currently outside
+            <strong>{summary.currentlyOutside}</strong> outside
+          </span>
+          <span className="text-slate-300">·</span>
+          <span>
+            <strong>{totalLogs}</strong> total records
           </span>
         </div>
 
@@ -66,46 +79,73 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
             <div className="flex h-40 items-center justify-center">
               <Spinner label="Loading log…" />
             </div>
-          ) : logs.length === 0 ? (
-            <p className="dashboard-muted py-16 text-center text-sm">No gate activity yet today.</p>
+          ) : totalLogs === 0 ? (
+            <p className="dashboard-muted py-16 text-center text-sm">
+              No gate activity in the last 30 days.
+            </p>
           ) : (
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className="sticky top-0 bg-white/95 backdrop-blur-sm">
-                <tr className="border-b border-slate-200/80 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <th className="px-4 py-3 sm:px-5">Time</th>
-                  <th className="px-4 py-3 sm:px-5">Student</th>
-                  <th className="px-4 py-3 sm:px-5">Room</th>
-                  <th className="px-4 py-3 sm:px-5">Event</th>
-                  <th className="px-4 py-3 sm:px-5">Pass type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="border-b border-slate-200/60 last:border-0 hover:bg-slate-50/70"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3 font-mono tabular-nums text-slate-800 sm:px-5">
-                      {formatLogTime(log.scanned_at)}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-900 sm:px-5">
-                      {getStudentName(log)}
-                    </td>
-                    <td className="dashboard-muted px-4 py-3 sm:px-5">{getStudentRoom(log)}</td>
-                    <td className="px-4 py-3 sm:px-5">
-                      <EventBadge type={log.event_type} />
-                    </td>
-                    <td className="px-4 py-3 sm:px-5">
-                      {log.outpass_requests?.pass_type ? (
-                        <PassTypeBadge type={log.outpass_requests.pass_type} />
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="divide-y divide-slate-200/80">
+              {logsByDate.map(([dateLabel, dayLogs]) => (
+                <section key={dateLabel}>
+                  <div className="sticky top-0 z-10 border-b border-slate-200/80 bg-slate-100/95 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-600 backdrop-blur-sm sm:px-5">
+                    {dateLabel}
+                    <span className="ml-2 font-normal normal-case text-slate-500">
+                      ({dayLogs.length} record{dayLogs.length !== 1 ? 's' : ''})
+                    </span>
+                  </div>
+                  <table className="w-full min-w-[760px] text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200/60 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-2.5 sm:px-5">Time</th>
+                        <th className="px-4 py-2.5 sm:px-5">Admission no</th>
+                        <th className="px-4 py-2.5 sm:px-5">Student</th>
+                        <th className="px-4 py-2.5 sm:px-5">Room</th>
+                        <th className="px-4 py-2.5 sm:px-5">Event</th>
+                        <th className="px-4 py-2.5 sm:px-5">Pass</th>
+                        <th className="px-4 py-2.5 sm:px-5">Destination</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dayLogs.map((log) => (
+                        <tr
+                          key={log.id}
+                          className="border-b border-slate-200/40 last:border-0 hover:bg-slate-50/70"
+                        >
+                          <td className="whitespace-nowrap px-4 py-3 sm:px-5">
+                            <span className="font-mono tabular-nums text-slate-800">
+                              {formatLogTime(log.scanned_at)}
+                            </span>
+                            <span className="dashboard-muted ml-2 text-xs sm:hidden">
+                              {formatLogDate(log.scanned_at)}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-medium text-slate-900 sm:px-5">
+                            {log.admissionNo}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-slate-900 sm:px-5">
+                            {log.studentName}
+                          </td>
+                          <td className="dashboard-muted px-4 py-3 sm:px-5">{log.room}</td>
+                          <td className="px-4 py-3 sm:px-5">
+                            <EventBadge type={log.event_type} />
+                          </td>
+                          <td className="px-4 py-3 sm:px-5">
+                            {log.passType ? (
+                              <PassTypeBadge type={log.passType} />
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="dashboard-muted max-w-[140px] truncate px-4 py-3 sm:px-5">
+                            {log.destination}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              ))}
+            </div>
           )}
         </div>
       </div>

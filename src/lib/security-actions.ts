@@ -6,7 +6,11 @@ import {
 } from '@/lib/pass-filters'
 import { parseScanInput } from '@/lib/pass-qr'
 import { supabase } from '@/lib/supabase'
-import { getStudentName, getStudentReg, getStudentAdmissionNo } from '@/lib/warden'
+import { getStudentName, getStudentReg } from '@/lib/warden'
+import {
+  fetchAdmissionNoByStudentId,
+  fetchStudentProfileById,
+} from '@/lib/student-details'
 import type { ExtensionRequest, GateLog, GateEventType, OutpassWithStudent } from '@/lib/types'
 
 export type ScanResultKind = 'valid' | 'invalid' | 'late-entry' | 'overdue-entry'
@@ -41,37 +45,12 @@ const OUTPASS_SELECT = '*'
 
 /** Load student row + profile row linked by outpass_requests.student_id = students.id = profiles.id */
 async function attachStudentDetails(pass: OutpassWithStudent): Promise<OutpassWithStudent> {
-  const studentId = pass.student_id
-
-  const [studentResult, profileResult] = await Promise.all([
-    supabase
-      .from('students')
-      .select('id, reg_number, room_number, hostel_block')
-      .eq('id', studentId)
-      .maybeSingle(),
-    supabase
-      .from('profiles')
-      .select('id, full_name, phone')
-      .eq('id', studentId)
-      .maybeSingle(),
-  ])
-
-  const student = studentResult.data
-  const profile = profileResult.data
-
-  if (!student && !profile) return pass
+  const profile = await fetchStudentProfileById(pass.student_id)
+  if (!profile) return pass
 
   return {
     ...pass,
-    students: {
-      id: studentId,
-      reg_number: student?.reg_number ?? pass.students?.reg_number ?? '',
-      room_number: student?.room_number ?? pass.students?.room_number ?? '',
-      hostel_block: student?.hostel_block ?? pass.students?.hostel_block ?? '',
-      profiles: profile
-        ? { full_name: profile.full_name, phone: profile.phone }
-        : pass.students?.profiles ?? null,
-    },
+    students: profile,
   }
 }
 
@@ -122,23 +101,7 @@ export async function fetchPassWithLogs(
 async function fetchStudentAdmissionNoForPass(
   pass: OutpassWithStudent,
 ): Promise<string | undefined> {
-  const { data, error } = await supabase.rpc('get_student_admission_no', {
-    p_student_id: pass.student_id,
-  })
-
-  if (!error && typeof data === 'string' && data.trim()) {
-    return data.trim()
-  }
-
-  const regNumber = getStudentReg(pass.students)
-  if (regNumber === '—') return undefined
-
-  const { data: email, error: emailError } = await supabase.rpc('get_student_login_email', {
-    reg_number_input: regNumber,
-  })
-
-  if (emailError || !email || typeof email !== 'string') return undefined
-  return getStudentAdmissionNo(email)
+  return fetchAdmissionNoByStudentId(pass.student_id, getStudentReg(pass.students))
 }
 
 export async function validateScanInput(raw: string): Promise<ScanValidationResult> {
