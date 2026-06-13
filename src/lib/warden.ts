@@ -2,7 +2,8 @@ import type { GateLog, OutpassRequest, StudentProfile } from '@/lib/types'
 import { hasEntryLog } from '@/lib/pass-filters'
 
 export function getStudentName(student: StudentProfile | null | undefined): string {
-  return student?.profiles?.full_name ?? 'Unknown'
+  const name = student?.profiles?.full_name?.trim()
+  return name || 'Unknown'
 }
 
 export function getStudentReg(student: StudentProfile | null | undefined): string {

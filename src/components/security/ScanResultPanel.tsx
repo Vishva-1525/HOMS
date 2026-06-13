@@ -2,6 +2,7 @@ import { Clock, MapPin, FileText, LogIn, LogOut } from 'lucide-react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { PASS_TYPE_LABELS, formatReturnTime, formatTableDateTime } from '@/lib/outpass'
+import { formatOverdueDuration } from '@/lib/pass-filters'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import type { ScanValidationResult } from '@/lib/security-actions'
 import { hasExitLog } from '@/lib/security-actions'
@@ -16,6 +17,52 @@ interface ScanResultPanelProps {
   onRecordEntry: () => void
   onAlertWarden: () => void
   onScanAgain: () => void
+}
+
+function getBanner(result: ScanValidationResult): { text: string; className: string } {
+  if (result.scanPhase === 'exit') {
+    return {
+      text: 'Exiting college — allow student to leave',
+      className: 'bg-[#1A5CA0]',
+    }
+  }
+
+  if (result.kind === 'valid') {
+    if (result.extensionApproved) {
+      return {
+        text: 'Extension approved — allow entry',
+        className: 'bg-emerald-600',
+      }
+    }
+    return {
+      text: 'Returning on time — allow entry',
+      className: 'bg-emerald-600',
+    }
+  }
+
+  if (result.kind === 'late-entry') {
+    const lateBy = result.overdueMs ? formatOverdueDuration(result.overdueMs) : ''
+    return {
+      text: lateBy ? `Late return (${lateBy}) — allow entry` : 'Late return — allow entry',
+      className: 'bg-amber-600',
+    }
+  }
+
+  if (result.kind === 'overdue-entry') {
+    const lateBy = result.overdueMs ? formatOverdueDuration(result.overdueMs) : '12+ hours'
+    if (result.extensionPending) {
+      return {
+        text: `Severely overdue (${lateBy}) — extension pending, warden notified`,
+        className: 'bg-red-600',
+      }
+    }
+    return {
+      text: `Severely overdue (${lateBy}) — no approved extension, warden notified`,
+      className: 'bg-red-600',
+    }
+  }
+
+  return { text: 'Outpass verified', className: 'bg-emerald-600' }
 }
 
 export function ScanResultPanel({
@@ -33,6 +80,7 @@ export function ScanResultPanel({
   const gateLogs = result.gateLogs ?? []
   const hasExit = hasExitLog(pass?.id ?? '', gateLogs)
   const nextAction = result.nextAction ?? 'exit'
+  const isExitScan = result.scanPhase === 'exit'
 
   if (result.kind === 'invalid') {
     return (
@@ -60,8 +108,8 @@ export function ScanResultPanel({
   const admissionNo = result.studentAdmissionNo ?? '—'
   const room = formatStudentRoomDisplay(pass.students)
   const verificationLabel = formatStudentVerificationLabel(studentName, result.studentAdmissionNo)
-  const isOverdue = result.kind === 'overdue'
-  const allowLabel = nextAction === 'exit' ? 'EXIT' : 'ENTRY'
+  const banner = getBanner(result)
+  const isLateEntry = result.kind === 'late-entry' || result.kind === 'overdue-entry'
   const displayStatus = getPassDisplayStatus(pass, gateLogs)
   const statusLabel = getPassStatusLabel(pass.status, gateLogs, pass)
   const exitLog = gateLogs.find((log) => log.event_type === 'exit')
@@ -69,15 +117,8 @@ export function ScanResultPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
-      <div
-        className={cn(
-          'px-4 py-3 text-center text-base font-bold text-white sm:text-lg',
-          isOverdue ? 'bg-amber-600' : 'bg-emerald-600',
-        )}
-      >
-        {isOverdue
-          ? `Overdue — record ${allowLabel.toLowerCase()} & alert warden`
-          : `Outpass verified — allow ${allowLabel.toLowerCase()}`}
+      <div className={cn('px-4 py-3 text-center text-base font-bold text-white sm:text-lg', banner.className)}>
+        {banner.text}
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
@@ -89,6 +130,43 @@ export function ScanResultPanel({
           </div>
           <StatusBadge status={displayStatus} label={statusLabel} />
         </div>
+
+        {isExitScan && (
+          <div className="rounded-xl border border-[#1A5CA0]/30 bg-[#1A5CA0]/10 p-3 text-sm text-slate-800">
+            <p className="font-medium text-[#1A5CA0]">First scan — college exit</p>
+            <p className="mt-1 text-slate-600">
+              Verify the student&apos;s ID, then record exit. The same QR will be scanned again when they return.
+            </p>
+          </div>
+        )}
+
+        {!isExitScan && isLateEntry && (
+          <div
+            className={cn(
+              'rounded-xl border p-3 text-sm',
+              result.kind === 'overdue-entry'
+                ? 'border-red-200 bg-red-50 text-red-900'
+                : 'border-amber-200 bg-amber-50 text-amber-900',
+            )}
+          >
+            <p className="font-medium">
+              {result.kind === 'overdue-entry' ? 'Severely overdue return' : 'Late return'}
+            </p>
+            <p className="mt-1">
+              Return was due {formatReturnTime(pass.return_by)}
+              {result.overdueMs ? ` · ${formatOverdueDuration(result.overdueMs)} late` : ''}.
+            </p>
+            {result.extensionApproved && (
+              <p className="mt-1 text-emerald-800">Approved extension covers this return window.</p>
+            )}
+            {result.extensionPending && (
+              <p className="mt-1">Extension request is pending warden approval.</p>
+            )}
+            {result.kind === 'overdue-entry' && result.wardenNotified && (
+              <p className="mt-1 font-medium">Warden has been notified automatically.</p>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-2 rounded-xl border border-slate-200/80 bg-white/60 p-3 text-sm">
           <DetailRow icon={MapPin} label="Destination" value={pass.destination} />
@@ -102,8 +180,8 @@ export function ScanResultPanel({
             icon={Clock}
             label="Return by"
             value={formatReturnTime(pass.return_by)}
-            valueClassName={isOverdue ? 'text-amber-700 font-semibold' : undefined}
-            suffix={isOverdue ? '(overdue)' : undefined}
+            valueClassName={isLateEntry ? 'text-amber-700 font-semibold' : undefined}
+            suffix={isLateEntry ? '(late)' : undefined}
           />
           <DetailRow label="Pass type" value={PASS_TYPE_LABELS[pass.pass_type]} />
           <DetailRow label="Pass ID" value={`${pass.id.slice(0, 8)}…`} mono />
@@ -133,7 +211,10 @@ export function ScanResultPanel({
             />
           </div>
           <p className="dashboard-muted mt-2 text-xs">
-            Next action: <strong className="text-slate-800">{nextAction === 'exit' ? 'Record exit' : 'Record entry'}</strong>
+            Scan {isExitScan ? '1 of 2' : '2 of 2'} —{' '}
+            <strong className="text-slate-800">
+              {nextAction === 'exit' ? 'Record exit' : 'Record entry'}
+            </strong>
           </p>
         </div>
       </div>
@@ -154,48 +235,44 @@ export function ScanResultPanel({
             ? 'Recording…'
             : nextAction === 'exit'
               ? 'Record exit — allow student to leave'
-              : 'Record entry — allow student to return'}
+              : result.kind === 'overdue-entry'
+                ? 'Record entry — allow student to return (warden notified)'
+                : 'Record entry — allow student to return'}
         </button>
 
-        {isOverdue && (
+        {result.kind === 'overdue-entry' && !result.wardenNotified && (
           <button
             type="button"
             disabled={submitting}
             onClick={onAlertWarden}
-            className="h-12 w-full rounded-xl border-2 border-amber-600 bg-white text-sm font-semibold text-amber-700 disabled:opacity-50"
+            className="h-12 w-full rounded-xl border-2 border-red-600 bg-white text-sm font-semibold text-red-700 disabled:opacity-50"
           >
-            {submitting ? 'Sending alert…' : 'Alert warden (overdue)'}
+            {submitting ? 'Sending alert…' : 'Notify warden again'}
           </button>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            disabled={submitting || hasExit}
-            onClick={onRecordExit}
-            className={cn(
-              'h-11 rounded-xl text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60',
-              !hasExit && nextAction === 'exit'
-                ? 'bg-[#1A5CA0] hover:bg-[#164a85]'
-                : 'bg-slate-400',
-            )}
-          >
-            Exit
-          </button>
-          <button
-            type="button"
-            disabled={submitting || !hasExit}
-            onClick={onRecordEntry}
-            className={cn(
-              'h-11 rounded-xl text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60',
-              hasExit && nextAction === 'entry'
-                ? 'bg-emerald-600 hover:bg-emerald-700'
-                : 'bg-slate-400',
-            )}
-          >
-            Entry
-          </button>
-        </div>
+        {!isExitScan && (
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled
+              className="h-11 rounded-xl bg-slate-300 text-sm font-semibold text-white"
+            >
+              Exit ✓
+            </button>
+            <button
+              type="button"
+              disabled={submitting || !hasExit}
+              onClick={onRecordEntry}
+              className={cn(
+                'h-11 rounded-xl text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60',
+                hasExit ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-400',
+              )}
+            >
+              Entry
+            </button>
+          </div>
+        )}
 
         <button
           type="button"

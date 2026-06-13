@@ -51,10 +51,11 @@ export interface OutpassRequest {
 }
 
 export interface StudentProfile {
+  id?: string
   reg_number: string
   room_number: string
   hostel_block: string
-  profiles: { full_name: string } | null
+  profiles: { full_name: string; phone?: string } | null
 }
 
 export interface OutpassWithStudent extends OutpassRequest {
@@ -201,6 +202,10 @@ export interface Database {
     Functions: {
       get_student_login_email: {
         Args: { reg_number_input: string }
+        Returns: string
+      }
+      get_student_admission_no: {
+        Args: { p_student_id: string }
         Returns: string
       }
     }

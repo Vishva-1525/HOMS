@@ -1,22 +1,31 @@
 import {
+  evaluateEntryScan,
+  formatOverdueDuration,
   hasEntryLog,
-  isPassOverdue,
   isQrEligibleStatus,
 } from '@/lib/pass-filters'
 import { parseScanInput } from '@/lib/pass-qr'
 import { supabase } from '@/lib/supabase'
 import { getStudentName, getStudentReg, getStudentAdmissionNo } from '@/lib/warden'
-import type { GateLog, GateEventType, OutpassWithStudent } from '@/lib/types'
+import type { ExtensionRequest, GateLog, GateEventType, OutpassWithStudent } from '@/lib/types'
 
-export type ScanResultKind = 'valid' | 'invalid' | 'overdue'
+export type ScanResultKind = 'valid' | 'invalid' | 'late-entry' | 'overdue-entry'
+export type ScanPhase = 'exit' | 'entry'
 
 export interface ScanValidationResult {
   kind: ScanResultKind
+  scanPhase: ScanPhase
   pass?: OutpassWithStudent
   gateLogs?: GateLog[]
+  extensions?: ExtensionRequest[]
   nextAction?: GateEventType
   reason?: string
   studentAdmissionNo?: string
+  extensionApproved?: boolean
+  extensionPending?: boolean
+  overdueMs?: number
+  requiresWardenAlert?: boolean
+  wardenNotified?: boolean
 }
 
 export function getNextGateAction(gateLogs: GateLog[]): GateEventType {
@@ -28,112 +37,202 @@ export function hasExitLog(passId: string, gateLogs: GateLog[]): boolean {
   return gateLogs.some((log) => log.outpass_id === passId && log.event_type === 'exit')
 }
 
-const OUTPASS_SELECT = `
-  *,
-  students (
-    id,
-    reg_number,
-    room_number,
-    hostel_block,
-    profiles ( full_name )
-  )
-`
+const OUTPASS_SELECT = '*'
 
-async function enrichStudentProfile(pass: OutpassWithStudent): Promise<OutpassWithStudent> {
-  if (!pass.students || pass.students.profiles?.full_name) return pass
-
+/** Load student row + profile row linked by outpass_requests.student_id = students.id = profiles.id */
+async function attachStudentDetails(pass: OutpassWithStudent): Promise<OutpassWithStudent> {
   const studentId = pass.student_id
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', studentId)
-    .maybeSingle()
 
-  if (!profile?.full_name) return pass
+  const [studentResult, profileResult] = await Promise.all([
+    supabase
+      .from('students')
+      .select('id, reg_number, room_number, hostel_block')
+      .eq('id', studentId)
+      .maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('id, full_name, phone')
+      .eq('id', studentId)
+      .maybeSingle(),
+  ])
+
+  const student = studentResult.data
+  const profile = profileResult.data
+
+  if (!student && !profile) return pass
 
   return {
     ...pass,
     students: {
-      ...pass.students,
-      profiles: { full_name: profile.full_name },
+      id: studentId,
+      reg_number: student?.reg_number ?? pass.students?.reg_number ?? '',
+      room_number: student?.room_number ?? pass.students?.room_number ?? '',
+      hostel_block: student?.hostel_block ?? pass.students?.hostel_block ?? '',
+      profiles: profile
+        ? { full_name: profile.full_name, phone: profile.phone }
+        : pass.students?.profiles ?? null,
     },
   }
 }
 
+async function fetchExtensions(outpassId: string): Promise<ExtensionRequest[]> {
+  const { data, error } = await supabase
+    .from('extension_requests')
+    .select('*')
+    .eq('outpass_id', outpassId)
+    .order('created_at', { ascending: false })
+
+  if (error) return []
+  return (data ?? []) as ExtensionRequest[]
+}
+
 export async function fetchPassWithLogs(
   outpassId: string,
-): Promise<{ pass: OutpassWithStudent | null; gateLogs: GateLog[]; error?: string }> {
-  const [passResult, logsResult] = await Promise.all([
+): Promise<{
+  pass: OutpassWithStudent | null
+  gateLogs: GateLog[]
+  extensions: ExtensionRequest[]
+  error?: string
+}> {
+  const [passResult, logsResult, extensions] = await Promise.all([
     supabase.from('outpass_requests').select(OUTPASS_SELECT).eq('id', outpassId).maybeSingle(),
     supabase.from('gate_logs').select('*').eq('outpass_id', outpassId).order('scanned_at', {
       ascending: false,
     }),
+    fetchExtensions(outpassId),
   ])
 
   if (passResult.error) {
-    return { pass: null, gateLogs: [], error: passResult.error.message }
+    return { pass: null, gateLogs: [], extensions: [], error: passResult.error.message }
   }
 
   if (logsResult.error) {
-    return { pass: null, gateLogs: [], error: logsResult.error.message }
+    return { pass: null, gateLogs: [], extensions: [], error: logsResult.error.message }
   }
 
   return {
     pass: passResult.data
-      ? await enrichStudentProfile(passResult.data as OutpassWithStudent)
+      ? await attachStudentDetails(passResult.data as OutpassWithStudent)
       : null,
     gateLogs: (logsResult.data ?? []) as GateLog[],
+    extensions,
   }
 }
 
-async function fetchStudentAdmissionNo(regNumber: string): Promise<string | undefined> {
-  const { data, error } = await supabase.rpc('get_student_login_email', {
+async function fetchStudentAdmissionNoForPass(
+  pass: OutpassWithStudent,
+): Promise<string | undefined> {
+  const { data, error } = await supabase.rpc('get_student_admission_no', {
+    p_student_id: pass.student_id,
+  })
+
+  if (!error && typeof data === 'string' && data.trim()) {
+    return data.trim()
+  }
+
+  const regNumber = getStudentReg(pass.students)
+  if (regNumber === '—') return undefined
+
+  const { data: email, error: emailError } = await supabase.rpc('get_student_login_email', {
     reg_number_input: regNumber,
   })
 
-  if (error || !data || typeof data !== 'string') return undefined
-  return getStudentAdmissionNo(data)
+  if (emailError || !email || typeof email !== 'string') return undefined
+  return getStudentAdmissionNo(email)
 }
 
 export async function validateScanInput(raw: string): Promise<ScanValidationResult> {
   const parsed = parseScanInput(raw)
   if (!parsed) {
-    return { kind: 'invalid', reason: 'Unrecognised QR code or pass ID.' }
+    return { kind: 'invalid', scanPhase: 'exit', reason: 'Unrecognised QR code or pass ID.' }
   }
 
-  const { pass, gateLogs, error } = await fetchPassWithLogs(parsed.outpass_id)
+  const { pass, gateLogs, extensions, error } = await fetchPassWithLogs(parsed.outpass_id)
   if (error) {
-    return { kind: 'invalid', reason: error }
+    return { kind: 'invalid', scanPhase: 'exit', reason: error }
   }
 
   if (!pass) {
-    return { kind: 'invalid', reason: 'Pass not found or not approved.' }
+    return { kind: 'invalid', scanPhase: 'exit', reason: 'Pass not found or not approved.' }
   }
 
-  const regNumber = getStudentReg(pass.students)
-  const studentAdmissionNo =
-    regNumber !== '—' ? await fetchStudentAdmissionNo(regNumber) : undefined
+  const studentAdmissionNo = await fetchStudentAdmissionNoForPass(pass)
+
+  const base = {
+    pass,
+    gateLogs,
+    extensions,
+    studentAdmissionNo,
+  }
 
   if (!isQrEligibleStatus(pass.status)) {
-    return { kind: 'invalid', reason: 'This pass is not active.' }
+    return { ...base, kind: 'invalid', scanPhase: 'exit', reason: 'This pass is not active.' }
   }
 
   if (parsed.reg_number && getStudentReg(pass.students) !== parsed.reg_number) {
-    return { kind: 'invalid', reason: 'Registration number does not match.', studentAdmissionNo }
+    return {
+      ...base,
+      kind: 'invalid',
+      scanPhase: 'exit',
+      reason: 'Registration number does not match.',
+    }
   }
 
   if (hasEntryLog(pass.id, gateLogs)) {
-    return { kind: 'invalid', reason: 'This pass has already been completed.', studentAdmissionNo }
+    return {
+      ...base,
+      kind: 'invalid',
+      scanPhase: 'entry',
+      reason: 'This pass has already been used for exit and entry.',
+    }
   }
 
   const nextAction = getNextGateAction(gateLogs)
-  const overdue = isPassOverdue(pass, gateLogs)
 
-  if (overdue) {
-    return { kind: 'overdue', pass, gateLogs, nextAction, studentAdmissionNo }
+  if (nextAction === 'exit') {
+    return {
+      ...base,
+      kind: 'valid',
+      scanPhase: 'exit',
+      nextAction,
+    }
   }
 
-  return { kind: 'valid', pass, gateLogs, nextAction, studentAdmissionNo }
+  const entry = evaluateEntryScan(pass, extensions)
+
+  if (entry.kind === 'valid') {
+    return {
+      ...base,
+      kind: 'valid',
+      scanPhase: 'entry',
+      nextAction,
+      extensionApproved: entry.extensionApproved,
+      overdueMs: 0,
+      requiresWardenAlert: false,
+    }
+  }
+
+  if (entry.kind === 'late-entry') {
+    return {
+      ...base,
+      kind: 'late-entry',
+      scanPhase: 'entry',
+      nextAction,
+      extensionPending: entry.extensionPending,
+      overdueMs: entry.overdueMs,
+      requiresWardenAlert: false,
+    }
+  }
+
+  return {
+    ...base,
+    kind: 'overdue-entry',
+    scanPhase: 'entry',
+    nextAction,
+    extensionPending: entry.extensionPending,
+    overdueMs: entry.overdueMs,
+    requiresWardenAlert: entry.requiresWardenAlert,
+  }
 }
 
 export async function recordGateEvent(
@@ -192,10 +291,33 @@ export async function recordGateEvent(
   return { gateLogs: updatedLogs }
 }
 
-export async function alertWardenOverdue(pass: OutpassWithStudent): Promise<{ error?: string }> {
+function buildWardenAlertDetail(
+  overdueMs: number | undefined,
+  extensionPending: boolean | undefined,
+): string {
+  const parts: string[] = []
+
+  if (overdueMs && overdueMs > 0) {
+    parts.push(`Late by ${formatOverdueDuration(overdueMs)}`)
+  }
+
+  if (extensionPending) {
+    parts.push('extension pending — not yet approved')
+  } else {
+    parts.push('no approved extension on file')
+  }
+
+  return parts.join('; ')
+}
+
+export async function alertWardenOverdue(
+  pass: OutpassWithStudent,
+  options?: { overdueMs?: number; extensionPending?: boolean },
+): Promise<{ error?: string }> {
   const { error } = await supabase.rpc('alert_warden_overdue', {
     p_reg_number: getStudentReg(pass.students),
     p_student_name: getStudentName(pass.students),
+    p_detail: buildWardenAlertDetail(options?.overdueMs, options?.extensionPending),
   })
 
   return error ? { error: error.message } : {}

@@ -34,7 +34,11 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
   const processScan = useCallback(async (raw: string): Promise<ScanValidationResult> => {
     const trimmed = raw.trim()
     if (!trimmed) {
-      const empty: ScanValidationResult = { kind: 'invalid', reason: 'Empty scan input.' }
+      const empty: ScanValidationResult = {
+        kind: 'invalid',
+        scanPhase: 'exit',
+        reason: 'Empty scan input.',
+      }
       setResult(empty)
       setPhase('result')
       return empty
@@ -44,13 +48,27 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
     setResult(null)
 
     try {
-      const validation = await validateScanInput(trimmed)
+      let validation = await validateScanInput(trimmed)
+
+      if (validation.requiresWardenAlert && validation.pass) {
+        const { error } = await alertWardenOverdue(validation.pass, {
+          overdueMs: validation.overdueMs,
+          extensionPending: validation.extensionPending,
+        })
+        validation = {
+          ...validation,
+          wardenNotified: !error,
+          reason: error ? `Warden alert failed: ${error}` : validation.reason,
+        }
+      }
+
       setResult(validation)
       setPhase('result')
       return validation
     } catch {
       const failed: ScanValidationResult = {
         kind: 'invalid',
+        scanPhase: 'exit',
         reason: 'Failed to validate pass. Try again.',
       }
       setResult(failed)
@@ -68,7 +86,14 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
       setSubmitting(false)
 
       if (error) {
-        setResult({ kind: 'invalid', reason: error })
+        setResult({
+          kind: 'invalid',
+          scanPhase: result.scanPhase,
+          reason: error,
+          pass: result.pass,
+          gateLogs: result.gateLogs,
+          studentAdmissionNo: result.studentAdmissionNo,
+        })
         setPhase('result')
         return
       }
@@ -85,13 +110,19 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
     if (!result?.pass) return
 
     setSubmitting(true)
-    const { error } = await alertWardenOverdue(result.pass)
+    const { error } = await alertWardenOverdue(result.pass, {
+      overdueMs: result.overdueMs,
+      extensionPending: result.extensionPending,
+    })
     setSubmitting(false)
 
     if (error) {
-      setResult({ kind: 'invalid', reason: error })
+      setResult({ ...result, kind: 'invalid', reason: error })
       setPhase('result')
+      return
     }
+
+    setResult({ ...result, wardenNotified: true })
   }, [result])
 
   const cameraActive = phase === 'scanning'
