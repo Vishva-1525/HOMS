@@ -1,4 +1,4 @@
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, LogOut } from 'lucide-react'
 import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import { useAuth } from '@/contexts/AuthProvider'
@@ -9,7 +9,7 @@ interface SecurityTopBarProps {
 }
 
 export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
-  const { profile } = useAuth()
+  const { profile, signOut } = useAuth()
 
   return (
     <header className="glass-nav sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between px-4 sm:px-5">
@@ -33,6 +33,15 @@ export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
         >
           <ClipboardList className="h-4 w-4" strokeWidth={1.75} />
           <span className="hidden sm:inline">Log</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => signOut()}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/60 bg-white/50 px-3 py-1.5 text-sm font-medium text-slate-800 transition-colors hover:bg-white/70"
+          aria-label="Sign out"
+        >
+          <LogOut className="h-4 w-4" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Sign out</span>
         </button>
         <UserAvatar name={profile?.full_name ?? 'Guard'} size="sm" />
       </div>
