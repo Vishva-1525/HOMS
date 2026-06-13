@@ -48,14 +48,11 @@ export function ActivePassBanner({ pass, student }: ActivePassBannerProps) {
         )}
       </div>
 
-      {student && (
-        <PassQrSheet
-          open={qrOpen}
-          pass={pass}
-          regNumber={student.reg_number}
-          onClose={() => setQrOpen(false)}
-        />
-      )}
+      <PassQrSheet
+        open={qrOpen}
+        pass={pass}
+        onClose={() => setQrOpen(false)}
+      />
     </>
   )
 }

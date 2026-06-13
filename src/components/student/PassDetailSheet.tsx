@@ -194,7 +194,7 @@ export function PassDetailSheet({
                 <p className="mb-3 text-center text-sm font-medium text-[#1A1A2E]">
                   Scan at gate
                 </p>
-                <PassQrCode pass={pass} regNumber={student.reg_number} />
+                <PassQrCode pass={pass} />
               </div>
             ) : null}
 

@@ -5,7 +5,7 @@ import {
 } from '@/lib/pass-filters'
 import { parseScanInput } from '@/lib/pass-qr'
 import { supabase } from '@/lib/supabase'
-import { getStudentName, getStudentReg } from '@/lib/warden'
+import { getStudentName, getStudentReg, getStudentAdmissionNo } from '@/lib/warden'
 import type { GateLog, GateEventType, OutpassWithStudent } from '@/lib/types'
 
 export type ScanResultKind = 'valid' | 'invalid' | 'overdue'
@@ -16,6 +16,7 @@ export interface ScanValidationResult {
   gateLogs?: GateLog[]
   nextAction?: GateEventType
   reason?: string
+  studentAdmissionNo?: string
 }
 
 export function getNextGateAction(gateLogs: GateLog[]): GateEventType {
@@ -30,12 +31,34 @@ export function hasExitLog(passId: string, gateLogs: GateLog[]): boolean {
 const OUTPASS_SELECT = `
   *,
   students (
+    id,
     reg_number,
     room_number,
     hostel_block,
     profiles ( full_name )
   )
 `
+
+async function enrichStudentProfile(pass: OutpassWithStudent): Promise<OutpassWithStudent> {
+  if (!pass.students || pass.students.profiles?.full_name) return pass
+
+  const studentId = pass.student_id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', studentId)
+    .maybeSingle()
+
+  if (!profile?.full_name) return pass
+
+  return {
+    ...pass,
+    students: {
+      ...pass.students,
+      profiles: { full_name: profile.full_name },
+    },
+  }
+}
 
 export async function fetchPassWithLogs(
   outpassId: string,
@@ -56,9 +79,20 @@ export async function fetchPassWithLogs(
   }
 
   return {
-    pass: (passResult.data as OutpassWithStudent | null) ?? null,
+    pass: passResult.data
+      ? await enrichStudentProfile(passResult.data as OutpassWithStudent)
+      : null,
     gateLogs: (logsResult.data ?? []) as GateLog[],
   }
+}
+
+async function fetchStudentAdmissionNo(regNumber: string): Promise<string | undefined> {
+  const { data, error } = await supabase.rpc('get_student_login_email', {
+    reg_number_input: regNumber,
+  })
+
+  if (error || !data || typeof data !== 'string') return undefined
+  return getStudentAdmissionNo(data)
 }
 
 export async function validateScanInput(raw: string): Promise<ScanValidationResult> {
@@ -76,26 +110,30 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
     return { kind: 'invalid', reason: 'Pass not found or not approved.' }
   }
 
+  const regNumber = getStudentReg(pass.students)
+  const studentAdmissionNo =
+    regNumber !== '—' ? await fetchStudentAdmissionNo(regNumber) : undefined
+
   if (!isQrEligibleStatus(pass.status)) {
     return { kind: 'invalid', reason: 'This pass is not active.' }
   }
 
   if (parsed.reg_number && getStudentReg(pass.students) !== parsed.reg_number) {
-    return { kind: 'invalid', reason: 'Registration number does not match.' }
+    return { kind: 'invalid', reason: 'Registration number does not match.', studentAdmissionNo }
   }
 
   if (hasEntryLog(pass.id, gateLogs)) {
-    return { kind: 'invalid', reason: 'This pass has already been completed.' }
+    return { kind: 'invalid', reason: 'This pass has already been completed.', studentAdmissionNo }
   }
 
   const nextAction = getNextGateAction(gateLogs)
   const overdue = isPassOverdue(pass, gateLogs)
 
   if (overdue) {
-    return { kind: 'overdue', pass, gateLogs, nextAction }
+    return { kind: 'overdue', pass, gateLogs, nextAction, studentAdmissionNo }
   }
 
-  return { kind: 'valid', pass, gateLogs, nextAction }
+  return { kind: 'valid', pass, gateLogs, nextAction, studentAdmissionNo }
 }
 
 export async function recordGateEvent(

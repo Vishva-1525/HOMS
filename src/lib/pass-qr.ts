@@ -25,14 +25,9 @@ export function buildPassQrPayload(
   }
 }
 
-export function buildPassQrValue(pass: OutpassRequest, regNumber: string): string {
-  return JSON.stringify({
-    outpass_id: pass.id,
-    reg_number: regNumber,
-    pass_type: pass.pass_type,
-    departure_at: pass.departure_at,
-    return_by: pass.return_by,
-  })
+/** QR encodes only the outpass UUID — gate lookup loads full pass details from the DB. */
+export function buildPassQrValue(pass: OutpassRequest): string {
+  return pass.id
 }
 
 export interface ScannedPassQrPayload {

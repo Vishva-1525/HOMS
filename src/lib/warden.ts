@@ -15,6 +15,35 @@ export function getStudentRoom(student: StudentProfile | null | undefined): stri
   return `${student.room_number}${block}`
 }
 
+/** Admission number from student login email (e.g. 2023cs0488 from 2023cs0488@svce.ac.in). */
+export function getStudentAdmissionNo(email: string): string {
+  return email.trim().replace(/@svce\.ac\.in$/i, '').split('@')[0] ?? email
+}
+
+/** @deprecated Use getStudentAdmissionNo */
+export function getStudentEmailLocalPart(email: string): string {
+  return getStudentAdmissionNo(email)
+}
+
+export function formatStudentVerificationLabel(
+  name: string,
+  admissionNo: string | null | undefined,
+): string {
+  const displayName = name !== 'Unknown' ? name : null
+  const id = admissionNo?.trim() || null
+
+  if (displayName && id) return `${displayName} · ${id}`
+  if (displayName) return displayName
+  if (id) return id
+  return 'Student'
+}
+
+export function formatStudentRoomDisplay(student: StudentProfile | null | undefined): string {
+  if (!student?.room_number) return '—'
+  const block = student.hostel_block ? ` · ${student.hostel_block}` : ''
+  return `Room ${student.room_number}${block}`
+}
+
 export function isStudentCurrentlyOut(
   pass: OutpassRequest,
   gateLogs: GateLog[],

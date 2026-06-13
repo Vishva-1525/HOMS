@@ -82,11 +82,10 @@ export function StudentPassesPage() {
         onUpdated={refetch}
       />
 
-      {student && qrPass && (
+      {qrPass && (
         <PassQrSheet
           open={Boolean(qrPass)}
           pass={qrPass}
-          regNumber={student.reg_number}
           onClose={() => setQrPass(null)}
         />
       )}

@@ -4,11 +4,10 @@ import type { OutpassRequest } from '@/lib/types'
 interface PassQrSheetProps {
   open: boolean
   pass: OutpassRequest
-  regNumber: string
   onClose: () => void
 }
 
-export function PassQrSheet({ open, pass, regNumber, onClose }: PassQrSheetProps) {
+export function PassQrSheet({ open, pass, onClose }: PassQrSheetProps) {
   if (!open) return null
 
   return (
@@ -21,7 +20,7 @@ export function PassQrSheet({ open, pass, regNumber, onClose }: PassQrSheetProps
       />
       <div className="relative z-10 w-full max-w-sm rounded-t-2xl border border-[var(--svce-border-default)] bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:rounded-2xl">
         <h3 className="mb-4 text-center text-lg font-semibold text-[#1A1A2E]">Your pass QR</h3>
-        <PassQrCode pass={pass} regNumber={regNumber} />
+        <PassQrCode pass={pass} />
       </div>
     </div>
   )

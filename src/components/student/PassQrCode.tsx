@@ -9,17 +9,16 @@ import type { OutpassRequest } from '@/lib/types'
 
 interface PassQrCodeProps {
   pass: OutpassRequest
-  regNumber: string
 }
 
-export function PassQrCode({ pass, regNumber }: PassQrCodeProps) {
+export function PassQrCode({ pass }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   if (!isQrEligibleStatus(pass.status)) {
     return <PassQrPlaceholder status={pass.status} />
   }
 
-  const qrValue = buildPassQrValue(pass, regNumber)
+  const qrValue = buildPassQrValue(pass)
 
   async function getQrBlob(): Promise<Blob | null> {
     const canvas = canvasRef.current

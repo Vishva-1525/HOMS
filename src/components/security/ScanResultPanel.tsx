@@ -5,7 +5,7 @@ import { PASS_TYPE_LABELS, formatReturnTime, formatTableDateTime } from '@/lib/o
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import type { ScanValidationResult } from '@/lib/security-actions'
 import { hasExitLog } from '@/lib/security-actions'
-import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
+import { getStudentName, formatStudentVerificationLabel, formatStudentRoomDisplay } from '@/lib/warden'
 import { cn } from '@/lib/utils'
 
 interface ScanResultPanelProps {
@@ -57,8 +57,9 @@ export function ScanResultPanel({
   if (!pass) return null
 
   const studentName = getStudentName(pass.students)
-  const regNo = getStudentReg(pass.students)
-  const room = getStudentRoom(pass.students)
+  const admissionNo = result.studentAdmissionNo ?? '—'
+  const room = formatStudentRoomDisplay(pass.students)
+  const verificationLabel = formatStudentVerificationLabel(studentName, result.studentAdmissionNo)
   const isOverdue = result.kind === 'overdue'
   const allowLabel = nextAction === 'exit' ? 'EXIT' : 'ENTRY'
   const displayStatus = getPassDisplayStatus(pass, gateLogs)
@@ -82,8 +83,8 @@ export function ScanResultPanel({
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-2xl font-bold tabular-nums text-slate-900">{regNo}</p>
-            <p className="mt-1 text-xl font-semibold text-slate-900">{studentName}</p>
+            <p className="font-mono text-2xl font-bold tabular-nums text-slate-900">{admissionNo}</p>
+            <p className="mt-1 text-xl font-semibold leading-snug text-slate-900">{verificationLabel}</p>
             <p className="mt-0.5 text-sm text-slate-600">{room}</p>
           </div>
           <StatusBadge status={displayStatus} label={statusLabel} />
