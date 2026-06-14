@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
+import { MobileDataCard, MobileDataCardRow } from '@/components/ui/MobileDataCard'
 import { Spinner } from '@/components/ui/spinner'
 import { useSecurityGateLog } from '@/hooks/security/useSecurityGateLog'
 import { cn } from '@/lib/utils'
@@ -33,8 +34,8 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
   const totalLogs = logsByDate.reduce((sum, [, rows]) => sum + rows.length, 0)
 
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col bg-slate-900/40 p-3 backdrop-blur-sm animate-[slideUpFull_0.3s_ease-out] sm:p-4">
-      <div className="dashboard-surface flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[90] flex flex-col bg-slate-900/45 p-0 backdrop-blur-md animate-[slideUpFull_0.3s_ease-out] sm:p-4">
+      <div className="dashboard-surface flex min-h-0 flex-1 flex-col overflow-hidden rounded-none sm:rounded-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-5">
           <div>
             <h2 className="dashboard-heading text-base sm:text-lg">Gate history</h2>
@@ -50,19 +51,19 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 border-b border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm text-slate-800 sm:px-5">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200/80 bg-slate-50/80 px-4 py-3 text-xs text-slate-800 sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-1 sm:px-5 sm:text-sm">
           <span>
             Today: <strong>{summary.exits}</strong> exits
           </span>
-          <span className="text-slate-300">·</span>
+          <span className="hidden text-slate-300 sm:inline">·</span>
           <span>
             <strong>{summary.entries}</strong> entries
           </span>
-          <span className="text-slate-300">·</span>
+          <span className="hidden text-slate-300 sm:inline">·</span>
           <span>
             <strong>{summary.currentlyOutside}</strong> outside
           </span>
-          <span className="text-slate-300">·</span>
+          <span className="hidden text-slate-300 sm:inline">·</span>
           <span>
             <strong>{totalLogs}</strong> total records
           </span>
@@ -93,6 +94,34 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
                       ({dayLogs.length} record{dayLogs.length !== 1 ? 's' : ''})
                     </span>
                   </div>
+
+                  <div className="divide-y divide-slate-200/60 md:hidden">
+                    {dayLogs.map((log) => (
+                      <MobileDataCard key={log.id}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-slate-900">{log.studentName}</p>
+                            <p className="mt-0.5 font-mono text-xs text-[#1A5CA0]">{log.admissionNo}</p>
+                          </div>
+                          <EventBadge type={log.event_type} />
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          <MobileDataCardRow
+                            label="Time"
+                            value={`${formatLogTime(log.scanned_at)} · ${formatLogDate(log.scanned_at)}`}
+                          />
+                          <MobileDataCardRow label="Room" value={log.room} />
+                          <MobileDataCardRow
+                            label="Pass"
+                            value={log.passType ? <PassTypeBadge type={log.passType} /> : '—'}
+                          />
+                          <MobileDataCardRow label="Destination" value={log.destination} />
+                        </div>
+                      </MobileDataCard>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[760px] text-sm">
                     <thead>
                       <tr className="border-b border-slate-200/60 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -143,6 +172,7 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </section>
               ))}
             </div>

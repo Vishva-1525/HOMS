@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react'
 import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
+import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { DataTable } from '@/components/ui/DataTable'
 import { StatCard } from '@/components/ui/StatCard'
@@ -93,7 +94,7 @@ export function WardenHomePage() {
   return (
     <div className="space-y-6">
       <div className="dashboard-page-header mb-0">
-        <h1 className="dashboard-heading text-2xl font-semibold">
+        <h1 className="dashboard-heading text-xl font-semibold sm:text-2xl">
           {getGreeting()}, {profile?.full_name?.split(/\s+/)[0] ?? 'Warden'}
         </h1>
         <p className="dashboard-subheading mt-1 text-sm">{formatTodayDate()}</p>
@@ -198,6 +199,13 @@ export function WardenHomePage() {
             emptyMessage="No pending requests right now."
             getRowKey={(row) => row.id}
             getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
+            mobileCardRender={(row) => (
+              <WardenPendingMobileCard
+                pass={row}
+                onApprove={() => openDrawer(row, 'approve')}
+                onReject={() => openDrawer(row, 'reject')}
+              />
+            )}
           />
         </div>
       </div>

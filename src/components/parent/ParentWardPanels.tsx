@@ -23,12 +23,12 @@ export function ParentWardHeader({ ward, wards, onSelectWard }: ParentWardHeader
   const name = ward.profile?.full_name?.trim() || 'Your ward'
 
   return (
-    <div className="glass-panel-strong p-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+    <div className="glass-panel-strong p-4 sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="dashboard-muted text-xs font-medium uppercase tracking-wide">Your ward</p>
-          <h2 className="dashboard-heading mt-1 text-xl font-semibold">{name}</h2>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+          <h2 className="dashboard-heading mt-1 text-lg font-semibold sm:text-xl">{name}</h2>
+          <div className="mt-2 grid grid-cols-1 gap-1 text-sm text-slate-700 sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-1">
             {ward.admissionNo && (
               <span className="font-mono font-medium">{ward.admissionNo}</span>
             )}
@@ -47,7 +47,7 @@ export function ParentWardHeader({ ward, wards, onSelectWard }: ParentWardHeader
           <select
             value={ward.student.id}
             onChange={(e) => onSelectWard(e.target.value)}
-            className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm text-slate-900"
+            className="w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm text-slate-900 sm:w-auto"
           >
             {wards.map((w) => (
               <option key={w.student.id} value={w.student.id}>

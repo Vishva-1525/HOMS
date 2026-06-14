@@ -27,6 +27,7 @@ import {
   reportRowToArray,
 } from '@/lib/warden-reports'
 import { getEntryTime, getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
+import { WardenReportMobileCard } from '@/components/warden/WardenMobileCards'
 import type { OutpassStatus, OutpassWithStudent } from '@/lib/types'
 import type { StatusBadgeStatus } from '@/components/ui/StatusBadge'
 
@@ -142,8 +143,8 @@ export function ReportsPage() {
       </div>
 
       {activeTab === 'custom' && (
-        <div className="dashboard-surface-muted flex flex-wrap items-end gap-3 p-4">
-          <div>
+        <div className="dashboard-surface-muted grid grid-cols-1 gap-3 p-4 sm:flex sm:flex-wrap sm:items-end">
+          <div className="w-full sm:w-auto">
             <Label htmlFor="report-from" className="text-xs">
               From
             </Label>
@@ -152,10 +153,10 @@ export function ReportsPage() {
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              className="mt-1 h-9 w-40"
+              className="mt-1 h-9 w-full sm:w-40"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-auto">
             <Label htmlFor="report-to" className="text-xs">
               To
             </Label>
@@ -164,7 +165,7 @@ export function ReportsPage() {
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              className="mt-1 h-9 w-40"
+              className="mt-1 h-9 w-full sm:w-40"
             />
           </div>
           {(customFrom || customTo) && (
@@ -183,7 +184,7 @@ export function ReportsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard label="Total requests" value={stats.total} iconTone="blue" />
         <StatCard
           label="Approved"
@@ -269,6 +270,13 @@ export function ReportsPage() {
           data={filteredPasses}
           emptyMessage="No outpass records in this period."
           getRowKey={(row) => row.id}
+          mobileCardRender={(row) => (
+            <WardenReportMobileCard
+              pass={row}
+              status={outpassStatusToBadge(row.status)}
+              entryTime={getEntryTime(row.id, gateLogs)}
+            />
+          )}
         />
       </div>
     </div>

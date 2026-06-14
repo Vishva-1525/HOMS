@@ -1,4 +1,6 @@
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { MobileDataCard, MobileDataCardRow } from '@/components/ui/MobileDataCard'
+import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { PASS_TYPE_LABELS, formatReturnTime, formatTableDateTime } from '@/lib/outpass'
 import { getPassGateSummary } from '@/lib/parent-alerts'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
@@ -30,61 +32,97 @@ export function ParentPassTable({
       {rows.length === 0 ? (
         <p className="dashboard-muted px-4 py-10 text-center text-sm sm:px-5">{emptyMessage}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead>
-              <tr className="border-b border-slate-200/80 bg-slate-50/80 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                <th className="px-4 py-3 sm:px-5">Requested</th>
-                <th className="px-4 py-3 sm:px-5">Type</th>
-                <th className="px-4 py-3 sm:px-5">Destination</th>
-                <th className="px-4 py-3 sm:px-5">Departure</th>
-                <th className="px-4 py-3 sm:px-5">Return by</th>
-                <th className="px-4 py-3 sm:px-5">Status</th>
-                <th className="px-4 py-3 sm:px-5">Exit</th>
-                <th className="px-4 py-3 sm:px-5">Entry</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((pass) => {
-                const displayStatus = getPassDisplayStatus(pass, gateLogs)
-                const label = getPassStatusLabel(pass.status, gateLogs, pass)
-                const { exitAt, entryAt } = getPassGateSummary(pass.id, gateLogs)
+        <>
+          <div className="divide-y divide-slate-200/60 md:hidden">
+            {rows.map((pass) => {
+              const displayStatus = getPassDisplayStatus(pass, gateLogs)
+              const label = getPassStatusLabel(pass.status, gateLogs, pass)
+              const { exitAt, entryAt } = getPassGateSummary(pass.id, gateLogs)
 
-                return (
-                  <tr
-                    key={pass.id}
-                    className="border-b border-slate-200/60 last:border-0 hover:bg-slate-50/70"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
-                      {formatTableDateTime(pass.created_at)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 font-medium text-slate-900 sm:px-5">
-                      {PASS_TYPE_LABELS[pass.pass_type]}
-                    </td>
-                    <td className="max-w-[160px] truncate px-4 py-3.5 text-slate-800 sm:px-5">
-                      {pass.destination}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-800 sm:px-5">
-                      {formatTableDateTime(pass.departure_at)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-800 sm:px-5">
-                      {formatReturnTime(pass.return_by)}
-                    </td>
-                    <td className="px-4 py-3.5 sm:px-5">
-                      <StatusBadge status={displayStatus} label={label} />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
-                      {exitAt ? formatReturnTime(exitAt) : '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
-                      {entryAt ? formatReturnTime(entryAt) : '—'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+              return (
+                <MobileDataCard key={pass.id}>
+                  <div className="flex items-center justify-between gap-2">
+                    <PassTypeBadge type={pass.pass_type} />
+                    <StatusBadge status={displayStatus} label={label} />
+                  </div>
+
+                  <p className="mt-2 text-sm font-semibold text-slate-900">{pass.destination}</p>
+                  <p className="dashboard-muted mt-1 text-xs">
+                    Requested {formatTableDateTime(pass.created_at)}
+                  </p>
+
+                  <div className="mt-2 space-y-1">
+                    <MobileDataCardRow
+                      label="Departure"
+                      value={formatTableDateTime(pass.departure_at)}
+                    />
+                    <MobileDataCardRow label="Return by" value={formatReturnTime(pass.return_by)} />
+                    <MobileDataCardRow
+                      label="Gate"
+                      value={`${exitAt ? formatReturnTime(exitAt) : '—'} → ${entryAt ? formatReturnTime(entryAt) : '—'}`}
+                    />
+                  </div>
+                </MobileDataCard>
+              )
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200/80 bg-slate-50/80 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <th className="px-4 py-3 sm:px-5">Requested</th>
+                  <th className="px-4 py-3 sm:px-5">Type</th>
+                  <th className="px-4 py-3 sm:px-5">Destination</th>
+                  <th className="px-4 py-3 sm:px-5">Departure</th>
+                  <th className="px-4 py-3 sm:px-5">Return by</th>
+                  <th className="px-4 py-3 sm:px-5">Status</th>
+                  <th className="px-4 py-3 sm:px-5">Exit</th>
+                  <th className="px-4 py-3 sm:px-5">Entry</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((pass) => {
+                  const displayStatus = getPassDisplayStatus(pass, gateLogs)
+                  const label = getPassStatusLabel(pass.status, gateLogs, pass)
+                  const { exitAt, entryAt } = getPassGateSummary(pass.id, gateLogs)
+
+                  return (
+                    <tr
+                      key={pass.id}
+                      className="border-b border-slate-200/60 last:border-0 hover:bg-slate-50/70"
+                    >
+                      <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
+                        {formatTableDateTime(pass.created_at)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3.5 font-medium text-slate-900 sm:px-5">
+                        {PASS_TYPE_LABELS[pass.pass_type]}
+                      </td>
+                      <td className="max-w-[160px] truncate px-4 py-3.5 text-slate-800 sm:px-5">
+                        {pass.destination}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-slate-800 sm:px-5">
+                        {formatTableDateTime(pass.departure_at)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-slate-800 sm:px-5">
+                        {formatReturnTime(pass.return_by)}
+                      </td>
+                      <td className="px-4 py-3.5 sm:px-5">
+                        <StatusBadge status={displayStatus} label={label} />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
+                        {exitAt ? formatReturnTime(exitAt) : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
+                        {entryAt ? formatReturnTime(entryAt) : '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

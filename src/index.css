@@ -167,6 +167,26 @@
   .dashboard-shell .dashboard-surface-muted .text-muted-foreground {
     @apply text-slate-600;
   }
+
+  .security-scan-card {
+    @apply rounded-2xl border border-white/80 bg-white/94 text-slate-900 shadow-2xl shadow-slate-900/15 backdrop-blur-2xl ring-1 ring-white/50;
+  }
+
+  .security-scan-dock {
+    @apply shrink-0 border-t border-white/70 bg-gradient-to-b from-white/75 to-white/95 px-3 py-3 backdrop-blur-xl sm:px-5 sm:py-4;
+  }
+
+  .security-info-pill {
+    @apply inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-slate-600 shadow-sm;
+  }
+
+  .security-action-btn {
+    @apply h-12 w-full rounded-xl text-sm font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:text-base;
+  }
+
+  .security-identity-card {
+    @apply rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white via-white to-slate-50/90 p-4 shadow-sm;
+  }
 }
 
 @keyframes slideInRight {
@@ -184,5 +204,28 @@
   }
   to {
     transform: translateY(0);
+  }
+}
+
+@keyframes securityScanLine {
+  0%,
+  100% {
+    top: 10%;
+    opacity: 0.35;
+  }
+  50% {
+    top: 90%;
+    opacity: 1;
+  }
+}
+
+@keyframes securitySuccessPop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }

@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { WardenExtensionDrawer } from '@/components/warden/WardenExtensionDrawer'
+import { WardenExtensionMobileCard } from '@/components/warden/WardenMobileCards'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { formatReturnTime } from '@/lib/outpass'
 import { formatRelativeTime } from '@/lib/relative-time'
@@ -230,6 +231,13 @@ export function ExtensionRequestsPage() {
           emptyMessage="No pending extension requests."
           getRowKey={(row) => row.id}
           getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
+          mobileCardRender={(row) => (
+            <WardenExtensionMobileCard
+              extension={row}
+              onApprove={() => openDrawer(row, 'approve')}
+              onReject={() => openDrawer(row, 'reject')}
+            />
+          )}
         />
       </div>
 

@@ -58,11 +58,12 @@ export function WardenReviewDrawer({
       />
       <aside
         className={cn(
-          'absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col border-l border-[var(--svce-border-default)] bg-white shadow-xl',
-          'animate-[slideInRight_0.25s_ease-out]',
+          'absolute inset-x-0 bottom-0 flex max-h-[92dvh] w-full flex-col rounded-t-2xl border-t border-[var(--svce-border-default)] bg-white shadow-xl',
+          'animate-[slideUpFull_0.3s_ease-out]',
+          'md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:max-w-[480px] md:rounded-none md:border-l md:border-t-0 md:animate-[slideInRight_0.25s_ease-out]',
         )}
       >
-        <div className="border-b border-[var(--svce-border-default)] px-6 py-4">
+        <div className="border-b border-[var(--svce-border-default)] px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-[#1A1A2E]">
             {isReject ? 'Reject request' : 'Review request'}
           </h2>
@@ -71,7 +72,7 @@ export function WardenReviewDrawer({
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="flex items-center gap-4 rounded-xl border border-[var(--svce-border-default)] bg-[var(--svce-page-bg)] p-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EBF3FF]">
               <User className="h-7 w-7 text-[#1A5CA0]" strokeWidth={1.5} />
@@ -138,7 +139,7 @@ export function WardenReviewDrawer({
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-[var(--svce-border-default)] px-6 py-4">
+        <div className="space-y-2 border-t border-[var(--svce-border-default)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
           <Button
             type="button"
             className="w-full"

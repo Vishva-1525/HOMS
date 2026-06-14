@@ -21,9 +21,9 @@ export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCard
   return (
     <div className="glass-panel p-4 sm:p-5">
       <button type="button" onClick={onClick} className="w-full text-left">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <PassTypeBadge type={pass.pass_type} />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
             <span className="dashboard-muted text-xs">{formatPassDate(pass.created_at)}</span>
             <StatusBadge status={displayStatus} label={label} />
           </div>

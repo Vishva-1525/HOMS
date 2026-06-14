@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell } from 'lucide-react'
+import { Bell, X } from 'lucide-react'
 import { getNotificationDotColor } from '@/lib/notifications'
 import { formatRelativeTime } from '@/lib/relative-time'
 import type { NotificationLog } from '@/lib/notifications'
@@ -48,51 +48,75 @@ export function NotificationDropdown({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-xl border border-[var(--svce-border-default)] bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-[var(--svce-border-default)] px-4 py-3">
-            <p className="text-sm font-semibold text-[#1A1A2E]">Notifications</p>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={onMarkAllRead}
-                className="text-xs font-medium text-[#1A5CA0] hover:underline"
-              >
-                Mark all read
-              </button>
-            )}
-          </div>
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            aria-label="Close notifications"
+            onClick={() => setOpen(false)}
+          />
 
-          <ul className="max-h-[400px] overflow-y-auto">
-            {notifications.length === 0 ? (
-              <li className="px-4 py-8 text-center text-sm text-[var(--svce-text-muted)]">
-                No notifications yet.
-              </li>
-            ) : (
-              notifications.map((item) => (
-                <li
-                  key={item.id}
-                  className={cn(
-                    'border-b border-[var(--svce-border-default)] px-4 py-3 last:border-0',
-                    !item.read_at && 'bg-[#EBF3FF]',
-                  )}
-                >
-                  <div className="flex gap-3">
-                    <span
-                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: getNotificationDotColor(item.type) }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-[#1A1A2E]">{item.message}</p>
-                      <p className="mt-0.5 text-xs text-[var(--svce-text-muted)]">
-                        {formatRelativeTime(item.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              ))
+          <div
+            className={cn(
+              'z-50 overflow-hidden bg-white shadow-lg',
+              'fixed inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:max-h-none md:w-[min(360px,calc(100vw-2rem))] md:rounded-xl md:border md:border-[var(--svce-border-default)]',
             )}
-          </ul>
-        </div>
+          >
+            <div className="flex items-center justify-between border-b border-[var(--svce-border-default)] px-4 py-3 md:py-3">
+              <p className="text-sm font-semibold text-[#1A1A2E]">Notifications</p>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={onMarkAllRead}
+                    className="text-xs font-medium text-[#1A5CA0] hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 md:hidden"
+                  aria-label="Close notifications"
+                >
+                  <X className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+              </div>
+            </div>
+
+            <ul className="max-h-[min(70dvh,400px)] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+              {notifications.length === 0 ? (
+                <li className="px-4 py-8 text-center text-sm text-[var(--svce-text-muted)]">
+                  No notifications yet.
+                </li>
+              ) : (
+                notifications.map((item) => (
+                  <li
+                    key={item.id}
+                    className={cn(
+                      'border-b border-[var(--svce-border-default)] px-4 py-3 last:border-0',
+                      !item.read_at && 'bg-[#EBF3FF]',
+                    )}
+                  >
+                    <div className="flex gap-3">
+                      <span
+                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: getNotificationDotColor(item.type) }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-[#1A1A2E]">{item.message}</p>
+                        <p className="mt-0.5 text-xs text-[var(--svce-text-muted)]">
+                          {formatRelativeTime(item.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        </>
       )}
     </div>
   )

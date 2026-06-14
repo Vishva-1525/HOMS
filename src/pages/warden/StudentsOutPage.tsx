@@ -3,6 +3,7 @@ import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Spinner } from '@/components/ui/spinner'
+import { WardenStudentOutMobileCard } from '@/components/warden/WardenMobileCards'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { useCountdown } from '@/hooks/useCountdown'
 import { formatReturnTime } from '@/lib/outpass'
@@ -103,6 +104,13 @@ export function StudentsOutPage() {
           getRowClassName={(row: OutpassWithStudent) =>
             isOverdueReturn(row, gateLogs) ? 'bg-[#FEF2F2] text-[#991B1B]' : undefined
           }
+          mobileCardRender={(row) => (
+            <WardenStudentOutMobileCard
+              pass={row}
+              gateLogs={gateLogs}
+              timeRemaining={<TimeRemainingCell returnBy={row.return_by} />}
+            />
+          )}
         />
       </div>
     </div>

@@ -69,7 +69,7 @@ export function AppShell({
           notificationSlot={notificationSlot}
         />
 
-        <main className="flex-1 px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-6">
+        <main className="flex-1 px-3 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-4 md:px-6 md:py-6 md:pb-6">
           <div className="mx-auto max-w-[1280px]">
             <Outlet />
           </div>

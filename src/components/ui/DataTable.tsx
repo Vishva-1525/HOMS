@@ -19,6 +19,8 @@ export interface DataTableProps<T> {
   className?: string
   getRowKey?: (row: T, index: number) => string | number
   getRowClassName?: (row: T, index: number) => string | undefined
+  /** Renders card rows on viewports below md; table is used from md upward. */
+  mobileCardRender?: (row: T, index: number) => ReactNode
 }
 
 function getCellValue<T extends object>(row: T, accessor: keyof T | string): unknown {
@@ -35,6 +37,15 @@ function getCellValue<T extends object>(row: T, accessor: keyof T | string): unk
 
 const SKELETON_ROW_COUNT = 5
 
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 py-12">
+      <Inbox className="h-8 w-8 text-slate-500" strokeWidth={1.5} />
+      <p className="text-sm text-slate-600">{message}</p>
+    </div>
+  )
+}
+
 export function DataTable<T extends object>({
   columns,
   data,
@@ -43,71 +54,101 @@ export function DataTable<T extends object>({
   className,
   getRowKey,
   getRowClassName,
+  mobileCardRender,
 }: DataTableProps<T>) {
+  const showMobileCards = Boolean(mobileCardRender)
+
   return (
-    <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full min-w-[640px] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-white/50 bg-white/45">
-            {columns.map((column) => (
-              <th
-                key={String(column.accessor)}
-                className="px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700"
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
+    <div className={className}>
+      {showMobileCards && (
+        <div className="divide-y divide-slate-200/60 md:hidden">
           {loading &&
             Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
-              <tr
-                key={`skeleton-${rowIndex}`}
-                className="h-[var(--table-row-height)] border-b border-white/40 bg-transparent"
-              >
-                {columns.map((column) => (
-                  <td key={String(column.accessor)} className="px-4 py-3">
-                    <Skeleton className={cn('h-4', column.skeletonClassName ?? 'w-full max-w-[12rem]')} />
-                  </td>
-                ))}
-              </tr>
+              <div key={`mobile-skeleton-${rowIndex}`} className="space-y-2 px-4 py-3.5">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-4/5" />
+              </div>
             ))}
 
-          {!loading && data.length === 0 && (
-            <tr>
-              <td colSpan={columns.length}>
-                <div className="flex flex-col items-center justify-center gap-2 py-12">
-                  <Inbox className="h-8 w-8 text-slate-500" strokeWidth={1.5} />
-                  <p className="text-sm text-slate-600">{emptyMessage}</p>
-                </div>
-              </td>
-            </tr>
-          )}
+          {!loading && data.length === 0 && <EmptyState message={emptyMessage} />}
 
           {!loading &&
             data.map((row, rowIndex) => (
-              <tr
+              <div
                 key={getRowKey?.(row, rowIndex) ?? rowIndex}
                 className={cn(
-                  'h-[var(--table-row-height)] border-b border-white/40 bg-transparent transition-all duration-300 hover:bg-white/35',
+                  'transition-opacity duration-300',
                   getRowClassName?.(row, rowIndex),
                 )}
               >
-                {columns.map((column) => (
-                  <td
-                    key={String(column.accessor)}
-                    className="px-4 py-3 text-sm text-slate-800"
-                  >
-                    {column.render
-                      ? column.render(row, rowIndex)
-                      : String(getCellValue(row, column.accessor) ?? '')}
-                  </td>
-                ))}
-              </tr>
+                {mobileCardRender!(row, rowIndex)}
+              </div>
             ))}
-        </tbody>
-      </table>
+        </div>
+      )}
+
+      <div className={cn('overflow-x-auto', showMobileCards && 'hidden md:block')}>
+        <table className="w-full min-w-[640px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-white/50 bg-white/45">
+              {columns.map((column) => (
+                <th
+                  key={String(column.accessor)}
+                  className="px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700"
+                >
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading &&
+              Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
+                <tr
+                  key={`skeleton-${rowIndex}`}
+                  className="h-[var(--table-row-height)] border-b border-white/40 bg-transparent"
+                >
+                  {columns.map((column) => (
+                    <td key={String(column.accessor)} className="px-4 py-3">
+                      <Skeleton className={cn('h-4', column.skeletonClassName ?? 'w-full max-w-[12rem]')} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+
+            {!loading && data.length === 0 && (
+              <tr>
+                <td colSpan={columns.length}>
+                  <EmptyState message={emptyMessage} />
+                </td>
+              </tr>
+            )}
+
+            {!loading &&
+              data.map((row, rowIndex) => (
+                <tr
+                  key={getRowKey?.(row, rowIndex) ?? rowIndex}
+                  className={cn(
+                    'h-[var(--table-row-height)] border-b border-white/40 bg-transparent transition-all duration-300 hover:bg-white/35',
+                    getRowClassName?.(row, rowIndex),
+                  )}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={String(column.accessor)}
+                      className="px-4 py-3 text-sm text-slate-800"
+                    >
+                      {column.render
+                        ? column.render(row, rowIndex)
+                        : String(getCellValue(row, column.accessor) ?? '')}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

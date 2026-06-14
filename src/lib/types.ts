@@ -208,6 +208,10 @@ export interface Database {
         Args: { p_student_id: string }
         Returns: string
       }
+      get_student_gate_info: {
+        Args: { p_student_id: string }
+        Returns: Record<string, unknown> | null
+      }
     }
   }
 }

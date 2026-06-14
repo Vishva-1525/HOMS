@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
+import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { PASS_TYPE_LABELS } from '@/lib/outpass'
@@ -133,7 +134,7 @@ export function PendingRequestsPage() {
           placeholder="Search by name or register number…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
+          className="w-full max-w-md"
         />
 
         <div className="flex flex-wrap gap-2">
@@ -151,8 +152,8 @@ export function PendingRequestsPage() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
+        <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-end">
+          <div className="w-full sm:w-auto">
             <Label htmlFor="date-from" className="text-xs">
               From
             </Label>
@@ -161,10 +162,10 @@ export function PendingRequestsPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="mt-1 h-9 w-40"
+              className="mt-1 h-9 w-full sm:w-40"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-auto">
             <Label htmlFor="date-to" className="text-xs">
               To
             </Label>
@@ -173,7 +174,7 @@ export function PendingRequestsPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="mt-1 h-9 w-40"
+              className="mt-1 h-9 w-full sm:w-40"
             />
           </div>
         </div>
@@ -227,6 +228,13 @@ export function PendingRequestsPage() {
           emptyMessage="No pending requests match your filters."
           getRowKey={(row) => row.id}
           getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
+          mobileCardRender={(row) => (
+            <WardenPendingMobileCard
+              pass={row}
+              onApprove={() => openDrawer(row, 'approve')}
+              onReject={() => openDrawer(row, 'reject')}
+            />
+          )}
         />
       </div>
 

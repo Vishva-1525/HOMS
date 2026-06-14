@@ -27,7 +27,7 @@ export function TopBar({
   const firstName = userName.split(/\s+/)[0] ?? userName
 
   return (
-    <header className="glass-nav sticky top-0 z-30 flex h-[60px] shrink-0 items-center border-b px-4 md:px-6">
+    <header className="glass-nav sticky top-0 z-30 flex h-[60px] shrink-0 items-center border-b px-3 pt-[max(0px,env(safe-area-inset-top))] sm:px-4 md:px-6">
       {/* Mobile left: hamburger */}
       <button
         type="button"

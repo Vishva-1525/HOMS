@@ -23,7 +23,7 @@ function getBanner(result: ScanValidationResult): { text: string; className: str
   if (result.scanPhase === 'exit') {
     return {
       text: 'Exiting college — allow student to leave',
-      className: 'bg-[#1A5CA0]',
+      className: 'bg-gradient-to-r from-[#1A5CA0] to-[#164a85]',
     }
   }
 
@@ -31,12 +31,12 @@ function getBanner(result: ScanValidationResult): { text: string; className: str
     if (result.extensionApproved) {
       return {
         text: 'Extension approved — allow entry',
-        className: 'bg-emerald-600',
+        className: 'bg-gradient-to-r from-emerald-600 to-emerald-700',
       }
     }
     return {
       text: 'Returning on time — allow entry',
-      className: 'bg-emerald-600',
+      className: 'bg-gradient-to-r from-emerald-600 to-emerald-700',
     }
   }
 
@@ -44,7 +44,7 @@ function getBanner(result: ScanValidationResult): { text: string; className: str
     const lateBy = result.overdueMs ? formatOverdueDuration(result.overdueMs) : ''
     return {
       text: lateBy ? `Late return (${lateBy}) — allow entry` : 'Late return — allow entry',
-      className: 'bg-amber-600',
+      className: 'bg-gradient-to-r from-amber-600 to-amber-700',
     }
   }
 
@@ -53,16 +53,16 @@ function getBanner(result: ScanValidationResult): { text: string; className: str
     if (result.extensionPending) {
       return {
         text: `Severely overdue (${lateBy}) — extension pending, warden notified`,
-        className: 'bg-red-600',
+        className: 'bg-gradient-to-r from-red-600 to-red-700',
       }
     }
     return {
       text: `Severely overdue (${lateBy}) — no approved extension, warden notified`,
-      className: 'bg-red-600',
+      className: 'bg-gradient-to-r from-red-600 to-red-700',
     }
   }
 
-  return { text: 'Outpass verified', className: 'bg-emerald-600' }
+  return { text: 'Outpass verified', className: 'bg-gradient-to-r from-emerald-600 to-emerald-700' }
 }
 
 export function ScanResultPanel({
@@ -85,15 +85,17 @@ export function ScanResultPanel({
   if (result.kind === 'invalid') {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
-        <div className="bg-red-600 px-4 py-3 text-center text-base font-bold text-white sm:text-lg">
+        <div className="bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-center text-sm font-bold text-white sm:text-base">
           Invalid pass — do not allow
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-6">
-          <p className="text-center text-base font-medium text-red-800 sm:text-lg">{result.reason}</p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6 sm:px-5">
+          <p className="text-center text-sm font-medium leading-relaxed text-red-800 sm:text-base">
+            {result.reason}
+          </p>
           <button
             type="button"
             onClick={onScanAgain}
-            className="h-14 w-full max-w-md rounded-xl bg-[#1A5CA0] text-base font-semibold text-white shadow-md transition-colors hover:bg-[#164a85]"
+            className="security-action-btn max-w-md bg-[#1A5CA0] hover:bg-[#164a85]"
           >
             Scan again
           </button>
@@ -117,22 +119,31 @@ export function ScanResultPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
-      <div className={cn('px-4 py-3 text-center text-base font-bold text-white sm:text-lg', banner.className)}>
+      <div
+        className={cn(
+          'px-3 py-3 text-center text-sm font-bold leading-snug text-white sm:px-4 sm:text-base',
+          banner.className,
+        )}
+      >
         {banner.text}
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-mono text-2xl font-bold tabular-nums text-slate-900">{admissionNo}</p>
-            <p className="mt-1 text-xl font-semibold leading-snug text-slate-900">{displayName}</p>
-            <p className="mt-0.5 text-sm text-slate-600">{room}</p>
+      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
+        <div className="security-identity-card flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-xl font-bold leading-tight text-slate-900 sm:text-2xl">
+              {displayName}
+            </p>
+            <p className="mt-1 font-mono text-base font-semibold tabular-nums text-[#1A5CA0] sm:text-lg">
+              {admissionNo}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">{room}</p>
           </div>
           <StatusBadge status={displayStatus} label={statusLabel} />
         </div>
 
         {isExitScan && (
-          <div className="rounded-xl border border-[#1A5CA0]/30 bg-[#1A5CA0]/10 p-3 text-sm text-slate-800">
+          <div className="rounded-xl border border-[#1A5CA0]/25 bg-gradient-to-br from-[#1A5CA0]/10 to-[#1A5CA0]/5 p-3 text-sm text-slate-800">
             <p className="font-medium text-[#1A5CA0]">First scan — college exit</p>
             <p className="mt-1 text-slate-600">
               Verify the student&apos;s ID, then record exit. The same QR will be scanned again when they return.
@@ -168,7 +179,7 @@ export function ScanResultPanel({
           </div>
         )}
 
-        <div className="grid gap-2 rounded-xl border border-slate-200/80 bg-white/60 p-3 text-sm">
+        <div className="grid gap-2 rounded-xl border border-slate-200/70 bg-white/70 p-3 text-sm shadow-sm">
           <DetailRow icon={MapPin} label="Destination" value={pass.destination} />
           <DetailRow icon={FileText} label="Reason" value={pass.reason} />
           <DetailRow
@@ -219,13 +230,13 @@ export function ScanResultPanel({
         </div>
       </div>
 
-      <div className="mt-auto space-y-3 border-t border-slate-200/80 p-4">
+      <div className="mt-auto space-y-2.5 border-t border-slate-200/80 bg-white/50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:space-y-3 sm:p-4">
         <button
           type="button"
           disabled={submitting || (nextAction === 'exit' ? hasExit : !hasExit)}
           onClick={nextAction === 'exit' ? onRecordExit : onRecordEntry}
           className={cn(
-            'h-14 w-full rounded-xl text-base font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60',
+            'security-action-btn',
             nextAction === 'exit'
               ? 'bg-[#1A5CA0] hover:bg-[#164a85]'
               : 'bg-emerald-600 hover:bg-emerald-700',
@@ -234,10 +245,25 @@ export function ScanResultPanel({
           {submitting
             ? 'Recording…'
             : nextAction === 'exit'
-              ? 'Record exit — allow student to leave'
+              ? (
+                <>
+                  <span className="sm:hidden">Record exit</span>
+                  <span className="hidden sm:inline">Record exit — allow student to leave</span>
+                </>
+              )
               : result.kind === 'overdue-entry'
-                ? 'Record entry — allow student to return (warden notified)'
-                : 'Record entry — allow student to return'}
+                ? (
+                  <>
+                    <span className="sm:hidden">Record entry (warden notified)</span>
+                    <span className="hidden sm:inline">Record entry — allow student to return (warden notified)</span>
+                  </>
+                )
+                : (
+                  <>
+                    <span className="sm:hidden">Record entry</span>
+                    <span className="hidden sm:inline">Record entry — allow student to return</span>
+                  </>
+                )}
         </button>
 
         {result.kind === 'overdue-entry' && !result.wardenNotified && (
