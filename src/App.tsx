@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthProvider'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleRedirect } from '@/components/auth/RoleRedirect'
@@ -22,9 +22,14 @@ import { WardenHomePage } from '@/pages/warden/WardenHomePage'
 import { ReportsPage } from '@/pages/warden/ReportsPage'
 import { WardenPlaceholderPage } from '@/pages/warden/WardenPlaceholderPage'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
+import { SafeRouteFallback } from '@/components/auth/SafeRouteFallback'
+
+import { lazyWithRetry } from '@/lib/lazy-retry'
 
 const SecurityScanPage = lazy(() =>
-  import('@/pages/security/SecurityScanPage').then((m) => ({ default: m.SecurityScanPage })),
+  lazyWithRetry(() =>
+    import('@/pages/security/SecurityScanPage').then((m) => ({ default: m.SecurityScanPage })),
+  ),
 )
 import { ParentDashboard } from '@/pages/parent/ParentDashboard'
 import { ParentHistoryPage } from '@/pages/parent/ParentHistoryPage'
@@ -155,7 +160,7 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<SafeRouteFallback />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

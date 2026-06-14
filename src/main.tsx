@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { EnvSetupScreen } from '@/components/EnvSetupScreen'
+import { AppErrorBoundary } from '@/components/layout/AppErrorBoundary'
 import { isSupabaseConfigured } from '@/lib/env'
 
 const root = document.getElementById('root')!
@@ -16,7 +17,9 @@ if (!isSupabaseConfigured()) {
   const { default: App } = await import('./App.tsx')
   createRoot(root).render(
     <StrictMode>
-      <App />
+      <AppErrorBoundary>
+        <App />
+      </AppErrorBoundary>
     </StrictMode>,
   )
 }
