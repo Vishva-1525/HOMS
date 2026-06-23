@@ -74,3 +74,37 @@ export function formatFilenameDate(reference = new Date()): string {
   const d = String(reference.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
+
+export function formatWeeklyTabLabel(range: DateRange): string {
+  const startOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+  const endOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
+  const start = range.start.toLocaleDateString('en-IN', startOpts)
+  const end = range.end.toLocaleDateString('en-IN', endOpts)
+  return `${start}–${end}`
+}
+
+export function formatMonthlyTabLabel(reference = new Date()): string {
+  return reference.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+}
+
+export function formatDailyTabLabel(reference = new Date()): string {
+  return reference.toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+export function reportTypeLabel(tab: ReportPeriod | 'custom'): string {
+  switch (tab) {
+    case 'daily':
+      return 'Daily'
+    case 'weekly':
+      return 'Weekly'
+    case 'monthly':
+      return 'Monthly'
+    case 'custom':
+      return 'Custom'
+  }
+}

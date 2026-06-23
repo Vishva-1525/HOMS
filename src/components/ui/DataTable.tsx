@@ -9,6 +9,9 @@ export interface DataTableColumn<T> {
   render?: (row: T, index: number) => ReactNode
   /** Skeleton width class for loading state, e.g. "w-24" */
   skeletonClassName?: string
+  width?: string
+  headerClassName?: string
+  cellClassName?: string
 }
 
 export interface DataTableProps<T> {
@@ -17,8 +20,10 @@ export interface DataTableProps<T> {
   loading?: boolean
   emptyMessage?: string
   className?: string
+  tableClassName?: string
   getRowKey?: (row: T, index: number) => string | number
   getRowClassName?: (row: T, index: number) => string | undefined
+  onRowClick?: (row: T, index: number) => void
   /** Renders card rows on viewports below md; table is used from md upward. */
   mobileCardRender?: (row: T, index: number) => ReactNode
 }
@@ -52,8 +57,10 @@ export function DataTable<T extends object>({
   loading = false,
   emptyMessage = 'No data to display',
   className,
+  tableClassName,
   getRowKey,
   getRowClassName,
+  onRowClick,
   mobileCardRender,
 }: DataTableProps<T>) {
   const showMobileCards = Boolean(mobileCardRender)
@@ -81,6 +88,7 @@ export function DataTable<T extends object>({
                   'transition-opacity duration-300',
                   getRowClassName?.(row, rowIndex),
                 )}
+                onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
               >
                 {mobileCardRender!(row, rowIndex)}
               </div>
@@ -89,13 +97,17 @@ export function DataTable<T extends object>({
       )}
 
       <div className={cn('overflow-x-auto', showMobileCards && 'hidden md:block')}>
-        <table className="w-full min-w-[640px] border-collapse text-left">
+        <table className={cn('w-full min-w-[640px] border-collapse text-left', tableClassName)}>
           <thead>
             <tr className="border-b border-white/50 bg-white/45">
               {columns.map((column) => (
                 <th
                   key={String(column.accessor)}
-                  className="px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700"
+                  style={column.width ? { width: column.width, minWidth: column.width } : undefined}
+                  className={cn(
+                    'px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700',
+                    column.headerClassName,
+                  )}
                 >
                   {column.header}
                 </th>
@@ -133,11 +145,13 @@ export function DataTable<T extends object>({
                     'h-[var(--table-row-height)] border-b border-white/40 bg-transparent transition-all duration-300 hover:bg-white/35',
                     getRowClassName?.(row, rowIndex),
                   )}
+                  onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
                 >
                   {columns.map((column) => (
                     <td
                       key={String(column.accessor)}
-                      className="px-4 py-3 text-sm text-slate-800"
+                      style={column.width ? { width: column.width, minWidth: column.width } : undefined}
+                      className={cn('px-4 py-3 text-sm text-slate-800', column.cellClassName)}
                     >
                       {column.render
                         ? column.render(row, rowIndex)

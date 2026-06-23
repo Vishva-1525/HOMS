@@ -32,6 +32,7 @@ export interface Student {
   parent_email: string
   department: string
   year_of_study: number
+  is_active?: boolean
 }
 
 export interface OutpassRequest {
@@ -48,6 +49,8 @@ export interface OutpassRequest {
   qr_code_data: string | null
   approved_at: string | null
   created_at: string
+  is_overdue?: boolean
+  admin_override_note?: string | null
 }
 
 export interface StudentProfile {
@@ -212,6 +215,30 @@ export interface Database {
         Args: { p_student_id: string }
         Returns: Record<string, unknown> | null
       }
+      get_admin_stats: {
+        Args: Record<string, never>
+        Returns: Json
+      }
+      get_admin_activity_feed: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
+      get_admin_staff_list: {
+        Args: { p_role: string }
+        Returns: Json
+      }
+      get_outpass_report: {
+        Args: {
+          p_start: string
+          p_end: string
+          p_hostel_block?: string | null
+          p_department?: string | null
+          p_limit?: number
+        }
+        Returns: Json
+      }
     }
   }
 }
+
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
