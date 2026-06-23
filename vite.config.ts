@@ -13,7 +13,13 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['svce-emblem.png', 'favicon.svg'],
+      includeAssets: [
+        'pwa-icon-192.png',
+        'pwa-icon-512.png',
+        'pwa-screenshot-mobile.png',
+        'pwa-screenshot-wide.png',
+        'favicon.svg',
+      ],
       manifest: {
         name: 'HOMS — SVCE Hostel Outpass',
         short_name: 'HOMS',
@@ -27,22 +33,38 @@ export default defineConfig({
         categories: ['education', 'productivity'],
         icons: [
           {
-            src: '/svce-emblem.png',
+            src: '/pwa-icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/svce-emblem.png',
+            src: '/pwa-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/svce-emblem.png',
+            src: '/pwa-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
+          },
+        ],
+        screenshots: [
+          {
+            src: '/pwa-screenshot-mobile.png',
+            sizes: '1080x1920',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'HOMS mobile — student outpass dashboard',
+          },
+          {
+            src: '/pwa-screenshot-wide.png',
+            sizes: '1280x720',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'HOMS desktop — warden approval workflow',
           },
         ],
       },

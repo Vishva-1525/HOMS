@@ -21,8 +21,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title ?? 'HOMS — SVCE Hostel'
   const options: NotificationOptions = {
     body: payload.body ?? 'You have a new update.',
-    icon: '/svce-emblem.png',
-    badge: '/svce-emblem.png',
+    icon: '/pwa-icon-192.png',
+    badge: '/pwa-icon-192.png',
     tag: payload.type ?? 'homs-notification',
     data: { url: payload.url ?? '/' },
   }

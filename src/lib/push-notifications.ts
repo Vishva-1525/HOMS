@@ -86,15 +86,15 @@ export function showLocalNotification(title: string, body: string, url = '/'): v
     void navigator.serviceWorker.ready.then((registration) => {
       void registration.showNotification(title, {
         body,
-        icon: '/svce-emblem.png',
-        badge: '/svce-emblem.png',
+        icon: '/pwa-icon-192.png',
+        badge: '/pwa-icon-192.png',
         data: { url },
       })
     })
     return
   }
 
-  new Notification(title, { body, icon: '/svce-emblem.png' })
+  new Notification(title, { body, icon: '/pwa-icon-192.png' })
 }
 
 export async function requestNotificationDispatch(notificationId: string): Promise<void> {
