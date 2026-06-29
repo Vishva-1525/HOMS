@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
 import {
   buildExportFilename,
+  buildFilterSummaryLines,
   buildReportHeaderLines,
   buildSummaryRows,
 } from '@/utils/report-export/build-meta'
@@ -12,25 +13,28 @@ import type { ReportExportOptions } from '@/utils/report-export/types'
 
 const COLUMN_WIDTHS = [
   { wch: 5 },
+  { wch: 38 },
   { wch: 22 },
   { wch: 16 },
   { wch: 8 },
-  { wch: 8 },
+  { wch: 10 },
   { wch: 14 },
   { wch: 6 },
   { wch: 12 },
-  { wch: 20 },
-  { wch: 28 },
+  { wch: 22 },
+  { wch: 30 },
+  { wch: 22 },
   { wch: 14 },
   { wch: 12 },
   { wch: 22 },
-  { wch: 14 },
-  { wch: 14 },
+  { wch: 22 },
+  { wch: 22 },
+  { wch: 12 },
   { wch: 12 },
   { wch: 12 },
   { wch: 8 },
   { wch: 18 },
-  { wch: 30 },
+  { wch: 32 },
 ]
 
 export function exportReportToExcel(options: ReportExportOptions): string {
@@ -38,6 +42,7 @@ export function exportReportToExcel(options: ReportExportOptions): string {
   const headerRows = buildReportHeaderLines(options)
   const dataRows = buildExportTableBody(rows)
   const summaryRows = buildSummaryRows(rows)
+  const filterLines = buildFilterSummaryLines(filters)
 
   const allRows = [...headerRows, [...REPORT_EXPORT_HEADERS], ...dataRows, ...summaryRows]
   const ws = XLSX.utils.aoa_to_sheet(allRows)
@@ -48,23 +53,27 @@ export function exportReportToExcel(options: ReportExportOptions): string {
 
   const summaryWs = XLSX.utils.aoa_to_sheet([
     ['SVCE Hostel — Report Summary'],
-    [`Report type: ${filters.reportType}`],
-    [`Period: ${filters.dateLabel}`],
+    ...filterLines.map((line) => [line]),
     [],
     ['Metric', 'Count'],
-    ['Total requests', rows.length],
+    ['Total records exported', rows.length],
+    ['Pending', rows.filter((r) => r.status === 'pending').length],
     ['Approved', rows.filter((r) => r.status === 'approved' || r.status === 'extended').length],
     ['Rejected', rows.filter((r) => r.status === 'rejected').length],
-    ['Pending', rows.filter((r) => r.status === 'pending').length],
+    ['Cancelled', rows.filter((r) => r.status === 'cancelled').length],
     ['Overdue', rows.filter((r) => r.is_overdue).length],
-    ['Students who exited', rows.filter((r) => r.actual_exit_time).length],
-    ['Students who returned', rows.filter((r) => r.actual_entry_time).length],
+    ['Students who exited (gate)', rows.filter((r) => r.actual_exit_time).length],
+    ['Students who returned (gate)', rows.filter((r) => r.actual_entry_time).length],
     [
-      'Did not return (active)',
+      'Currently outside (exited, not returned)',
       rows.filter((r) => r.actual_exit_time && !r.actual_entry_time).length,
     ],
+    [
+      'Completed round trip',
+      rows.filter((r) => r.actual_exit_time && r.actual_entry_time).length,
+    ],
   ])
-  summaryWs['!cols'] = [{ wch: 35 }, { wch: 10 }]
+  summaryWs['!cols'] = [{ wch: 42 }, { wch: 12 }]
   XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary')
 
   const filename = buildExportFilename(filters, 'xlsx')

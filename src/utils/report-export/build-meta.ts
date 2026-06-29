@@ -54,9 +54,14 @@ export function buildSummaryRows(rows: ReportExportOptions['rows']): (string | n
     [],
     ['--- Summary ---'],
     ['Total Records', rows.length],
+    ['Pending', rows.filter((r) => r.status === 'pending').length],
     ['Approved', rows.filter((r) => r.status === 'approved' || r.status === 'extended').length],
     ['Rejected', rows.filter((r) => r.status === 'rejected').length],
+    ['Cancelled', rows.filter((r) => r.status === 'cancelled').length],
     ['Overdue', rows.filter((r) => r.is_overdue).length],
-    ['Completed (returned)', rows.filter((r) => r.actual_entry_time).length],
+    ['Exited (gate scan)', rows.filter((r) => r.actual_exit_time).length],
+    ['Returned (gate scan)', rows.filter((r) => r.actual_entry_time).length],
+    ['Currently outside', rows.filter((r) => r.actual_exit_time && !r.actual_entry_time).length],
+    ['Completed (exit + entry)', rows.filter((r) => r.actual_exit_time && r.actual_entry_time).length],
   ]
 }

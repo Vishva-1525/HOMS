@@ -3,6 +3,7 @@ import { ReportsPanel } from '@/components/reports/ReportsPanel'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { fetchWardenBlockAssignment } from '@/hooks/useReportData'
+import { formatBlockLabel } from '@/lib/block-display'
 
 export function ReportsPage() {
   const { user } = useAuth()
@@ -44,5 +45,5 @@ export function ReportsPage() {
     )
   }
 
-  return <ReportsPanel title={`Reports — Block ${block}`} fixedHostelBlock={block} />
+  return <ReportsPanel title={`Reports — ${formatBlockLabel(block)}`} fixedHostelBlock={block} />
 }

@@ -321,7 +321,7 @@ export function ReportsPanel({
     }
   }, [activeRange, fixedHostelBlock, blockFilter, departmentFilter])
 
-  const { rows, stats, loading, error } = useReportData(reportFilters)
+  const { rows, stats, loading, error, fetchAllForExport } = useReportData(reportFilters)
 
   const exportReportType = reportTypeLabel(periodTab)
   const exportDateLabel = dateSubtitle
@@ -330,8 +330,9 @@ export function ReportsPanel({
     setExporting(format)
     setExportToast(null)
     try {
+      const exportRows = await fetchAllForExport()
       const exportOptions = {
-        rows,
+        rows: exportRows,
         filters: {
           reportType: exportReportType,
           dateLabel: exportDateLabel,
