@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { SystemSettingsMap } from '@/lib/admin-types'
+import { invalidateQrAvailabilityCache } from '@/hooks/useQrAvailabilityMinutes'
 import { supabase } from '@/lib/supabase'
 
 const DEFAULT_KEYS = [
   'max_outpass_hours',
   'max_staypass_days',
   'max_night_pass_hours',
+  'max_weekly_passes',
+  'max_monthly_passes',
+  'qr_availability_minutes',
   'sms_notifications_enabled',
   'email_notifications_enabled',
   'college_name',
@@ -73,6 +77,7 @@ export function useSystemSettings() {
     }
 
     setSettings({ ...draft })
+    invalidateQrAvailabilityCache()
     setSaving(false)
     setSaved(true)
     window.setTimeout(() => setSaved(false), 4000)

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
+import { ApprovalTimeline } from '@/components/student/ApprovalTimeline'
 import { PassQrCode } from '@/components/student/PassQrCode'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -7,18 +8,27 @@ import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  EXTENSION_DURATION_OPTIONS,
+  computeExtendedReturnTime,
+  formatExtensionDuration,
+} from '@/lib/extension'
 import { PASS_TYPE_LABELS, formatReturnTime } from '@/lib/outpass'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import { canRequestExtension } from '@/lib/pass-filters'
+import { SPECIAL_PASS_PURPOSE_LABELS } from '@/lib/special-pass'
 import { supabase } from '@/lib/supabase'
-import type { ExtensionRequest, GateLog, OutpassRequest, Student } from '@/lib/types'
+import type { ExtensionRequest, ExtensionStatus, GateLog, OutpassRequest, Student, StudentPassQuotas } from '@/lib/types'
 import { useAuth } from '@/contexts/AuthProvider'
+import { cn } from '@/lib/utils'
 
 interface PassDetailSheetProps {
   pass: OutpassRequest | null
   student: Student | null
   extensions: ExtensionRequest[]
   gateLogs?: GateLog[]
+  quotas?: StudentPassQuotas
+  approvedPasses?: OutpassRequest[]
   onClose: () => void
   onUpdated: () => void
 }
@@ -32,11 +42,25 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+const EXTENSION_STATUS_STYLES: Record<ExtensionStatus, string> = {
+  pending: 'bg-[#FFF8E1] text-[#92400E] border-[#FDE68A]',
+  approved: 'bg-[#EBF7EE] text-[#166534] border-[#BBF7D0]',
+  rejected: 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]',
+}
+
+const EXTENSION_STATUS_LABELS: Record<ExtensionStatus, string> = {
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+}
+
 export function PassDetailSheet({
   pass,
   student,
   extensions,
   gateLogs = [],
+  quotas,
+  approvedPasses,
   onClose,
   onUpdated,
 }: PassDetailSheetProps) {
@@ -45,14 +69,18 @@ export function PassDetailSheet({
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [showExtensionForm, setShowExtensionForm] = useState(false)
-  const [extensionTime, setExtensionTime] = useState('')
+  const [extensionDurationHours, setExtensionDurationHours] = useState('2')
   const [extensionReason, setExtensionReason] = useState('')
   const [extensionError, setExtensionError] = useState<string | null>(null)
   const [submittingExtension, setSubmittingExtension] = useState(false)
 
-  const pendingExtension = pass
-    ? extensions.find((e) => e.outpass_id === pass.id && e.status === 'pending')
-    : null
+  const passExtensions = pass
+    ? extensions
+        .filter((e) => e.outpass_id === pass.id)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    : []
+
+  const pendingExtension = passExtensions.find((e) => e.status === 'pending')
 
   useEffect(() => {
     if (!pass?.approved_by) {
@@ -71,7 +99,7 @@ export function PassDetailSheet({
   if (!pass) return null
 
   const showExtensionButton =
-    canRequestExtension(pass) && !pendingExtension && !showExtensionForm
+    canRequestExtension(pass, gateLogs) && !pendingExtension && !showExtensionForm
   const showCancel = pass.status === 'pending'
   const displayStatus = getPassDisplayStatus(pass, gateLogs)
   const statusLabel = getPassStatusLabel(pass.status, gateLogs, pass)
@@ -96,8 +124,9 @@ export function PassDetailSheet({
     event.preventDefault()
     setExtensionError(null)
 
-    if (!extensionTime) {
-      setExtensionError('Please select a new return time.')
+    const additionalHours = Number(extensionDurationHours)
+    if (!additionalHours || additionalHours < 1) {
+      setExtensionError('Please select additional duration.')
       return
     }
 
@@ -106,13 +135,7 @@ export function PassDetailSheet({
       return
     }
 
-    const newReturn = new Date(extensionTime)
-    const currentReturn = new Date(pass!.return_by)
-
-    if (newReturn.getTime() <= currentReturn.getTime()) {
-      setExtensionError('New return time must be after the current return time.')
-      return
-    }
+    const newReturn = computeExtendedReturnTime(pass!.return_by, additionalHours)
 
     setSubmittingExtension(true)
 
@@ -120,6 +143,7 @@ export function PassDetailSheet({
       outpass_id: pass!.id,
       new_return_time: newReturn.toISOString(),
       reason: extensionReason.trim(),
+      additional_duration_hours: additionalHours,
       status: 'pending',
     })
 
@@ -131,7 +155,7 @@ export function PassDetailSheet({
     }
 
     setShowExtensionForm(false)
-    setExtensionTime('')
+    setExtensionDurationHours('2')
     setExtensionReason('')
     onUpdated()
   }
@@ -182,6 +206,15 @@ export function PassDetailSheet({
               <DetailRow label="Pass type" value={PASS_TYPE_LABELS[pass.pass_type]} />
               <DetailRow label="Destination" value={pass.destination} />
               <DetailRow label="Reason" value={pass.reason} />
+              {pass.special_purpose && (
+                <DetailRow
+                  label="Purpose"
+                  value={SPECIAL_PASS_PURPOSE_LABELS[pass.special_purpose]}
+                />
+              )}
+              {pass.special_remarks && (
+                <DetailRow label="Remarks" value={pass.special_remarks} />
+              )}
               <DetailRow label="Departure" value={formatReturnTime(pass.departure_at)} />
               <DetailRow label="Return by" value={formatReturnTime(pass.return_by)} />
               {pass.approved_by && (
@@ -189,18 +222,44 @@ export function PassDetailSheet({
               )}
             </div>
 
-            {student ? (
+            <ApprovalTimeline pass={pass} gateLogs={gateLogs} />
+
+            {student && (pass.status === 'approved' || pass.status === 'extended') ? (
               <div className="mt-6">
                 <p className="mb-3 text-center text-sm font-medium text-[#1A1A2E]">
                   Scan at gate
                 </p>
-                <PassQrCode pass={pass} />
+                <PassQrCode pass={pass} quotas={quotas} approvedPasses={approvedPasses} />
               </div>
             ) : null}
 
-            {pendingExtension && (
-              <div className="mt-4 rounded-lg bg-[#FFF8E1] px-3 py-2.5 text-sm text-[#92400E]">
-                Extension requested — awaiting warden approval
+            {passExtensions.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-[#1A1A2E]">Extension requests</p>
+                {passExtensions.map((extension) => (
+                  <div
+                    key={extension.id}
+                    className={cn(
+                      'rounded-lg border px-3 py-2.5 text-sm',
+                      EXTENSION_STATUS_STYLES[extension.status],
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">
+                        {EXTENSION_STATUS_LABELS[extension.status]}
+                      </span>
+                      {extension.additional_duration_hours ? (
+                        <span className="text-xs">
+                          +{formatExtensionDuration(extension.additional_duration_hours)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-xs opacity-90">{extension.reason}</p>
+                    <p className="mt-1 text-xs opacity-80">
+                      New return: {formatReturnTime(extension.new_return_time)}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -211,15 +270,20 @@ export function PassDetailSheet({
               >
                 <p className="text-sm font-medium text-[#1A1A2E]">Request extension</p>
                 <div className="space-y-2">
-                  <Label htmlFor="extension-time">New return time</Label>
-                  <Input
-                    id="extension-time"
-                    type="datetime-local"
-                    value={extensionTime}
-                    onChange={(e) => setExtensionTime(e.target.value)}
+                  <Label htmlFor="extension-duration">Additional duration</Label>
+                  <select
+                    id="extension-duration"
+                    value={extensionDurationHours}
+                    onChange={(e) => setExtensionDurationHours(e.target.value)}
                     disabled={submittingExtension}
-                    required
-                  />
+                    className="flex h-10 w-full rounded-xl border border-white/55 bg-white/50 px-3 text-sm text-slate-900 shadow-sm"
+                  >
+                    {EXTENSION_DURATION_OPTIONS.map((option) => (
+                      <option key={option.hours} value={String(option.hours)}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="extension-reason">Reason</Label>

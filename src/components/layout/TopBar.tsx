@@ -1,6 +1,7 @@
 import { Bell, Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ShellLogo } from '@/components/layout/ShellLogo'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import { getGreeting } from '@/lib/outpass'
 import { cn } from '@/lib/utils'
@@ -57,7 +58,9 @@ export function TopBar({
       </div>
 
       {/* Right: notifications, greeting, avatar */}
-      <div className="ml-auto flex items-center gap-3 md:gap-4">
+      <div className="ml-auto flex items-center gap-2 md:gap-3">
+        <ThemeToggle />
+
         {notificationSlot ?? (
           <button
             type="button"

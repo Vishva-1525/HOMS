@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Clock, DoorOpen, LayoutDashboard, Timer } from 'lucide-react'
+import { BarChart3, Clock, DoorOpen, LayoutDashboard, Timer } from 'lucide-react'
 import type { NavConfig } from './types'
 
 export const wardenNav: NavConfig = [
@@ -7,5 +7,4 @@ export const wardenNav: NavConfig = [
   { label: 'Students Out', path: '/warden/out', icon: DoorOpen, mobile: true },
   { label: 'Extensions', path: '/warden/extensions', icon: Timer, mobile: true },
   { label: 'Reports', path: '/warden/reports', icon: BarChart3 },
-  { label: 'Notifications', path: '/warden/notifications', icon: Bell },
 ]

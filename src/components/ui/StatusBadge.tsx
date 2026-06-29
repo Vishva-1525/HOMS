@@ -5,6 +5,8 @@ export type StatusBadgeStatus =
   | 'approved'
   | 'rejected'
   | 'overdue'
+  | 'expired'
+  | 'return_completed'
   | 'completed'
   | 'cancelled'
 
@@ -19,6 +21,8 @@ const STATUS_LABELS: Record<StatusBadgeStatus, string> = {
   approved: 'Approved',
   rejected: 'Rejected',
   overdue: 'Overdue',
+  expired: 'Expired',
+  return_completed: 'Return Completed',
   completed: 'Completed',
   cancelled: 'Cancelled',
 }
@@ -28,6 +32,8 @@ const STATUS_STYLES: Record<StatusBadgeStatus, string> = {
   approved: 'bg-[var(--svce-green-tint)] text-[#166534]',
   rejected: 'bg-[var(--svce-danger-tint)] text-[#991B1B]',
   overdue: 'bg-[var(--svce-danger-tint)] text-[#7F1D1D]',
+  expired: 'bg-[#FFEDD5] text-[#9A3412]',
+  return_completed: 'bg-[var(--svce-blue-tint)] text-[#1E40AF]',
   completed: 'bg-[var(--svce-blue-tint)] text-[#1E40AF]',
   cancelled: 'bg-[#F3F4F6] text-[#6B7280]',
 }

@@ -1,48 +1,70 @@
 import { useMemo, useState } from 'react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
+import { BulkActionBar } from '@/components/shared/BulkActionBar'
+import { PassLimitBadge } from '@/components/shared/PassLimitBadge'
+import { PassListFilters } from '@/components/shared/PassListFilters'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Label } from '@/components/ui/label'
+import { Modal, ModalFooter } from '@/components/ui/modal'
 import { Spinner } from '@/components/ui/spinner'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
-import { PASS_TYPE_LABELS } from '@/lib/outpass'
+import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
+import { bulkApproveOutpassRequests, bulkRejectOutpassRequests } from '@/lib/bulk-approval'
+import { classifyPass } from '@/lib/pass-classification'
 import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
 import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
 import type { OutpassWithStudent, PassType } from '@/lib/types'
-import { cn } from '@/lib/utils'
-
-type PassTypeFilter = 'all' | PassType
+import type { PassClassificationFilter } from '@/components/shared/PassListFilters'
 
 export function PendingRequestsPage() {
   const { user } = useAuth()
-  const { passes, loading, error, refetch } = useWardenDataContext()
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState<PassTypeFilter>('all')
+  const { passes, gateLogs, loading, error, refetch } = useWardenDataContext()
+  const { violationByStudentId } = usePassLimitViolations()
+
+  const [nameSearch, setNameSearch] = useState('')
+  const [regSearch, setRegSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<PassType | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<PassClassificationFilter>('pending')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [drawerMode, setDrawerMode] = useState<'approve' | 'reject' | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<OutpassWithStudent | null>(null)
   const [remarks, setRemarks] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set())
+  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null)
+  const [bulkRemarks, setBulkRemarks] = useState('')
+  const [bulkError, setBulkError] = useState<string | null>(null)
 
-  const pendingPasses = useMemo(() => {
+  const filteredPasses = useMemo(() => {
+    const nameQ = nameSearch.trim().toLowerCase()
+    const regQ = regSearch.trim().toLowerCase()
+
     return passes
-      .filter((p) => p.status === 'pending')
       .filter((p) => typeFilter === 'all' || p.pass_type === typeFilter)
       .filter((p) => {
-        if (!search.trim()) return true
-        const q = search.trim().toLowerCase()
-        const name = getStudentName(p.students).toLowerCase()
-        const reg = getStudentReg(p.students).toLowerCase()
-        return name.includes(q) || reg.includes(q)
+        const logs = gateLogs.filter((l) => l.outpass_id === p.id)
+        const classification = classifyPass(p, logs)
+        if (statusFilter === 'all') return true
+        if (statusFilter === 'pending') return classification === 'pending'
+        return classification === statusFilter
+      })
+      .filter((p) => {
+        if (!nameQ) return true
+        return getStudentName(p.students).toLowerCase().includes(nameQ)
+      })
+      .filter((p) => {
+        if (!regQ) return true
+        return getStudentReg(p.students).toLowerCase().includes(regQ)
       })
       .filter((p) => {
         if (!dateFrom && !dateTo) return true
@@ -55,7 +77,21 @@ export function PendingRequestsPage() {
         }
         return true
       })
-  }, [passes, typeFilter, search, dateFrom, dateTo])
+  }, [passes, gateLogs, typeFilter, statusFilter, nameSearch, regSearch, dateFrom, dateTo])
+
+  const pendingSelected = useMemo(
+    () => filteredPasses.filter((p) => selectedIds.has(p.id) && p.status === 'pending'),
+    [filteredPasses, selectedIds],
+  )
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   function openDrawer(request: OutpassWithStudent, mode: 'approve' | 'reject') {
     setSelectedRequest(request)
@@ -108,6 +144,35 @@ export function PendingRequestsPage() {
     }, 300)
   }
 
+  async function executeBulkAction() {
+    if (!user || !bulkAction || pendingSelected.length === 0) return
+
+    if (bulkAction === 'reject' && !bulkRemarks.trim()) {
+      setBulkError('Remarks are required when rejecting requests.')
+      return
+    }
+
+    setSubmitting(true)
+    setBulkError(null)
+
+    const result =
+      bulkAction === 'approve'
+        ? await bulkApproveOutpassRequests(pendingSelected, user.id, bulkRemarks)
+        : await bulkRejectOutpassRequests(pendingSelected, user.id, bulkRemarks)
+
+    setSubmitting(false)
+
+    if (result.failed > 0) {
+      setBulkError(`${result.failed} request(s) failed.`)
+      return
+    }
+
+    setBulkAction(null)
+    setBulkRemarks('')
+    setSelectedIds(new Set())
+    await refetch()
+  }
+
   if (loading) {
     return (
       <div className="dashboard-loading-panel">
@@ -120,7 +185,7 @@ export function PendingRequestsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Pending requests"
-        subtitle={`${pendingPasses.length} awaiting review`}
+        subtitle={`${filteredPasses.length} matching your filters`}
       />
 
       {error && (
@@ -129,61 +194,61 @@ export function PendingRequestsPage() {
         </div>
       )}
 
-      <div className="dashboard-surface-muted space-y-4 p-4">
-        <Input
-          placeholder="Search by name or register number…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md"
-        />
+      <PassListFilters
+        nameSearch={nameSearch}
+        regSearch={regSearch}
+        onNameSearchChange={setNameSearch}
+        onRegSearchChange={setRegSearch}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+      />
 
-        <div className="flex flex-wrap gap-2">
-          {(['all', 'outpass', 'staypass', 'night_pass'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setTypeFilter(type)}
-              className={cn(
-                typeFilter === type ? 'dashboard-filter-chip-active' : 'dashboard-filter-chip',
-              )}
-            >
-              {type === 'all' ? 'All' : PASS_TYPE_LABELS[type]}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-end">
-          <div className="w-full sm:w-auto">
-            <Label htmlFor="date-from" className="text-xs">
-              From
-            </Label>
-            <Input
-              id="date-from"
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="mt-1 h-9 w-full sm:w-40"
-            />
-          </div>
-          <div className="w-full sm:w-auto">
-            <Label htmlFor="date-to" className="text-xs">
-              To
-            </Label>
-            <Input
-              id="date-to"
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="mt-1 h-9 w-full sm:w-40"
-            />
-          </div>
-        </div>
-      </div>
+      <BulkActionBar
+        selectedCount={pendingSelected.length}
+        onApprove={() => setBulkAction('approve')}
+        onReject={() => setBulkAction('reject')}
+        onClear={() => setSelectedIds(new Set())}
+        disabled={submitting}
+      />
 
       <div className="dashboard-surface">
         <DataTable
           columns={[
-            { header: 'Student', accessor: 'id', render: (row) => getStudentName(row.students) },
+            {
+              header: 'Select',
+              accessor: 'id',
+              render: (row) =>
+                row.status === 'pending' ? (
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${getStudentName(row.students)}`}
+                    checked={selectedIds.has(row.id)}
+                    onChange={() => toggleRow(row.id)}
+                  />
+                ) : null,
+            },
+            {
+              header: 'Student',
+              accessor: 'id',
+              render: (row) => {
+                const violation = violationByStudentId(row.student_id)
+                return (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span>{getStudentName(row.students)}</span>
+                    <PassLimitBadge
+                      weeklyExceeded={violation?.weekly_exceeded}
+                      monthlyExceeded={violation?.monthly_exceeded}
+                    />
+                  </div>
+                )
+              },
+            },
             { header: 'Reg No', accessor: 'id', render: (row) => getStudentReg(row.students) },
             { header: 'Room', accessor: 'id', render: (row) => getStudentRoom(row.students) },
             {
@@ -206,26 +271,29 @@ export function PendingRequestsPage() {
             {
               header: 'Actions',
               accessor: 'id',
-              render: (row) => (
-                <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
-                    Approve
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="text-[#DC2626] hover:bg-[#FEF2F2]"
-                    onClick={() => openDrawer(row, 'reject')}
-                  >
-                    Reject
-                  </Button>
-                </div>
-              ),
+              render: (row) =>
+                row.status === 'pending' ? (
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
+                      Approve
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-[#DC2626] hover:bg-[#FEF2F2]"
+                      onClick={() => openDrawer(row, 'reject')}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                ) : (
+                  '—'
+                ),
             },
           ]}
-          data={pendingPasses}
-          emptyMessage="No pending requests match your filters."
+          data={filteredPasses}
+          emptyMessage="No requests match your filters."
           getRowKey={(row) => row.id}
           getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
           mobileCardRender={(row) => (
@@ -253,6 +321,55 @@ export function PendingRequestsPage() {
         submitting={submitting}
         error={actionError}
       />
+
+      <ConfirmModal
+        open={bulkAction === 'approve'}
+        title="Approve selected requests?"
+        description={`Approve ${pendingSelected.length} pending request(s)?`}
+        confirmLabel="Approve all"
+        onConfirm={executeBulkAction}
+        onCancel={() => setBulkAction(null)}
+        loading={submitting}
+      />
+
+      <Modal
+        open={bulkAction === 'reject'}
+        title="Reject selected requests?"
+        onClose={() => {
+          setBulkAction(null)
+          setBulkRemarks('')
+          setBulkError(null)
+        }}
+        footer={
+          <ModalFooter
+            onCancel={() => {
+              setBulkAction(null)
+              setBulkRemarks('')
+              setBulkError(null)
+            }}
+            onConfirm={executeBulkAction}
+            confirmLabel="Reject all"
+            loading={submitting}
+          />
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">
+            Reject {pendingSelected.length} pending request(s). Remarks are required.
+          </p>
+          <div>
+            <Label htmlFor="bulk-remarks">Remarks</Label>
+            <textarea
+              id="bulk-remarks"
+              rows={3}
+              value={bulkRemarks}
+              onChange={(e) => setBulkRemarks(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
+            />
+          </div>
+          {bulkError && <p className="text-sm text-[#DC2626]">{bulkError}</p>}
+        </div>
+      </Modal>
     </div>
   )
 }

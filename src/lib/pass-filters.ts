@@ -109,14 +109,13 @@ export function filterPasses(
   }
 }
 
-export function canRequestExtension(pass: OutpassRequest): boolean {
-  if (pass.status !== 'approved' && pass.status !== 'extended') return false
-
-  const returnBy = new Date(pass.return_by).getTime()
-  const now = Date.now()
-  const twoHoursMs = 2 * 60 * 60 * 1000
-
-  return Math.abs(now - returnBy) <= twoHoursMs
+export function canRequestExtension(
+  pass: OutpassRequest,
+  gateLogs: GateLog[] = [],
+): boolean {
+  if (pass.status !== 'approved') return false
+  if (hasEntryLog(pass.id, gateLogs)) return false
+  return Date.now() < new Date(pass.return_by).getTime()
 }
 
 export function isQrEligibleStatus(status: OutpassStatus): boolean {

@@ -5,7 +5,16 @@ export type UserRole =
   | 'parent'
   | 'admin'
 
-export type PassType = 'outpass' | 'staypass' | 'night_pass'
+export type PassType = 'outpass' | 'staypass' | 'night_pass' | 'special_pass'
+
+export type SpecialPassPurpose =
+  | 'internship'
+  | 'hackathon'
+  | 'sports_event'
+  | 'industrial_visit'
+  | 'other'
+
+export type AcademicDayType = 'holiday' | 'working_day' | 'exam_day' | 'study_holiday'
 
 export type OutpassStatus = 'pending' | 'approved' | 'rejected' | 'extended' | 'cancelled'
 
@@ -51,6 +60,11 @@ export interface OutpassRequest {
   created_at: string
   is_overdue?: boolean
   admin_override_note?: string | null
+  entry_code?: string | null
+  special_purpose?: SpecialPassPurpose | null
+  special_remarks?: string | null
+  document_url?: string | null
+  requires_hod_approval?: boolean
 }
 
 export interface StudentProfile {
@@ -84,6 +98,24 @@ export interface ExtensionRequest {
   reason: string
   status: ExtensionStatus
   created_at: string
+  additional_duration_hours?: number | null
+}
+
+export interface AcademicCalendarDay {
+  calendar_date: string
+  day_type: AcademicDayType
+  label: string
+}
+
+export interface StudentPassQuotas {
+  weekly_limit: number
+  monthly_limit: number
+  weekly_used: number
+  monthly_used: number
+  weekly_remaining: number
+  monthly_remaining: number
+  week_start: string
+  month_start: string
 }
 
 export interface Database {
@@ -235,6 +267,26 @@ export interface Database {
           p_department?: string | null
           p_limit?: number
         }
+        Returns: Json
+      }
+      get_student_pass_quotas: {
+        Args: { p_student_id: string }
+        Returns: Json
+      }
+      get_academic_calendar: {
+        Args: { p_start: string; p_end: string }
+        Returns: Json
+      }
+      get_student_pass_limits: {
+        Args: Record<string, never>
+        Returns: Json
+      }
+      get_pass_period_stats: {
+        Args: { p_period: string }
+        Returns: Json
+      }
+      get_pass_limit_violations: {
+        Args: Record<string, never>
         Returns: Json
       }
     }

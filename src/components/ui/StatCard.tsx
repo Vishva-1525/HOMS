@@ -50,7 +50,8 @@ export function StatCard({
   const iconStyles = ICON_TONE_STYLES[iconTone]
 
   return (
-    <div className={cn('glass-panel p-[var(--card-padding)]', className)}>
+    <div className={cn('glass-panel relative overflow-hidden p-[var(--card-padding)]', className)}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1A5CA0]/0 via-[#1A5CA0]/30 to-[#1A5CA0]/0" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[length:var(--svce-text-small)] font-medium text-slate-600">{label}</p>

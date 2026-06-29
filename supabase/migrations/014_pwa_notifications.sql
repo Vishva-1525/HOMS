@@ -1,4 +1,34 @@
 -- PWA push subscriptions, notification triggers, and dispatch outbox
+-- Prerequisites (migrations 007 + 012) — safe if already applied
+
+CREATE TABLE IF NOT EXISTS public.notifications_log (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+  type       TEXT NOT NULL DEFAULT 'info',
+  message    TEXT NOT NULL,
+  read_at    TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_log_user_id ON public.notifications_log (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_log_created_at ON public.notifications_log (created_at DESC);
+
+ALTER TABLE public.notifications_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS notifications_log_select_own ON public.notifications_log;
+CREATE POLICY notifications_log_select_own
+  ON public.notifications_log FOR SELECT
+  USING (user_id = auth.uid());
+
+DROP POLICY IF EXISTS notifications_log_update_own ON public.notifications_log;
+CREATE POLICY notifications_log_update_own
+  ON public.notifications_log FOR UPDATE
+  USING (user_id = auth.uid());
+
+CREATE TABLE IF NOT EXISTS public.system_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 
 -- ---------------------------------------------------------------------------
 -- Push subscriptions (Web Push API)
@@ -19,14 +49,17 @@ CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON public.push_subscri
 
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS push_subscriptions_select_own ON public.push_subscriptions;
 CREATE POLICY push_subscriptions_select_own
   ON public.push_subscriptions FOR SELECT
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS push_subscriptions_insert_own ON public.push_subscriptions;
 CREATE POLICY push_subscriptions_insert_own
   ON public.push_subscriptions FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS push_subscriptions_delete_own ON public.push_subscriptions;
 CREATE POLICY push_subscriptions_delete_own
   ON public.push_subscriptions FOR DELETE
   USING (user_id = auth.uid());
@@ -46,6 +79,7 @@ CREATE TABLE IF NOT EXISTS public.sms_log (
 
 ALTER TABLE public.sms_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS sms_log_admin_read ON public.sms_log;
 CREATE POLICY sms_log_admin_read
   ON public.sms_log FOR SELECT
   USING (public.is_admin());
@@ -82,7 +116,18 @@ ON CONFLICT (key) DO NOTHING;
 -- Realtime for notifications
 -- ---------------------------------------------------------------------------
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications_log;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'notifications_log'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications_log;
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- Helper: find wardens for a hostel block
@@ -357,3 +402,5 @@ CREATE TRIGGER trg_outbox_dispatch
   AFTER INSERT ON public.notification_outbox
   FOR EACH ROW
   EXECUTE FUNCTION public.dispatch_outbox_notification();
+
+NOTIFY pgrst, 'reload schema';

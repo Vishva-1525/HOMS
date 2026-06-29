@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileSpreadsheet, Loader2 } from 'lucide-react'
+import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { DataTable, type DataTableColumn } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -27,12 +27,12 @@ import {
 } from '@/lib/report-dates'
 import type { PassType } from '@/lib/types'
 import {
-  exportReportToExcel,
   formatDate,
   formatDateTime,
   formatDuration,
   formatTime,
-} from '@/utils/exportReport'
+} from '@/utils/report-export'
+import type { ReportExportFormat } from '@/utils/report-export'
 import { cn } from '@/lib/utils'
 
 type ReportTab = ReportPeriod | 'custom' | 'aggregate'
@@ -275,7 +275,7 @@ export function ReportsPanel({
   const [departmentFilter, setDepartmentFilter] = useState('')
   const [blockOptions, setBlockOptions] = useState<string[]>([])
   const [departmentOptions, setDepartmentOptions] = useState<string[]>([])
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting] = useState<ReportExportFormat | null>(null)
   const [exportToast, setExportToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -321,24 +321,40 @@ export function ReportsPanel({
     }
   }, [activeRange, fixedHostelBlock, blockFilter, departmentFilter])
 
-  const { rows, stats, loading, error, fetchAllForExport } = useReportData(reportFilters)
+  const { rows, stats, loading, error } = useReportData(reportFilters)
 
   const exportReportType = reportTypeLabel(periodTab)
   const exportDateLabel = dateSubtitle
 
-  async function handleExport() {
-    setExporting(true)
+  async function handleExport(format: ReportExportFormat) {
+    setExporting(format)
     setExportToast(null)
     try {
-      const data = await fetchAllForExport()
-      const filename = exportReportToExcel(data, exportReportType, exportDateLabel)
+      const exportOptions = {
+        rows,
+        filters: {
+          reportType: exportReportType,
+          dateLabel: exportDateLabel,
+          hostelBlock: reportFilters.hostelBlock,
+          department: reportFilters.department,
+        },
+        stats,
+      }
+
+      const filename =
+        format === 'pdf'
+          ? (await import('@/utils/report-export/export-pdf')).exportReportToPdf(exportOptions)
+          : (await import('@/utils/report-export/export-excel')).exportReportToExcel(
+              exportOptions,
+            )
+
       setExportToast(`Report downloaded: ${filename}`)
       window.setTimeout(() => setExportToast(null), 5000)
     } catch (err) {
       setExportToast(err instanceof Error ? err.message : 'Export failed')
       window.setTimeout(() => setExportToast(null), 5000)
     } finally {
-      setExporting(false)
+      setExporting(null)
     }
   }
 
@@ -363,24 +379,44 @@ export function ReportsPanel({
         subtitle={dateSubtitle}
         actions={
           activeTab !== 'aggregate' ? (
-            <Button
-              type="button"
-              onClick={handleExport}
-              disabled={exporting}
-              className="bg-[#1A5CA0] text-white hover:bg-[#154a85]"
-            >
-              {exporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
-                  Preparing export...
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet className="h-4 w-4" strokeWidth={1.75} />
-                  Export to Excel
-                </>
-              )}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={() => handleExport('xlsx')}
+                disabled={exporting !== null}
+                className="bg-[#1A5CA0] text-white hover:bg-[#154a85]"
+              >
+                {exporting === 'xlsx' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+                    Preparing export...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-4 w-4" strokeWidth={1.75} />
+                    Export to Excel
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleExport('pdf')}
+                disabled={exporting !== null}
+                className="bg-[#1A5CA0] text-white hover:bg-[#154a85]"
+              >
+                {exporting === 'pdf' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+                    Preparing export...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" strokeWidth={1.75} />
+                    Export to PDF
+                  </>
+                )}
+              </Button>
+            </div>
           ) : undefined
         }
       />

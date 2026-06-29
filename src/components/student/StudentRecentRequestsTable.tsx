@@ -58,7 +58,7 @@ export function StudentRecentRequestsTable({
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-slate-200/80 bg-slate-50/80 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <tr className="dashboard-table-head">
                   <th className="px-4 py-3 sm:px-5">Type</th>
                   <th className="px-4 py-3 sm:px-5">Destination</th>
                   <th className="px-4 py-3 sm:px-5">Departure</th>
@@ -74,7 +74,7 @@ export function StudentRecentRequestsTable({
                   return (
                     <tr
                       key={pass.id}
-                      className="cursor-pointer border-b border-slate-200/60 last:border-0 hover:bg-slate-50/70"
+                      className="dashboard-table-row cursor-pointer last:border-0"
                       onClick={() => onSelectPass(pass)}
                     >
                       <td className="whitespace-nowrap px-4 py-3.5 font-medium text-slate-900 sm:px-5">

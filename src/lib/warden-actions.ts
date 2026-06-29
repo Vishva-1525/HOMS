@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { buildPassQrValue } from '@/lib/pass-qr'
+import { buildPassQrValue, generateEntryCode } from '@/lib/pass-qr'
 import type { OutpassWithStudent } from '@/lib/types'
 
 export async function approveOutpassRequest(
@@ -8,6 +8,7 @@ export async function approveOutpassRequest(
   remarks: string,
 ): Promise<{ error: string | null }> {
   const qrCodeData = buildPassQrValue(request)
+  const entryCode = generateEntryCode()
 
   const { error } = await supabase
     .from('outpass_requests')
@@ -15,6 +16,7 @@ export async function approveOutpassRequest(
       status: 'approved',
       approved_by: wardenId,
       qr_code_data: qrCodeData,
+      entry_code: entryCode,
       approved_at: new Date().toISOString(),
       warden_remark: remarks.trim() || null,
     })

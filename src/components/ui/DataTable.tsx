@@ -99,7 +99,7 @@ export function DataTable<T extends object>({
       <div className={cn('overflow-x-auto', showMobileCards && 'hidden md:block')}>
         <table className={cn('w-full min-w-[640px] border-collapse text-left', tableClassName)}>
           <thead>
-            <tr className="border-b border-white/50 bg-white/45">
+            <tr className="dashboard-table-head">
               {columns.map((column) => (
                 <th
                   key={String(column.accessor)}
@@ -142,7 +142,7 @@ export function DataTable<T extends object>({
                 <tr
                   key={getRowKey?.(row, rowIndex) ?? rowIndex}
                   className={cn(
-                    'h-[var(--table-row-height)] border-b border-white/40 bg-transparent transition-all duration-300 hover:bg-white/35',
+                    'dashboard-table-row h-[var(--table-row-height)] transition-all duration-300',
                     getRowClassName?.(row, rowIndex),
                   )}
                   onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}

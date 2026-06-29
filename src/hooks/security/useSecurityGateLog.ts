@@ -18,6 +18,24 @@ export interface EnrichedGateLog {
   room: string
   passType: PassType | null
   destination: string
+  scannerName: string
+}
+
+export type PassScanStatus = 'outside' | 'returned' | 'exit_only' | 'incomplete'
+
+export interface PassScanHistoryRow {
+  outpass_id: string
+  studentName: string
+  admissionNo: string
+  room: string
+  destination: string
+  passType: PassType | null
+  exitAt: string | null
+  entryAt: string | null
+  exitScanner: string | null
+  entryScanner: string | null
+  status: PassScanStatus
+  lastActivityAt: string
 }
 
 export interface GateLogSummary {
@@ -40,7 +58,29 @@ function startOfTodayIso(): string {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString()
 }
 
-async function enrichGateLogs(logs: GateLog[]): Promise<EnrichedGateLog[]> {
+function derivePassStatus(exitAt: string | null, entryAt: string | null): PassScanStatus {
+  if (exitAt && entryAt) return 'returned'
+  if (exitAt && !entryAt) return 'outside'
+  if (!exitAt && entryAt) return 'incomplete'
+  return 'incomplete'
+}
+
+async function fetchScannerNameMap(logs: GateLog[]): Promise<Record<string, string>> {
+  const ids = [...new Set(logs.map((log) => log.scanned_by).filter(Boolean))]
+  if (ids.length === 0) return {}
+
+  const { data } = await supabase.from('profiles').select('id, full_name').in('id', ids)
+  const map: Record<string, string> = {}
+  for (const row of data ?? []) {
+    map[row.id] = row.full_name
+  }
+  return map
+}
+
+async function enrichGateLogs(
+  logs: GateLog[],
+  scannerMap: Record<string, string>,
+): Promise<EnrichedGateLog[]> {
   if (logs.length === 0) return []
 
   const outpassIds = [...new Set(logs.map((log) => log.outpass_id))]
@@ -70,12 +110,54 @@ async function enrichGateLogs(logs: GateLog[]): Promise<EnrichedGateLog[]> {
       room: formatStudentRoomDisplay(student ?? null),
       passType: (pass?.pass_type as PassType | undefined) ?? null,
       destination: pass?.destination ?? '—',
+      scannerName: scannerMap[log.scanned_by] ?? 'Unknown guard',
     }
   })
 }
 
+function buildPassScanHistory(logs: EnrichedGateLog[]): PassScanHistoryRow[] {
+  const byPass = new Map<string, PassScanHistoryRow>()
+
+  for (const log of logs) {
+    const existing = byPass.get(log.outpass_id) ?? {
+      outpass_id: log.outpass_id,
+      studentName: log.studentName,
+      admissionNo: log.admissionNo,
+      room: log.room,
+      destination: log.destination,
+      passType: log.passType,
+      exitAt: null,
+      entryAt: null,
+      exitScanner: null,
+      entryScanner: null,
+      status: 'incomplete' as PassScanStatus,
+      lastActivityAt: log.scanned_at,
+    }
+
+    if (log.event_type === 'exit') {
+      existing.exitAt = log.scanned_at
+      existing.exitScanner = log.scannerName
+    } else {
+      existing.entryAt = log.scanned_at
+      existing.entryScanner = log.scannerName
+    }
+
+    if (log.scanned_at > existing.lastActivityAt) {
+      existing.lastActivityAt = log.scanned_at
+    }
+
+    existing.status = derivePassStatus(existing.exitAt, existing.entryAt)
+    byPass.set(log.outpass_id, existing)
+  }
+
+  return [...byPass.values()].sort(
+    (a, b) => new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime(),
+  )
+}
+
 export function useSecurityGateLog(enabled = true) {
   const [logs, setLogs] = useState<EnrichedGateLog[]>([])
+  const [passHistory, setPassHistory] = useState<PassScanHistoryRow[]>([])
   const [recentRawLogs, setRecentRawLogs] = useState<GateLog[]>([])
   const [activePasses, setActivePasses] = useState<OutpassWithStudent[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,11 +190,14 @@ export function useSecurityGateLog(enabled = true) {
 
     const rawLogs = (historyResult.data ?? []) as GateLog[]
     setRecentRawLogs(rawLogs)
-    setLogs(await enrichGateLogs(rawLogs))
 
-    if (!passesResult.error) {
-      setActivePasses((passesResult.data ?? []) as OutpassWithStudent[])
-    }
+    const scannerMap = await fetchScannerNameMap(rawLogs)
+    const enriched = await enrichGateLogs(rawLogs, scannerMap)
+    setLogs(enriched)
+
+    const passes = (passesResult.error ? [] : passesResult.data ?? []) as OutpassWithStudent[]
+    setActivePasses(passes)
+    setPassHistory(buildPassScanHistory(enriched))
 
     setLoading(false)
   }, [enabled])
@@ -147,25 +232,26 @@ export function useSecurityGateLog(enabled = true) {
   }, [logs, recentRawLogs, activePasses])
 
   const logsByDate = useMemo(() => {
-    const groups = new Map<string, EnrichedGateLog[]>()
+    const groups = new Map<string, PassScanHistoryRow[]>()
 
-    for (const log of logs) {
-      const dateKey = new Date(log.scanned_at).toLocaleDateString('en-IN', {
+    for (const row of passHistory) {
+      const dateKey = new Date(row.lastActivityAt).toLocaleDateString('en-IN', {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
         year: 'numeric',
       })
       const existing = groups.get(dateKey) ?? []
-      existing.push(log)
+      existing.push(row)
       groups.set(dateKey, existing)
     }
 
     return [...groups.entries()]
-  }, [logs])
+  }, [passHistory])
 
   return {
     logs,
+    passHistory,
     logsByDate,
     summary,
     loading,

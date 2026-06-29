@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { MobileDataCard, MobileDataCardRow } from '@/components/ui/MobileDataCard'
@@ -26,11 +27,14 @@ export function WardenPendingMobileCard({ pass, onApprove, onReject }: WardenPen
   return (
     <MobileDataCard>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate font-semibold text-slate-900">{getStudentName(pass.students)}</p>
-          <p className="mt-0.5 text-xs text-slate-600">
-            {getStudentReg(pass.students)} · {getStudentRoom(pass.students)}
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <StudentAvatar name={getStudentName(pass.students)} size="sm" />
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-slate-900">{getStudentName(pass.students)}</p>
+            <p className="mt-0.5 text-xs text-slate-600">
+              {getStudentReg(pass.students)} · {getStudentRoom(pass.students)}
+            </p>
+          </div>
         </div>
         <PassTypeBadge type={pass.pass_type} />
       </div>

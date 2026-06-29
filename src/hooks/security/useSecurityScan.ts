@@ -86,13 +86,23 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
       setSubmitting(false)
 
       if (error) {
+        const kind =
+          error === 'Student already exited.'
+            ? 'duplicate-exit'
+            : error === 'Student already entered.'
+              ? 'duplicate-entry'
+              : 'invalid'
+
         setResult({
-          kind: 'invalid',
+          kind,
           scanPhase: result.scanPhase,
           reason: error,
           pass: result.pass,
           gateLogs: result.gateLogs,
+          extensions: result.extensions,
           studentAdmissionNo: result.studentAdmissionNo,
+          scannerNames: result.scannerNames,
+          nextAction: result.nextAction,
         })
         setPhase('result')
         return

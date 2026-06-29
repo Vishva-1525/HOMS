@@ -57,7 +57,7 @@ export function SecurityScanPage() {
     setManualError(null)
 
     if (!manualId.trim()) {
-      setManualError('Enter a pass ID or paste QR JSON.')
+      setManualError('Enter a pass ID, entry code, or paste QR JSON.')
       return
     }
 
@@ -119,7 +119,7 @@ export function SecurityScanPage() {
                 <div className="security-scan-dock">
                   {cameraOn && (
                     <p className="text-center text-sm font-medium text-slate-800">
-                      Point camera at the student&apos;s pass QR code
+                      Point camera at the student&apos;s pass QR code or entry code
                     </p>
                   )}
 
@@ -132,7 +132,7 @@ export function SecurityScanPage() {
                           className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-4 py-2.5 text-sm font-medium text-[#1A5CA0] shadow-sm transition-colors hover:bg-white active:scale-[0.98]"
                         >
                           <Keyboard className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                          Enter pass ID manually
+                          Enter pass ID or entry code manually
                         </button>
                       ) : (
                         <form
@@ -144,7 +144,7 @@ export function SecurityScanPage() {
                               type="text"
                               value={manualId}
                               onChange={(e) => setManualId(e.target.value)}
-                              placeholder="Pass UUID or QR JSON…"
+                              placeholder="Pass UUID, entry code, or QR JSON…"
                               className="h-11 flex-1 rounded-xl border border-slate-200/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
                             />
                             <button

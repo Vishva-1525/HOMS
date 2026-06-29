@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthProvider'
+import { ThemeProvider } from '@/contexts/ThemeProvider'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleRedirect } from '@/components/auth/RoleRedirect'
 import { AppShell } from '@/components/layout/AppShell'
@@ -37,6 +38,7 @@ import { AdminStaffPage } from '@/pages/admin/AdminStaffPage'
 import { AdminPassesPage } from '@/pages/admin/AdminPassesPage'
 import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage'
 import { AdminReportsPage } from '@/pages/admin/AdminReportsPage'
+import { AdminCalendarPage } from '@/pages/admin/AdminCalendarPage'
 import { ComponentGalleryPage } from '@/pages/dev/ComponentGalleryPage'
 import { StudentShell } from '@/components/layout/StudentShell'
 import { ParentShell } from '@/components/layout/ParentShell'
@@ -48,9 +50,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <PwaBootstrap />
-        <InstallPrompt />
-        <Routes>
+        <ThemeProvider>
+          <PwaBootstrap />
+          <InstallPrompt />
+          <Routes>
           <Route path="/dev/ui" element={<ComponentGalleryPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -119,6 +122,7 @@ export default function App() {
               <Route path="/admin/students" element={<AdminStudentsPage />} />
               <Route path="/admin/staff" element={<AdminStaffPage />} />
               <Route path="/admin/passes" element={<AdminPassesPage />} />
+              <Route path="/admin/calendar" element={<AdminCalendarPage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
               <Route
                 path="/admin/settings"
@@ -129,6 +133,7 @@ export default function App() {
 
           <Route path="*" element={<SafeRouteFallback />} />
         </Routes>
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -4,6 +4,7 @@ export const PASS_TYPE_LABELS: Record<PassType, string> = {
   outpass: 'Outpass',
   staypass: 'Staypass',
   night_pass: 'Night Pass',
+  special_pass: 'Special Pass',
 }
 
 export const STATUS_LABELS: Record<OutpassStatus, string> = {

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AdminPassRow } from '@/lib/admin-types'
+import { classifyPass } from '@/lib/pass-classification'
+import type { PassClassificationFilter } from '@/components/shared/PassListFilters'
 import { getExitTime, getEntryTime } from '@/lib/warden'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { supabase } from '@/lib/supabase'
 import type { GateLog, OutpassRequest, OutpassStatus, PassType } from '@/lib/types'
-
-export type PassStatusFilter = 'all' | OutpassStatus | 'overdue' | 'completed'
 
 const PAGE_SIZE = 25
 
@@ -14,13 +14,15 @@ export function useAdminPasses() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<PassStatusFilter>('all')
+  const [nameSearch, setNameSearch] = useState('')
+  const [regSearch, setRegSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<PassClassificationFilter>('all')
   const [typeFilter, setTypeFilter] = useState<PassType | 'all'>('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
-  const debouncedSearch = useDebouncedValue(search, 300)
+  const debouncedName = useDebouncedValue(nameSearch, 300)
+  const debouncedReg = useDebouncedValue(regSearch, 300)
 
   const fetchData = useCallback(async () => {
     setError(null)
@@ -64,12 +66,14 @@ export function useAdminPasses() {
 
     const mapped: AdminPassRow[] = allPasses.map((p) => ({
       pass: p,
+      student_id: p.student_id,
       student_name: p.students?.profiles?.full_name ?? '—',
       reg_number: p.students?.reg_number ?? '—',
       room_number: p.students?.room_number ?? '—',
       hostel_block: p.students?.hostel_block ?? '—',
       exit_at: getExitTime(p.id, gateLogs),
       entry_at: getEntryTime(p.id, gateLogs),
+      gate_logs: gateLogs.filter((l) => l.outpass_id === p.id),
     }))
 
     setRows(mapped)
@@ -96,9 +100,10 @@ export function useAdminPasses() {
   }, [fetchData])
 
   const filtered = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase()
+    const nameQ = debouncedName.trim().toLowerCase()
+    const regQ = debouncedReg.trim().toLowerCase()
 
-    return rows.filter(({ pass, student_name, reg_number, entry_at }) => {
+    return rows.filter(({ pass, student_name, reg_number, gate_logs }) => {
       if (typeFilter !== 'all' && pass.pass_type !== typeFilter) return false
 
       if (dateFrom && new Date(pass.departure_at) < new Date(dateFrom)) return false
@@ -108,27 +113,26 @@ export function useAdminPasses() {
         if (new Date(pass.departure_at) > end) return false
       }
 
-      if (statusFilter === 'overdue') {
-        const overdue =
-          pass.is_overdue
-          || (['approved', 'extended'].includes(pass.status)
-            && !entry_at
-            && new Date(pass.return_by) < new Date())
-        if (!overdue) return false
-      } else if (statusFilter === 'completed') {
-        if (!entry_at && pass.status !== 'cancelled') return false
-      } else if (statusFilter !== 'all' && pass.status !== statusFilter) {
-        return false
+      const classification = classifyPass(pass, gate_logs)
+
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'completed') {
+          if (classification !== 'return_completed' && pass.status !== 'cancelled') return false
+        } else if (classification !== statusFilter) {
+          return false
+        }
       }
 
-      if (!q) return true
-      return student_name.toLowerCase().includes(q) || reg_number.toLowerCase().includes(q)
+      if (nameQ && !student_name.toLowerCase().includes(nameQ)) return false
+      if (regQ && !reg_number.toLowerCase().includes(regQ)) return false
+
+      return true
     })
-  }, [rows, debouncedSearch, statusFilter, typeFilter, dateFrom, dateTo])
+  }, [rows, debouncedName, debouncedReg, statusFilter, typeFilter, dateFrom, dateTo])
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, statusFilter, typeFilter, dateFrom, dateTo])
+  }, [debouncedName, debouncedReg, statusFilter, typeFilter, dateFrom, dateTo])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -148,6 +152,8 @@ export function useAdminPasses() {
 
   return {
     rows: pageRows,
+    allRows: rows,
+    filteredRows: filtered,
     total: filtered.length,
     page,
     pageSize: PAGE_SIZE,
@@ -155,8 +161,10 @@ export function useAdminPasses() {
     setPage,
     loading,
     error,
-    search,
-    setSearch,
+    nameSearch,
+    setNameSearch,
+    regSearch,
+    setRegSearch,
     statusFilter,
     setStatusFilter,
     typeFilter,

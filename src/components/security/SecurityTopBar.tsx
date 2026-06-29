@@ -1,5 +1,6 @@
 import { ClipboardList, LogOut } from 'lucide-react'
 import { SvceEmblem } from '@/components/branding/SvceEmblem'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import { useAuth } from '@/contexts/AuthProvider'
 import { SVCE_APP_SHORT } from '@/lib/branding'
@@ -54,6 +55,7 @@ export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
       </h1>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <ThemeToggle className="border border-white/60 bg-white/55 shadow-sm" />
         <HeaderAction onClick={onLogClick} label="Log" icon={ClipboardList} />
         <HeaderAction onClick={() => signOut()} label="Sign out" icon={LogOut} />
         <UserAvatar name={profile?.full_name ?? 'Guard'} size="sm" />

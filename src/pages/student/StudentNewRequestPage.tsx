@@ -2,12 +2,15 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
+import { AcademicCalendarPicker } from '@/components/student/AcademicCalendarPicker'
 import { PassTypeSelector } from '@/components/student/PassTypeSelector'
+import { SpecialPassFields } from '@/components/student/SpecialPassFields'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAcademicCalendar } from '@/hooks/useAcademicCalendar'
 import {
   INITIAL_NEW_REQUEST_FORM,
   getReturnDatetimeBounds,
@@ -17,6 +20,7 @@ import {
   type NewRequestFormValues,
 } from '@/lib/outpass-request-validation'
 import { supabase } from '@/lib/supabase'
+import { uploadSpecialPassDocument } from '@/lib/upload-special-pass-document'
 
 export function StudentNewRequestPage() {
   const navigate = useNavigate()
@@ -26,6 +30,7 @@ export function StudentNewRequestPage() {
   const [submitting, setSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+  const { days, calendarMap, loading: calendarLoading } = useAcademicCalendar()
 
   const returnBounds = useMemo(
     () => getReturnDatetimeBounds(form.passType, form.departureAt),
@@ -38,8 +43,13 @@ export function StudentNewRequestPage() {
   ) {
     setForm((prev) => {
       const next = { ...prev, [key]: value }
+      if (key === 'passType' && value !== 'special_pass') {
+        next.specialPurpose = null
+        next.specialRemarks = ''
+        next.documentFile = null
+      }
       if (Object.keys(errors).length > 0) {
-        setErrors(validateNewRequestForm(next))
+        setErrors(validateNewRequestForm(next, calendarMap))
       }
       return next
     })
@@ -56,7 +66,7 @@ export function StudentNewRequestPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const validationErrors = validateNewRequestForm(form)
+    const validationErrors = validateNewRequestForm(form, calendarMap)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
@@ -67,14 +77,36 @@ export function StudentNewRequestPage() {
     setSubmitting(true)
     setErrors({})
 
+    let documentUrl: string | null = null
+
+    if (form.passType === 'special_pass' && form.documentFile) {
+      const upload = await uploadSpecialPassDocument(user.id, form.documentFile)
+      if (upload.error) {
+        setSubmitting(false)
+        setErrors({ submit: upload.error })
+        return
+      }
+      documentUrl = upload.path
+    }
+
+    const isSpecial = form.passType === 'special_pass'
+    const reason =
+      isSpecial && form.specialPurpose === 'other'
+        ? form.specialRemarks.trim()
+        : form.reason.trim()
+
     const { error } = await supabase.from('outpass_requests').insert({
       student_id: user.id,
       pass_type: form.passType,
       destination: form.destination.trim(),
-      reason: form.reason.trim(),
+      reason,
       departure_at: new Date(form.departureAt).toISOString(),
       return_by: new Date(form.returnBy).toISOString(),
       status: 'pending',
+      special_purpose: isSpecial ? form.specialPurpose : null,
+      special_remarks: isSpecial && form.specialPurpose === 'other' ? form.specialRemarks.trim() : null,
+      document_url: documentUrl,
+      requires_hod_approval: isSpecial,
     })
 
     setSubmitting(false)
@@ -126,6 +158,23 @@ export function StudentNewRequestPage() {
           disabled={submitting}
         />
 
+        {form.passType === 'special_pass' && (
+          <SpecialPassFields
+            purpose={form.specialPurpose}
+            remarks={form.specialRemarks}
+            documentFile={form.documentFile}
+            errors={{
+              specialPurpose: errors.specialPurpose,
+              specialRemarks: errors.specialRemarks,
+              documentFile: errors.documentFile,
+            }}
+            disabled={submitting}
+            onPurposeChange={(purpose) => updateField('specialPurpose', purpose)}
+            onRemarksChange={(remarks) => updateField('specialRemarks', remarks)}
+            onDocumentChange={(file) => updateField('documentFile', file)}
+          />
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="destination">Destination</Label>
           <Input
@@ -142,20 +191,28 @@ export function StudentNewRequestPage() {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="reason">Reason</Label>
-          <textarea
-            id="reason"
-            rows={3}
-            placeholder="Purpose of visit"
-            required
-            value={form.reason}
-            onChange={(e) => updateField('reason', e.target.value)}
-            disabled={submitting}
-            className="flex w-full rounded-xl border border-white/55 bg-white/50 px-3 py-2 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-          />
-          {errors.reason && <p className="text-sm text-[#DC2626]">{errors.reason}</p>}
-        </div>
+        {form.passType !== 'special_pass' || form.specialPurpose !== 'other' ? (
+          <div className="space-y-2">
+            <Label htmlFor="reason">Reason</Label>
+            <textarea
+              id="reason"
+              rows={3}
+              placeholder="Purpose of visit"
+              required
+              value={form.reason}
+              onChange={(e) => updateField('reason', e.target.value)}
+              disabled={submitting}
+              className="flex w-full rounded-xl border border-white/55 bg-white/50 px-3 py-2 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            />
+            {errors.reason && <p className="text-sm text-[#DC2626]">{errors.reason}</p>}
+          </div>
+        ) : null}
+
+        <AcademicCalendarPicker
+          days={days}
+          calendarMap={calendarMap}
+          loading={calendarLoading}
+        />
 
         <div className="space-y-2">
           <Label htmlFor="departure-at">Departure date &amp; time</Label>

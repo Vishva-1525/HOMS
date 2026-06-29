@@ -7,12 +7,15 @@ import {
   Users,
 } from 'lucide-react'
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed'
+import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
 import { StatCard } from '@/components/ui/StatCard'
 import { Spinner } from '@/components/ui/spinner'
 import { useAdminStats } from '@/hooks/admin/useAdminStats'
+import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
 
 export function AdminDashboard() {
   const { stats, loading, error } = useAdminStats()
+  const { violations, loading: violationsLoading } = usePassLimitViolations()
   const navigate = useNavigate()
 
   if (loading) {
@@ -71,6 +74,39 @@ export function AdminDashboard() {
           iconTone="default"
         />
       </div>
+
+      <PassPeriodStatsPanel />
+
+      {!violationsLoading && violations.length > 0 && (
+        <section className="dashboard-surface-muted space-y-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="dashboard-heading text-sm font-semibold">Pass limit warnings</h2>
+            <span className="rounded-full bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-medium text-[#991B1B]">
+              {violations.length} student{violations.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <ul className="divide-y divide-slate-200/60 rounded-xl border border-white/55 bg-white/40">
+            {violations.slice(0, 8).map((v) => (
+              <li
+                key={v.student_id}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
+              >
+                <button
+                  type="button"
+                  className="font-medium text-[#0D3F72] hover:underline"
+                  onClick={() => navigate(`/admin/students?student=${v.student_id}`)}
+                >
+                  {v.student_name} · {v.reg_number}
+                </button>
+                <span className="text-xs text-slate-600">
+                  Weekly {v.weekly_used}/{v.weekly_limit} · Monthly {v.monthly_used}/
+                  {v.monthly_limit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <AdminActivityFeed
         onStudentClick={(studentId) => {

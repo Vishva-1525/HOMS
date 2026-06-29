@@ -1,0 +1,145 @@
+/**
+ * Dark mode overrides for dashboard shells (html.dark).
+ * Imported in index.css with layer(utilities) after light dashboard utilities.
+ * Card/surface backgrounds live in index.css with !important — do not duplicate here.
+ */
+
+html.dark .dashboard-shell {
+  --svce-text-primary: #e8edf5;
+  --svce-text-secondary: #b8c4d4;
+  --svce-text-muted: #8b98ab;
+  --svce-border-default: rgba(255, 255, 255, 0.12);
+  --svce-border-strong: rgba(255, 255, 255, 0.18);
+  --svce-page-bg: #0f172a;
+  --svce-blue-tint: rgba(26, 92, 160, 0.22);
+  --svce-green-tint: rgba(46, 139, 68, 0.18);
+  --svce-orange-tint: rgba(232, 119, 34, 0.18);
+  --svce-danger-tint: rgba(220, 38, 38, 0.15);
+  --svce-info-tint: rgba(26, 92, 160, 0.2);
+  --svce-selection-bg: rgba(26, 92, 160, 0.35);
+  --svce-selection-text: #e8edf5;
+}
+
+html.dark .dashboard-shell > div:first-of-type {
+  background: linear-gradient(
+    to bottom right,
+    rgba(13, 63, 114, 0.72),
+    rgba(15, 23, 42, 0.78),
+    rgba(2, 6, 23, 0.85)
+  ) !important;
+}
+
+html.dark .dashboard-shell > div:nth-of-type(2) {
+  background: radial-gradient(ellipse at top, rgba(26, 92, 160, 0.12) 0%, transparent 55%) !important;
+}
+
+html.dark .dashboard-shell .glass-panel .text-muted-foreground,
+html.dark .dashboard-shell .glass-panel-strong .text-muted-foreground,
+html.dark .dashboard-shell .dashboard-surface .text-muted-foreground,
+html.dark .dashboard-shell .dashboard-surface-muted .text-muted-foreground {
+  color: rgb(148 163 184) !important;
+}
+
+html.dark .dashboard-shell .dashboard-link {
+  color: #93c5fd;
+}
+
+html.dark .dashboard-shell .dashboard-link:hover {
+  color: #bfdbfe;
+}
+
+html.dark .dashboard-shell .dashboard-filter-chip {
+  border-color: rgb(255 255 255 / 0.12);
+  background-color: rgb(30 41 59 / 0.55);
+  color: rgb(203 213 225);
+}
+
+html.dark .dashboard-shell .dashboard-filter-chip:hover {
+  background-color: rgb(30 41 59 / 0.75);
+}
+
+html.dark .dashboard-shell .dashboard-filter-chip-active {
+  background-color: #1a5ca0;
+  color: #fff;
+}
+
+html.dark .dashboard-shell .security-scan-dock {
+  border-color: rgb(255 255 255 / 0.12);
+  background: linear-gradient(to bottom, rgb(15 23 42 / 0.8), rgb(2 6 23 / 0.95));
+}
+
+html.dark .dashboard-shell .security-info-pill {
+  border-color: rgb(255 255 255 / 0.12);
+  background-color: rgb(30 41 59 / 0.7);
+  color: rgb(203 213 225);
+}
+
+html.dark .dashboard-shell .security-identity-card {
+  border-color: rgb(255 255 255 / 0.12);
+  background: linear-gradient(to bottom right, rgb(15 23 42), rgb(15 23 42), rgb(30 41 59 / 0.9));
+}
+
+html.dark .dashboard-shell .theme-toggle,
+html.dark .dashboard-shell .glass-nav button {
+  color: rgb(203 213 225);
+}
+
+html.dark .dashboard-shell .theme-toggle:hover,
+html.dark .dashboard-shell .glass-nav button:hover {
+  background-color: rgb(255 255 255 / 0.1);
+}
+
+html.dark .dashboard-shell .border-white\/50,
+html.dark .dashboard-shell .border-white\/40,
+html.dark .dashboard-shell .border-white\/55,
+html.dark .dashboard-shell .border-white\/60,
+html.dark .dashboard-shell .border-white\/70 {
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+
+html.dark .dashboard-shell table thead tr {
+  border-color: rgb(255 255 255 / 0.1);
+  background-color: rgb(30 41 59 / 0.45);
+}
+
+html.dark .dashboard-shell table tbody tr {
+  border-color: rgb(255 255 255 / 0.1);
+}
+
+html.dark .dashboard-shell table tbody tr:hover {
+  background-color: rgb(255 255 255 / 0.05);
+}
+
+html.dark .dashboard-shell input,
+html.dark .dashboard-shell select,
+html.dark .dashboard-shell textarea {
+  border-color: rgb(255 255 255 / 0.15);
+  background-color: rgb(15 23 42 / 0.8);
+  color: rgb(241 245 249);
+}
+
+html.dark .dashboard-shell .hover\:bg-white\/35:hover {
+  background-color: rgb(255 255 255 / 0.08) !important;
+}
+
+html.dark .dashboard-shell .hover\:bg-white\/50:hover {
+  background-color: rgb(255 255 255 / 0.1) !important;
+}
+
+html.dark .dashboard-shell [class*='bg-white'][class*='shadow-lg'] {
+  border-color: rgb(255 255 255 / 0.12);
+  background-color: rgb(15 23 42 / 0.95);
+  color: rgb(241 245 249);
+}
+
+html.dark .dashboard-shell [class*='text-[#1A1A2E]'] {
+  color: #e8edf5;
+}
+
+html.dark .dashboard-shell [class*='text-[#4B5563]'] {
+  color: #b8c4d4;
+}
+
+html.dark .dashboard-shell [class*='bg-[#EBF3FF]'] {
+  background-color: rgb(26 92 160 / 0.2);
+}

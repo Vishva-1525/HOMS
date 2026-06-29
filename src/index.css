@@ -94,6 +94,19 @@
     --muted-foreground: oklch(0.35 0.03 250);
   }
 
+  html.dark .dashboard-shell {
+    --card: oklch(0.22 0.02 250 / 88%);
+    --popover: oklch(0.2 0.02 250 / 92%);
+    --background: oklch(0.16 0.02 250 / 55%);
+    --muted: oklch(0.24 0.02 250 / 82%);
+    --accent: oklch(0.26 0.025 250 / 78%);
+    --secondary: oklch(0.24 0.02 250 / 80%);
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 10%);
+    --foreground: oklch(0.96 0.01 250);
+    --muted-foreground: oklch(0.72 0.02 250);
+  }
+
   .dashboard-shell .bg-card,
   .dashboard-shell .bg-background,
   .dashboard-shell .bg-muted,
@@ -106,19 +119,19 @@
   }
 
   .glass-panel {
-    @apply rounded-2xl border border-white/60 bg-white/88 text-slate-900 shadow-lg shadow-slate-900/10 backdrop-blur-xl;
+    @apply rounded-2xl border border-white/75 bg-white/95 text-slate-900 shadow-lg shadow-slate-900/12 backdrop-blur-xl;
   }
 
   .glass-panel-strong {
-    @apply rounded-2xl border border-white/70 bg-white/92 text-slate-900 shadow-xl shadow-slate-900/12 backdrop-blur-2xl;
+    @apply rounded-2xl border border-white/80 bg-white/97 text-slate-900 shadow-xl shadow-slate-900/14 backdrop-blur-2xl;
   }
 
   .glass-nav {
-    @apply border-white/55 bg-white/88 text-slate-900 shadow-lg shadow-slate-900/8 backdrop-blur-2xl;
+    @apply border-white/70 bg-white/95 text-slate-900 shadow-lg shadow-slate-900/10 backdrop-blur-2xl;
   }
 
   .dashboard-page-header {
-    @apply mb-6 rounded-2xl border border-white/70 bg-white/92 p-5 text-slate-900 shadow-xl shadow-slate-900/12 backdrop-blur-2xl sm:p-6;
+    @apply mb-6 rounded-2xl border border-white/80 bg-white/97 p-5 text-slate-900 shadow-xl shadow-slate-900/14 backdrop-blur-2xl sm:p-6;
   }
 
   .dashboard-heading {
@@ -134,19 +147,35 @@
   }
 
   .dashboard-surface {
-    @apply overflow-hidden rounded-2xl border border-white/70 bg-white/92 text-slate-900 shadow-xl shadow-slate-900/12 backdrop-blur-2xl;
+    @apply overflow-hidden rounded-2xl border border-white/80 bg-white/97 text-slate-900 shadow-xl shadow-slate-900/14 backdrop-blur-2xl;
   }
 
   .dashboard-surface-muted {
-    @apply overflow-hidden rounded-2xl border border-white/60 bg-white/88 shadow-lg shadow-slate-900/10 backdrop-blur-xl;
+    @apply overflow-hidden rounded-2xl border border-white/75 bg-white/94 text-slate-900 shadow-lg shadow-slate-900/12 backdrop-blur-xl;
   }
 
   .dashboard-loading-panel {
-    @apply flex min-h-[40vh] items-center justify-center rounded-2xl border border-white/70 bg-white/92 p-8 shadow-xl shadow-slate-900/12 backdrop-blur-2xl;
+    @apply flex min-h-[40vh] items-center justify-center rounded-2xl border border-white/80 bg-white/97 p-8 shadow-xl shadow-slate-900/14 backdrop-blur-2xl;
+  }
+
+  .dashboard-section {
+    @apply space-y-3 rounded-2xl;
+  }
+
+  .dashboard-section-title {
+    @apply px-1 text-sm font-semibold tracking-tight text-slate-900 sm:text-base;
+  }
+
+  .dashboard-table-head {
+    @apply border-b border-slate-200/90 bg-slate-50/95 text-left text-xs font-semibold uppercase tracking-wide text-slate-700;
+  }
+
+  .dashboard-table-row {
+    @apply border-b border-slate-200/70 bg-white/50 transition-colors hover:bg-slate-50/90;
   }
 
   .dashboard-section-bar {
-    @apply mb-3 flex items-center justify-between rounded-xl border border-white/55 bg-white/60 px-4 py-3 backdrop-blur-xl;
+    @apply mb-3 flex items-center justify-between rounded-xl border border-white/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur-xl;
   }
 
   .dashboard-link {
@@ -169,11 +198,11 @@
   }
 
   .security-scan-card {
-    @apply rounded-2xl border border-white/80 bg-white/94 text-slate-900 shadow-2xl shadow-slate-900/15 backdrop-blur-2xl ring-1 ring-white/50;
+    @apply rounded-2xl border border-white/85 bg-white/97 text-slate-900 shadow-2xl shadow-slate-900/18 backdrop-blur-2xl ring-1 ring-white/60;
   }
 
   .security-scan-dock {
-    @apply shrink-0 border-t border-white/70 bg-gradient-to-b from-white/75 to-white/95 px-3 py-3 backdrop-blur-xl sm:px-5 sm:py-4;
+    @apply shrink-0 border-t border-white/80 bg-gradient-to-b from-white/90 to-white/98 px-3 py-3 backdrop-blur-xl sm:px-5 sm:py-4;
   }
 
   .security-info-pill {
@@ -185,7 +214,90 @@
   }
 
   .security-identity-card {
-    @apply rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white via-white to-slate-50/90 p-4 shadow-sm;
+    @apply rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-md backdrop-blur-sm;
+  }
+
+  /* Dark mode — card/surface overrides (must beat light @apply glass utilities) */
+  html.dark .dashboard-shell .glass-panel,
+  html.dark .dashboard-shell .glass-panel-strong,
+  html.dark .dashboard-shell .glass-nav,
+  html.dark .dashboard-shell .dashboard-page-header,
+  html.dark .dashboard-shell .dashboard-surface,
+  html.dark .dashboard-shell .dashboard-surface-muted,
+  html.dark .dashboard-shell .dashboard-loading-panel,
+  html.dark .dashboard-shell .security-scan-card {
+    border-color: rgb(255 255 255 / 0.12) !important;
+    background-color: rgb(15 23 42 / 0.94) !important;
+    color: rgb(241 245 249) !important;
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.35),
+      0 4px 6px -4px rgb(0 0 0 / 0.35) !important;
+    --tw-shadow-color: rgb(0 0 0 / 0.35);
+  }
+
+  html.dark .dashboard-shell .glass-panel-strong,
+  html.dark .dashboard-shell .dashboard-page-header,
+  html.dark .dashboard-shell .dashboard-surface,
+  html.dark .dashboard-shell .dashboard-loading-panel {
+    background-color: rgb(15 23 42 / 0.97) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-surface-muted {
+    background-color: rgb(15 23 42 / 0.88) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-section-bar {
+    border-color: rgb(255 255 255 / 0.1) !important;
+    background-color: rgb(15 23 42 / 0.55) !important;
+    color: rgb(226 232 240) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-heading {
+    color: rgb(248 250 252) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-subheading {
+    color: rgb(203 213 225) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-muted {
+    color: rgb(148 163 184) !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-900 {
+    color: rgb(241 245 249) !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-800 {
+    color: rgb(226 232 240) !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-700 {
+    color: rgb(203 213 225) !important;
+  }
+
+  html.dark .dashboard-shell .text-slate-600 {
+    color: rgb(148 163 184) !important;
+  }
+
+  html.dark .dashboard-shell .bg-white {
+    background-color: rgb(15 23 42) !important;
+  }
+
+  html.dark .dashboard-shell .bg-white\/45,
+  html.dark .dashboard-shell .bg-white\/50,
+  html.dark .dashboard-shell .bg-white\/55,
+  html.dark .dashboard-shell .bg-white\/60,
+  html.dark .dashboard-shell .bg-white\/70,
+  html.dark .dashboard-shell .bg-white\/75,
+  html.dark .dashboard-shell .bg-white\/80 {
+    background-color: rgb(30 41 59 / 0.55) !important;
+  }
+
+  html.dark .dashboard-shell [class*='border-[var(--svce-border-default)]'] {
+    border-color: rgb(255 255 255 / 0.12) !important;
+    background-color: rgb(15 23 42 / 0.94) !important;
+    color: rgb(241 245 249) !important;
   }
 }
 
@@ -229,3 +341,6 @@
     opacity: 1;
   }
 }
+
+/* Dark mode — must load after light utilities so overrides win in the cascade */
+@import "./styles/dark-dashboard.css" layer(utilities);

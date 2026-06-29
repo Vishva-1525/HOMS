@@ -1,12 +1,14 @@
-import { Clock, MapPin, FileText, LogIn, LogOut } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Clock, MapPin, LogIn, LogOut, User } from 'lucide-react'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { PASS_TYPE_LABELS, formatReturnTime, formatTableDateTime } from '@/lib/outpass'
+import { formatReturnTime, formatTableDateTime } from '@/lib/outpass'
 import { formatOverdueDuration } from '@/lib/pass-filters'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import type { ScanValidationResult } from '@/lib/security-actions'
 import { hasExitLog } from '@/lib/security-actions'
-import { getStudentName, formatStudentRoomDisplay } from '@/lib/warden'
+import { getStudentName } from '@/lib/warden'
 import { cn } from '@/lib/utils'
 
 interface ScanResultPanelProps {
@@ -19,51 +21,83 @@ interface ScanResultPanelProps {
   onScanAgain: () => void
 }
 
-function getBanner(result: ScanValidationResult): { text: string; className: string } {
+function getVerificationResult(result: ScanValidationResult): {
+  label: string
+  detail: string
+  tone: 'success' | 'warning' | 'danger' | 'neutral'
+} {
+  if (result.kind === 'duplicate-exit') {
+    return {
+      label: 'Duplicate exit',
+      detail: 'Student already exited.',
+      tone: 'warning',
+    }
+  }
+
+  if (result.kind === 'duplicate-entry') {
+    return {
+      label: 'Duplicate entry',
+      detail: 'Student already entered.',
+      tone: 'warning',
+    }
+  }
+
+  if (result.kind === 'invalid') {
+    return {
+      label: 'Verification failed',
+      detail: result.reason ?? 'Invalid pass.',
+      tone: 'danger',
+    }
+  }
+
   if (result.scanPhase === 'exit') {
     return {
-      text: 'Exiting college — allow student to leave',
-      className: 'bg-gradient-to-r from-[#1A5CA0] to-[#164a85]',
+      label: 'Exit allowed',
+      detail: 'Verify identity and record exit.',
+      tone: 'success',
     }
   }
 
   if (result.kind === 'valid') {
-    if (result.extensionApproved) {
-      return {
-        text: 'Extension approved — allow entry',
-        className: 'bg-gradient-to-r from-emerald-600 to-emerald-700',
-      }
-    }
     return {
-      text: 'Returning on time — allow entry',
-      className: 'bg-gradient-to-r from-emerald-600 to-emerald-700',
+      label: result.extensionApproved ? 'Entry allowed (extension)' : 'Entry allowed',
+      detail: 'Student is returning on time.',
+      tone: 'success',
     }
   }
 
   if (result.kind === 'late-entry') {
-    const lateBy = result.overdueMs ? formatOverdueDuration(result.overdueMs) : ''
     return {
-      text: lateBy ? `Late return (${lateBy}) — allow entry` : 'Late return — allow entry',
-      className: 'bg-gradient-to-r from-amber-600 to-amber-700',
+      label: 'Late entry',
+      detail: result.overdueMs
+        ? `${formatOverdueDuration(result.overdueMs)} past return time.`
+        : 'Past scheduled return time.',
+      tone: 'warning',
     }
   }
 
-  if (result.kind === 'overdue-entry') {
-    const lateBy = result.overdueMs ? formatOverdueDuration(result.overdueMs) : '12+ hours'
-    if (result.extensionPending) {
-      return {
-        text: `Severely overdue (${lateBy}) — extension pending, warden notified`,
-        className: 'bg-gradient-to-r from-red-600 to-red-700',
-      }
-    }
-    return {
-      text: `Severely overdue (${lateBy}) — no approved extension, warden notified`,
-      className: 'bg-gradient-to-r from-red-600 to-red-700',
-    }
+  return {
+    label: 'Overdue entry',
+    detail: result.wardenNotified
+      ? 'Severely overdue — warden notified.'
+      : 'Severely overdue — notify warden if needed.',
+    tone: 'danger',
   }
-
-  return { text: 'Outpass verified', className: 'bg-gradient-to-r from-emerald-600 to-emerald-700' }
 }
+
+const toneStyles = {
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900',
+  danger: 'border-red-200 bg-red-50 text-red-900',
+  neutral: 'border-slate-200 bg-slate-50 text-slate-900',
+} as const
+
+const bannerStyles = {
+  success: 'bg-gradient-to-r from-emerald-600 to-emerald-700',
+  warning: 'bg-gradient-to-r from-amber-600 to-amber-700',
+  danger: 'bg-gradient-to-r from-red-600 to-red-700',
+  neutral: 'bg-gradient-to-r from-[#1A5CA0] to-[#164a85]',
+} as const
 
 export function ScanResultPanel({
   result,
@@ -78,20 +112,44 @@ export function ScanResultPanel({
 
   const pass = result.pass
   const gateLogs = result.gateLogs ?? []
-  const hasExit = hasExitLog(pass?.id ?? '', gateLogs)
-  const nextAction = result.nextAction ?? 'exit'
-  const isExitScan = result.scanPhase === 'exit'
+  const scannerNames = result.scannerNames ?? {}
+  const verification = getVerificationResult(result)
+  const isDuplicate =
+    result.kind === 'duplicate-exit' || result.kind === 'duplicate-entry'
 
-  if (result.kind === 'invalid') {
+  if (result.kind === 'invalid' || isDuplicate) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-center text-sm font-bold text-white sm:text-base">
-          Invalid pass — do not allow
+        <div
+          className={cn(
+            'px-4 py-3 text-center text-sm font-bold text-white sm:text-base',
+            bannerStyles[verification.tone],
+          )}
+        >
+          {verification.label}
         </div>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6 sm:px-5">
-          <p className="text-center text-sm font-medium leading-relaxed text-red-800 sm:text-base">
-            {result.reason}
-          </p>
+          {pass && (
+            <div className="flex w-full max-w-md items-center gap-3 rounded-xl border border-slate-200/80 bg-white/80 p-4">
+              <StudentAvatar name={getStudentName(pass.students)} size="lg" />
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-900">
+                  {getStudentName(pass.students)}
+                </p>
+                <p className="font-mono text-sm text-[#1A5CA0]">
+                  {result.studentAdmissionNo ?? '—'}
+                </p>
+              </div>
+            </div>
+          )}
+          <div
+            className={cn(
+              'w-full max-w-md rounded-xl border px-4 py-3 text-center text-sm font-medium',
+              toneStyles[verification.tone],
+            )}
+          >
+            {verification.detail}
+          </div>
           <button
             type="button"
             onClick={onScanAgain}
@@ -108,10 +166,10 @@ export function ScanResultPanel({
 
   const studentName = getStudentName(pass.students)
   const admissionNo = result.studentAdmissionNo ?? '—'
-  const room = formatStudentRoomDisplay(pass.students)
   const displayName = studentName !== 'Unknown' ? studentName : '—'
-  const banner = getBanner(result)
-  const isLateEntry = result.kind === 'late-entry' || result.kind === 'overdue-entry'
+  const hasExit = hasExitLog(pass.id, gateLogs)
+  const nextAction = result.nextAction ?? 'exit'
+  const isExitScan = result.scanPhase === 'exit'
   const displayStatus = getPassDisplayStatus(pass, gateLogs)
   const statusLabel = getPassStatusLabel(pass.status, gateLogs, pass)
   const exitLog = gateLogs.find((log) => log.event_type === 'exit')
@@ -122,111 +180,70 @@ export function ScanResultPanel({
       <div
         className={cn(
           'px-3 py-3 text-center text-sm font-bold leading-snug text-white sm:px-4 sm:text-base',
-          banner.className,
+          isExitScan ? bannerStyles.neutral : bannerStyles[verification.tone],
         )}
       >
-        {banner.text}
+        {isExitScan ? 'College exit — verify and allow departure' : verification.label}
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
-        <div className="security-identity-card flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div className="security-identity-card flex items-center gap-4">
+          <StudentAvatar name={displayName} size="xl" />
+          <div className="min-w-0 flex-1">
             <p className="truncate text-xl font-bold leading-tight text-slate-900 sm:text-2xl">
               {displayName}
             </p>
             <p className="mt-1 font-mono text-base font-semibold tabular-nums text-[#1A5CA0] sm:text-lg">
               {admissionNo}
             </p>
-            <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">{room}</p>
+            <div className="mt-2">
+              <StatusBadge status={displayStatus} label={statusLabel} />
+            </div>
           </div>
-          <StatusBadge status={displayStatus} label={statusLabel} />
         </div>
 
-        {isExitScan && (
-          <div className="rounded-xl border border-[#1A5CA0]/25 bg-gradient-to-br from-[#1A5CA0]/10 to-[#1A5CA0]/5 p-3 text-sm text-slate-800">
-            <p className="font-medium text-[#1A5CA0]">First scan — college exit</p>
-            <p className="mt-1 text-slate-600">
-              Verify the student&apos;s ID, then record exit. The same QR will be scanned again when they return.
-            </p>
-          </div>
-        )}
-
-        {!isExitScan && isLateEntry && (
-          <div
-            className={cn(
-              'rounded-xl border p-3 text-sm',
-              result.kind === 'overdue-entry'
-                ? 'border-red-200 bg-red-50 text-red-900'
-                : 'border-amber-200 bg-amber-50 text-amber-900',
-            )}
-          >
-            <p className="font-medium">
-              {result.kind === 'overdue-entry' ? 'Severely overdue return' : 'Late return'}
-            </p>
-            <p className="mt-1">
-              Return was due {formatReturnTime(pass.return_by)}
-              {result.overdueMs ? ` · ${formatOverdueDuration(result.overdueMs)} late` : ''}.
-            </p>
-            {result.extensionApproved && (
-              <p className="mt-1 text-emerald-800">Approved extension covers this return window.</p>
-            )}
-            {result.extensionPending && (
-              <p className="mt-1">Extension request is pending warden approval.</p>
-            )}
-            {result.kind === 'overdue-entry' && result.wardenNotified && (
-              <p className="mt-1 font-medium">Warden has been notified automatically.</p>
-            )}
-          </div>
-        )}
+        <div className={cn('rounded-xl border p-3 text-sm', toneStyles[verification.tone])}>
+          <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+            Verification result
+          </p>
+          <p className="mt-1 font-semibold">{verification.label}</p>
+          <p className="mt-0.5 opacity-90">{verification.detail}</p>
+        </div>
 
         <div className="grid gap-2 rounded-xl border border-slate-200/70 bg-white/70 p-3 text-sm shadow-sm">
           <DetailRow icon={MapPin} label="Destination" value={pass.destination} />
-          <DetailRow icon={FileText} label="Reason" value={pass.reason} />
           <DetailRow
             icon={Clock}
-            label="Departure"
-            value={formatTableDateTime(pass.departure_at)}
-          />
-          <DetailRow
-            icon={Clock}
-            label="Return by"
+            label="Return time"
             value={formatReturnTime(pass.return_by)}
-            valueClassName={isLateEntry ? 'text-amber-700 font-semibold' : undefined}
-            suffix={isLateEntry ? '(late)' : undefined}
+            valueClassName={
+              result.kind === 'late-entry' || result.kind === 'overdue-entry'
+                ? 'text-amber-700 font-semibold'
+                : undefined
+            }
           />
-          <DetailRow label="Pass type" value={PASS_TYPE_LABELS[pass.pass_type]} />
-          <DetailRow label="Pass ID" value={`${pass.id.slice(0, 8)}…`} mono />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <PassTypeBadge type={pass.pass_type} />
-          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">
-            {pass.status}
-          </span>
+          <DetailRow icon={Clock} label="Departure" value={formatTableDateTime(pass.departure_at)} />
+          <DetailRow label="Pass type" value={<PassTypeBadge type={pass.pass_type} />} />
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Gate status</p>
-          <div className="mt-2 space-y-1.5">
-            <GateStatusRow
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scan history</p>
+          <div className="mt-2 space-y-2">
+            <HistoryRow
               icon={LogOut}
-              label="Exit"
-              recorded={hasExit}
+              label="Exit scan"
               time={exitLog?.scanned_at}
+              scanner={exitLog ? scannerNames[exitLog.scanned_by] : undefined}
+              recorded={hasExit}
             />
-            <GateStatusRow
+            <HistoryRow
               icon={LogIn}
-              label="Entry"
-              recorded={Boolean(entryLog)}
+              label="Entry scan"
               time={entryLog?.scanned_at}
+              scanner={entryLog ? scannerNames[entryLog.scanned_by] : undefined}
+              recorded={Boolean(entryLog)}
             />
           </div>
-          <p className="dashboard-muted mt-2 text-xs">
-            Scan {isExitScan ? '1 of 2' : '2 of 2'} —{' '}
-            <strong className="text-slate-800">
-              {nextAction === 'exit' ? 'Record exit' : 'Record entry'}
-            </strong>
-          </p>
         </div>
       </div>
 
@@ -245,25 +262,10 @@ export function ScanResultPanel({
           {submitting
             ? 'Recording…'
             : nextAction === 'exit'
-              ? (
-                <>
-                  <span className="sm:hidden">Record exit</span>
-                  <span className="hidden sm:inline">Record exit — allow student to leave</span>
-                </>
-              )
+              ? 'Record exit — allow student to leave'
               : result.kind === 'overdue-entry'
-                ? (
-                  <>
-                    <span className="sm:hidden">Record entry (warden notified)</span>
-                    <span className="hidden sm:inline">Record entry — allow student to return (warden notified)</span>
-                  </>
-                )
-                : (
-                  <>
-                    <span className="sm:hidden">Record entry</span>
-                    <span className="hidden sm:inline">Record entry — allow student to return</span>
-                  </>
-                )}
+                ? 'Record entry — warden notified'
+                : 'Record entry — allow student to return'}
         </button>
 
         {result.kind === 'overdue-entry' && !result.wardenNotified && (
@@ -275,29 +277,6 @@ export function ScanResultPanel({
           >
             {submitting ? 'Sending alert…' : 'Notify warden again'}
           </button>
-        )}
-
-        {!isExitScan && (
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              disabled
-              className="h-11 rounded-xl bg-slate-300 text-sm font-semibold text-white"
-            >
-              Exit ✓
-            </button>
-            <button
-              type="button"
-              disabled={submitting || !hasExit}
-              onClick={onRecordEntry}
-              className={cn(
-                'h-11 rounded-xl text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60',
-                hasExit ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-400',
-              )}
-            >
-              Entry
-            </button>
-          </div>
         )}
 
         <button
@@ -317,50 +296,65 @@ function DetailRow({
   label,
   value,
   valueClassName,
-  suffix,
-  mono,
 }: {
   icon?: typeof MapPin
   label: string
-  value: string
+  value: ReactNode
   valueClassName?: string
-  suffix?: string
-  mono?: boolean
 }) {
   return (
     <div className="flex gap-2">
       {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.75} />}
       <div className={cn('min-w-0 flex-1', !Icon && 'pl-6')}>
         <span className="text-slate-500">{label}: </span>
-        <span className={cn('text-slate-900', mono && 'font-mono text-xs', valueClassName)}>
-          {value}
-        </span>
-        {suffix && <span className="ml-1 text-amber-700">{suffix}</span>}
+        <span className={cn('text-slate-900', valueClassName)}>{value}</span>
       </div>
     </div>
   )
 }
 
-function GateStatusRow({
+function HistoryRow({
   icon: Icon,
   label,
-  recorded,
   time,
+  scanner,
+  recorded,
 }: {
   icon: typeof LogOut
   label: string
-  recorded: boolean
   time?: string
+  scanner?: string
+  recorded: boolean
 }) {
   return (
-    <div className="flex items-center gap-2 text-slate-800">
-      <Icon className="h-4 w-4 text-slate-500" strokeWidth={1.75} />
-      <span className="font-medium">{label}:</span>
-      {recorded && time ? (
-        <span className="text-emerald-700">Recorded at {formatReturnTime(time)}</span>
-      ) : (
-        <span className="text-slate-500">Not recorded</span>
-      )}
+    <div className="flex items-start gap-2 rounded-lg border border-slate-200/60 bg-white/80 px-3 py-2">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.75} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-medium text-slate-800">{label}</span>
+          <span
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase',
+              recorded ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600',
+            )}
+          >
+            {recorded ? 'Done' : 'Pending'}
+          </span>
+        </div>
+        {recorded && time ? (
+          <>
+            <p className="mt-0.5 text-xs text-slate-600">{formatReturnTime(time)}</p>
+            {scanner && (
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                <User className="h-3 w-3" />
+                {scanner}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="mt-0.5 text-xs text-slate-500">Not recorded</p>
+        )}
+      </div>
     </div>
   )
 }

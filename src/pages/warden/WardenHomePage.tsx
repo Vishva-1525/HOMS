@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react'
 import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
+import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { DataTable } from '@/components/ui/DataTable'
 import { StatCard } from '@/components/ui/StatCard'
@@ -11,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
+import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
 import { getGreeting } from '@/lib/outpass'
 import { formatPassDuration, formatRelativeTime, formatTodayDate } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
@@ -20,6 +23,7 @@ import type { OutpassWithStudent } from '@/lib/types'
 export function WardenHomePage() {
   const { profile, user } = useAuth()
   const { passes, stats, loading, error, refetch } = useWardenDataContext()
+  const { violations, loading: violationsLoading } = usePassLimitViolations()
   const [drawerMode, setDrawerMode] = useState<'approve' | 'reject' | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<OutpassWithStudent | null>(null)
   const [remarks, setRemarks] = useState('')
@@ -92,7 +96,7 @@ export function WardenHomePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <div className="dashboard-page-header mb-0">
         <h1 className="dashboard-heading text-xl font-semibold sm:text-2xl">
           {getGreeting()}, {profile?.full_name?.split(/\s+/)[0] ?? 'Warden'}
@@ -137,6 +141,31 @@ export function WardenHomePage() {
 
       <OverdueAlertBanner count={stats.overdueReturns} />
 
+      <PassPeriodStatsPanel title="RT pass statistics" />
+
+      {!violationsLoading && violations.length > 0 && (
+        <section className="dashboard-surface-muted space-y-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="dashboard-heading text-sm font-semibold">Pass limit warnings</h2>
+            <span className="rounded-full bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-medium text-[#991B1B]">
+              {violations.length} student{violations.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <ul className="divide-y divide-slate-200/60 rounded-xl border border-white/55 bg-white/40">
+            {violations.slice(0, 5).map((v) => (
+              <li key={v.student_id} className="flex flex-wrap justify-between gap-2 px-4 py-3 text-sm">
+                <span className="font-medium text-slate-900">
+                  {v.student_name} · {v.reg_number}
+                </span>
+                <span className="text-xs text-slate-600">
+                  W {v.weekly_used}/{v.weekly_limit} · M {v.monthly_used}/{v.monthly_limit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div>
         <div className="dashboard-section-bar">
           <h2 className="text-base font-semibold text-slate-900">Pending requests</h2>
@@ -151,7 +180,14 @@ export function WardenHomePage() {
               {
                 header: 'Student',
                 accessor: 'id',
-                render: (row) => getStudentName(row.students),
+                render: (row) => (
+                  <div className="flex items-center gap-3">
+                    <StudentAvatar name={getStudentName(row.students)} size="sm" />
+                    <span className="font-medium text-slate-900">
+                      {getStudentName(row.students)}
+                    </span>
+                  </div>
+                ),
               },
               {
                 header: 'Room',

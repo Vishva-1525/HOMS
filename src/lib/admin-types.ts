@@ -56,12 +56,14 @@ export interface AdminStudentRow {
 
 export interface AdminPassRow {
   pass: import('@/lib/types').OutpassRequest
+  student_id: string
   student_name: string
   reg_number: string
   room_number: string
   hostel_block: string
   exit_at: string | null
   entry_at: string | null
+  gate_logs: import('@/lib/types').GateLog[]
 }
 
 export type SystemSettingsMap = Record<string, string>

@@ -13,7 +13,13 @@ import {
 } from '@/lib/student-details'
 import type { ExtensionRequest, GateLog, GateEventType, OutpassWithStudent } from '@/lib/types'
 
-export type ScanResultKind = 'valid' | 'invalid' | 'late-entry' | 'overdue-entry'
+export type ScanResultKind =
+  | 'valid'
+  | 'invalid'
+  | 'late-entry'
+  | 'overdue-entry'
+  | 'duplicate-exit'
+  | 'duplicate-entry'
 export type ScanPhase = 'exit' | 'entry'
 
 export interface ScanValidationResult {
@@ -30,6 +36,7 @@ export interface ScanValidationResult {
   overdueMs?: number
   requiresWardenAlert?: boolean
   wardenNotified?: boolean
+  scannerNames?: Record<string, string>
 }
 
 export function getNextGateAction(gateLogs: GateLog[]): GateEventType {
@@ -43,7 +50,6 @@ export function hasExitLog(passId: string, gateLogs: GateLog[]): boolean {
 
 const OUTPASS_SELECT = '*'
 
-/** Load student row + profile row linked by outpass_requests.student_id = students.id = profiles.id */
 async function attachStudentDetails(pass: OutpassWithStudent): Promise<OutpassWithStudent> {
   const profile = await fetchStudentProfileById(pass.student_id)
   if (!profile) return pass
@@ -63,6 +69,18 @@ async function fetchExtensions(outpassId: string): Promise<ExtensionRequest[]> {
 
   if (error) return []
   return (data ?? []) as ExtensionRequest[]
+}
+
+async function fetchScannerNames(gateLogs: GateLog[]): Promise<Record<string, string>> {
+  const ids = [...new Set(gateLogs.map((log) => log.scanned_by).filter(Boolean))]
+  if (ids.length === 0) return {}
+
+  const { data } = await supabase.from('profiles').select('id, full_name').in('id', ids)
+  const map: Record<string, string> = {}
+  for (const row of data ?? []) {
+    map[row.id] = row.full_name
+  }
+  return map
 }
 
 export async function fetchPassWithLogs(
@@ -98,6 +116,22 @@ export async function fetchPassWithLogs(
   }
 }
 
+async function resolveOutpassIdFromInput(
+  parsed: NonNullable<ReturnType<typeof parseScanInput>>,
+): Promise<string | null> {
+  if (parsed.outpass_id) return parsed.outpass_id
+
+  if (parsed.entry_code) {
+    const { data, error } = await supabase.rpc('get_outpass_id_by_entry_code', {
+      p_entry_code: parsed.entry_code,
+    })
+    if (error || !data) return null
+    return data as string
+  }
+
+  return null
+}
+
 async function fetchStudentAdmissionNoForPass(
   pass: OutpassWithStudent,
 ): Promise<string | undefined> {
@@ -107,10 +141,19 @@ async function fetchStudentAdmissionNoForPass(
 export async function validateScanInput(raw: string): Promise<ScanValidationResult> {
   const parsed = parseScanInput(raw)
   if (!parsed) {
-    return { kind: 'invalid', scanPhase: 'exit', reason: 'Unrecognised QR code or pass ID.' }
+    return { kind: 'invalid', scanPhase: 'exit', reason: 'Unrecognised QR code, pass ID, or entry code.' }
   }
 
-  const { pass, gateLogs, extensions, error } = await fetchPassWithLogs(parsed.outpass_id)
+  const outpassId = await resolveOutpassIdFromInput(parsed)
+  if (!outpassId) {
+    return {
+      kind: 'invalid',
+      scanPhase: 'exit',
+      reason: parsed.entry_code ? 'Entry code not found or pass is inactive.' : 'Pass not found.',
+    }
+  }
+
+  const { pass, gateLogs, extensions, error } = await fetchPassWithLogs(outpassId)
   if (error) {
     return { kind: 'invalid', scanPhase: 'exit', reason: error }
   }
@@ -119,6 +162,7 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
     return { kind: 'invalid', scanPhase: 'exit', reason: 'Pass not found or not approved.' }
   }
 
+  const scannerNames = await fetchScannerNames(gateLogs)
   const studentAdmissionNo = await fetchStudentAdmissionNoForPass(pass)
 
   const base = {
@@ -126,6 +170,7 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
     gateLogs,
     extensions,
     studentAdmissionNo,
+    scannerNames,
   }
 
   if (!isQrEligibleStatus(pass.status)) {
@@ -144,9 +189,9 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
   if (hasEntryLog(pass.id, gateLogs)) {
     return {
       ...base,
-      kind: 'invalid',
+      kind: 'duplicate-entry',
       scanPhase: 'entry',
-      reason: 'This pass has already been used for exit and entry.',
+      reason: 'Student already entered.',
     }
   }
 
@@ -217,14 +262,14 @@ export async function recordGateEvent(
   }
 
   if (hasEntryLog(pass.id, gateLogs)) {
-    return { error: 'Entry has already been recorded for this pass.' }
+    return { error: 'Student already entered.' }
   }
 
   const exitRecorded = hasExitLog(pass.id, gateLogs)
   const expectedAction = getNextGateAction(gateLogs)
 
   if (eventType === 'exit' && exitRecorded) {
-    return { error: 'Exit has already been recorded.' }
+    return { error: 'Student already exited.' }
   }
 
   if (eventType === 'entry' && !exitRecorded) {
@@ -236,7 +281,7 @@ export async function recordGateEvent(
       error:
         expectedAction === 'exit'
           ? 'This student must exit first.'
-          : 'This student must enter — exit was already recorded.',
+          : 'Student already exited — record entry on return.',
     }
   }
 
@@ -247,6 +292,12 @@ export async function recordGateEvent(
   })
 
   if (error) {
+    if (error.code === '23505') {
+      return {
+        error:
+          eventType === 'exit' ? 'Student already exited.' : 'Student already entered.',
+      }
+    }
     return { error: error.message }
   }
 

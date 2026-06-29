@@ -1,4 +1,10 @@
-import type { PassType } from '@/lib/types'
+import type { PassType, SpecialPassPurpose, AcademicCalendarDay } from '@/lib/types'
+import {
+  getDateRestrictionMessage,
+  isDateSelectableForOutpass,
+  toDateKey,
+} from '@/lib/academic-calendar'
+import { specialPassPurposeRequiresDocument } from '@/lib/special-pass'
 
 export interface NewRequestFormValues {
   passType: PassType | null
@@ -6,6 +12,9 @@ export interface NewRequestFormValues {
   reason: string
   departureAt: string
   returnBy: string
+  specialPurpose: SpecialPassPurpose | null
+  specialRemarks: string
+  documentFile: File | null
 }
 
 export type NewRequestFormErrors = Partial<Record<keyof NewRequestFormValues | 'submit', string>>
@@ -13,6 +22,7 @@ export type NewRequestFormErrors = Partial<Record<keyof NewRequestFormValues | '
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
 const NIGHT_PASS_MAX_HOURS = 78
+const SPECIAL_PASS_MAX_DAYS = 7
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -23,7 +33,23 @@ function calendarDaysBetween(departure: Date, returnDate: Date): number {
   return Math.round(diff / DAY_MS)
 }
 
-export function validateNewRequestForm(values: NewRequestFormValues): NewRequestFormErrors {
+function validateCalendarDate(
+  dateIso: string,
+  calendarMap: Map<string, AcademicCalendarDay> | undefined,
+  field: 'departureAt' | 'returnBy',
+): string | null {
+  if (!calendarMap || calendarMap.size === 0) return null
+  const dateKey = toDateKey(new Date(dateIso))
+  if (!isDateSelectableForOutpass(dateKey, calendarMap)) {
+    return getDateRestrictionMessage(dateKey, calendarMap) ?? 'This date is not available.'
+  }
+  return field === 'departureAt' ? null : null
+}
+
+export function validateNewRequestForm(
+  values: NewRequestFormValues,
+  calendarMap?: Map<string, AcademicCalendarDay>,
+): NewRequestFormErrors {
   const errors: NewRequestFormErrors = {}
 
   if (!values.passType) {
@@ -36,6 +62,18 @@ export function validateNewRequestForm(values: NewRequestFormValues): NewRequest
 
   if (!values.reason.trim()) {
     errors.reason = 'Reason is required.'
+  }
+
+  if (values.passType === 'special_pass') {
+    if (!values.specialPurpose) {
+      errors.specialPurpose = 'Please select a purpose.'
+    }
+    if (values.specialPurpose === 'other' && !values.specialRemarks.trim()) {
+      errors.specialRemarks = 'Remarks are required for Other purpose.'
+    }
+    if (specialPassPurposeRequiresDocument(values.specialPurpose) && !values.documentFile) {
+      errors.documentFile = 'Please upload a supporting document (PDF or image).'
+    }
   }
 
   if (!values.departureAt) {
@@ -72,6 +110,12 @@ export function validateNewRequestForm(values: NewRequestFormValues): NewRequest
     errors.returnBy = 'Return must be after departure.'
   }
 
+  const departureRestriction = validateCalendarDate(values.departureAt, calendarMap, 'departureAt')
+  if (departureRestriction) errors.departureAt = departureRestriction
+
+  const returnRestriction = validateCalendarDate(values.returnBy, calendarMap, 'returnBy')
+  if (returnRestriction) errors.returnBy = returnRestriction
+
   if (errors.departureAt || errors.returnBy || !values.passType) {
     return errors
   }
@@ -96,6 +140,12 @@ export function validateNewRequestForm(values: NewRequestFormValues): NewRequest
       }
       break
     }
+    case 'special_pass': {
+      if (daysApart < 0 || daysApart > SPECIAL_PASS_MAX_DAYS) {
+        errors.returnBy = 'Special Pass: return must be within 7 days of departure.'
+      }
+      break
+    }
   }
 
   return errors
@@ -108,6 +158,9 @@ export function isNewRequestFormDirty(values: NewRequestFormValues): boolean {
     || values.reason.trim() !== ''
     || values.departureAt !== ''
     || values.returnBy !== ''
+    || values.specialPurpose !== null
+    || values.specialRemarks.trim() !== ''
+    || values.documentFile !== null
   )
 }
 
@@ -117,6 +170,9 @@ export const INITIAL_NEW_REQUEST_FORM: NewRequestFormValues = {
   reason: '',
   departureAt: '',
   returnBy: '',
+  specialPurpose: null,
+  specialRemarks: '',
+  documentFile: null,
 }
 
 function toDatetimeLocalValue(date: Date): string {
@@ -149,6 +205,12 @@ export function getReturnDatetimeBounds(
     }
     case 'night_pass': {
       const max = new Date(departure.getTime() + NIGHT_PASS_MAX_HOURS * HOUR_MS)
+      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
+    }
+    case 'special_pass': {
+      const max = new Date(departure)
+      max.setDate(max.getDate() + SPECIAL_PASS_MAX_DAYS)
+      max.setHours(23, 59, 0, 0)
       return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
     }
   }

@@ -11,6 +11,7 @@ const PASS_TYPE_STYLES: Record<PassType, string> = {
   outpass: 'bg-[var(--svce-blue-tint)] text-[var(--svce-primary-blue)]',
   staypass: 'bg-[var(--svce-orange-tint)] text-[#9A3412]',
   night_pass: 'bg-[#F3E8FF] text-[#6B21A8]',
+  special_pass: 'bg-[#E0F2FE] text-[#0369A1]',
 }
 
 export function PassTypeBadge({ type, className }: PassTypeBadgeProps) {

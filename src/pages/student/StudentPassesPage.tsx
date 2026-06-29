@@ -6,14 +6,21 @@ import { PassQrSheet } from '@/components/student/PassQrSheet'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/spinner'
 import { useStudentPasses } from '@/hooks/useStudentPasses'
+import { useStudentPassQuotas } from '@/hooks/useStudentPassQuotas'
 import { filterPasses, isQrEligibleStatus, type PassFilter } from '@/lib/pass-filters'
 import type { OutpassRequest } from '@/lib/types'
 
 export function StudentPassesPage() {
   const { passes, gateLogs, extensions, student, loading, error, refetch } = useStudentPasses()
+  const { quotas } = useStudentPassQuotas()
   const [filter, setFilter] = useState<PassFilter>('all')
   const [selectedPass, setSelectedPass] = useState<OutpassRequest | null>(null)
   const [qrPass, setQrPass] = useState<OutpassRequest | null>(null)
+
+  const approvedPasses = useMemo(
+    () => passes.filter((pass) => pass.status === 'approved' || pass.status === 'extended'),
+    [passes],
+  )
 
   const filteredPasses = useMemo(
     () => filterPasses(passes, filter, gateLogs),
@@ -78,6 +85,8 @@ export function StudentPassesPage() {
         student={student}
         extensions={extensions}
         gateLogs={gateLogs}
+        quotas={quotas}
+        approvedPasses={approvedPasses}
         onClose={() => setSelectedPass(null)}
         onUpdated={refetch}
       />
@@ -86,6 +95,8 @@ export function StudentPassesPage() {
         <PassQrSheet
           open={Boolean(qrPass)}
           pass={qrPass}
+          quotas={quotas}
+          approvedPasses={approvedPasses}
           onClose={() => setQrPass(null)}
         />
       )}

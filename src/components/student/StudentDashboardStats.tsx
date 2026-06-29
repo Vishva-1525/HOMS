@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 interface StudentDashboardStatCardProps {
   label: string
-  value: number
+  value: number | string
   subtext: string
   valueClassName?: string
 }
@@ -14,7 +14,8 @@ export function StudentDashboardStatCard({
   valueClassName,
 }: StudentDashboardStatCardProps) {
   return (
-    <div className="glass-panel p-4 sm:p-5">
+    <div className="glass-panel relative overflow-hidden p-4 sm:p-5">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1A5CA0]/0 via-[#1A5CA0]/35 to-[#1A5CA0]/0" />
       <p className="dashboard-muted text-xs font-medium">{label}</p>
       <p
         className={cn(
