@@ -145,12 +145,21 @@ export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProp
         </div>
       )}
 
-      <div className="flex w-full gap-2">
-        <Button type="button" variant="secondary" className="flex-1" onClick={downloadQr}>
+      <div className="flex w-full flex-col gap-3 pt-2 sm:flex-row">
+        <Button
+          type="button"
+          className="qr-action-primary flex-1 gap-2"
+          onClick={downloadQr}
+        >
           Download QR
         </Button>
-        <Button type="button" variant="secondary" className="flex-1" onClick={shareQr}>
-          <Share2 className="h-4 w-4" />
+        <Button
+          type="button"
+          variant="secondary"
+          className="qr-action-secondary flex-1 gap-2"
+          onClick={shareQr}
+        >
+          <Share2 className="h-4 w-4" strokeWidth={1.75} />
           Share
         </Button>
       </div>

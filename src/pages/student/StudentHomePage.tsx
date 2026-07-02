@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ActivePassBanner } from '@/components/student/ActivePassBanner'
+import { ExtensionRequestBanner } from '@/components/student/ExtensionRequestBanner'
 import { PassDetailSheet } from '@/components/student/PassDetailSheet'
 import { StudentDashboardHero } from '@/components/student/StudentDashboardHero'
 import { StudentDashboardStats } from '@/components/student/StudentDashboardStats'
@@ -10,6 +11,7 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { useStudentDashboardData } from '@/hooks/useStudentDashboardData'
 import { useStudentPassQuotas } from '@/hooks/useStudentPassQuotas'
 import { useStudentPasses } from '@/hooks/useStudentPasses'
+import { canRequestExtension } from '@/lib/pass-filters'
 import type { OutpassRequest } from '@/lib/types'
 
 export function StudentHomePage() {
@@ -18,6 +20,7 @@ export function StudentHomePage() {
   const { quotas, loading: quotasLoading } = useStudentPassQuotas()
   const { passes, extensions, gateLogs, refetch } = useStudentPasses()
   const [selectedPass, setSelectedPass] = useState<OutpassRequest | null>(null)
+  const [detailInitialAction, setDetailInitialAction] = useState<'extension' | undefined>()
 
   const firstName = profile?.full_name?.split(/\s+/)[0] ?? 'Student'
 
@@ -25,6 +28,15 @@ export function StudentHomePage() {
     () => passes.filter((pass) => pass.status === 'approved' || pass.status === 'extended'),
     [passes],
   )
+
+  const extensionEligiblePass = useMemo(() => {
+    const active = dashboard.activePass ?? dashboard.activeCheckedOutPass
+    if (!active || !canRequestExtension(active, gateLogs)) return null
+    const hasPending = extensions.some(
+      (e) => e.outpass_id === active.id && e.status === 'pending',
+    )
+    return hasPending ? null : active
+  }, [dashboard.activePass, dashboard.activeCheckedOutPass, gateLogs, extensions])
 
   useEffect(() => {
     if (!selectedPass) return
@@ -75,8 +87,21 @@ export function StudentHomePage() {
         />
       )}
 
+      {extensionEligiblePass && (
+        <ExtensionRequestBanner
+          pass={extensionEligiblePass}
+          onRequestExtension={() => {
+            setDetailInitialAction('extension')
+            setSelectedPass(extensionEligiblePass)
+          }}
+        />
+      )}
+
       <section className="dashboard-section">
-        <h2 className="dashboard-section-title">Pass usage</h2>
+        <h2 className="dashboard-section-heading">
+          <span className="dashboard-section-accent" aria-hidden />
+          Pass usage
+        </h2>
         {quotasLoading ? (
           <div className="dashboard-loading-panel min-h-[120px]">
             <Spinner label="Loading pass usage…" />
@@ -87,7 +112,10 @@ export function StudentHomePage() {
       </section>
 
       <section className="dashboard-section">
-        <h2 className="dashboard-section-title">This semester</h2>
+        <h2 className="dashboard-section-heading">
+          <span className="dashboard-section-accent" aria-hidden />
+          This semester
+        </h2>
         <StudentDashboardStats
           total={dashboard.stats.total}
           approved={dashboard.stats.approved}
@@ -111,7 +139,11 @@ export function StudentHomePage() {
         gateLogs={gateLogs}
         quotas={quotas}
         approvedPasses={approvedPasses}
-        onClose={() => setSelectedPass(null)}
+        initialAction={detailInitialAction}
+        onClose={() => {
+          setSelectedPass(null)
+          setDetailInitialAction(undefined)
+        }}
         onUpdated={refetch}
       />
     </div>

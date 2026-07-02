@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Pencil, UserX } from 'lucide-react'
 import { AdminStudentDrawer } from '@/components/admin/AdminStudentDrawer'
-import { DataTable } from '@/components/ui/DataTable'
+import {
+  AdminStudentsYearGroup,
+  groupStudentsByYear,
+} from '@/components/admin/AdminStudentsYearGroup'
+import { DashboardFilterChip } from '@/components/ui/DashboardFilterChip'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { useAdminStudents } from '@/hooks/admin/useAdminStudents'
 import type { AdminStudentRow } from '@/lib/admin-types'
-import { cn } from '@/lib/utils'
+import { formatBlockLabel } from '@/lib/block-display'
+import { formatStudentYearLabel } from '@/lib/student-year'
 
 export function AdminStudentsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -36,12 +40,19 @@ export function AdminStudentsPage() {
 
   const [selected, setSelected] = useState<AdminStudentRow | null>(null)
 
+  const yearGroups = useMemo(() => groupStudentsByYear(students), [students])
+
   useEffect(() => {
     const id = searchParams.get('student')
     if (!id) return
     const student = allStudents.find((s) => s.id === id)
     if (student) setSelected(student)
   }, [searchParams, allStudents])
+
+  function openStudent(student: AdminStudentRow) {
+    setSelected(student)
+    setSearchParams({ student: student.id })
+  }
 
   if (loading) {
     return (
@@ -52,7 +63,7 @@ export function AdminStudentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-xl md:text-2xl">Students</h1>
         <p className="dashboard-subheading mt-1.5 text-sm">
@@ -66,124 +77,85 @@ export function AdminStudentsPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <Input
-          placeholder="Search name or reg no…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <select
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
-        >
-          <option value="all">All departments</option>
-          {departments.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-        <select
-          value={yearFilter === 'all' ? 'all' : String(yearFilter)}
-          onChange={(e) =>
-            setYearFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))
-          }
-          className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
-        >
-          <option value="all">All years</option>
-          {[1, 2, 3, 4].map((y) => (
-            <option key={y} value={y}>{y}{y === 1 ? 'st' : y === 2 ? 'nd' : y === 3 ? 'rd' : 'th'} year</option>
-          ))}
-        </select>
+      <div className="dashboard-surface-muted space-y-4 p-4 sm:p-5">
+        <h2 className="dashboard-heading text-sm font-semibold">Search &amp; filters</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Input
+            placeholder="Search name or reg no…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="lg:col-span-1"
+          />
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+            className="h-10 rounded-xl border border-white/60 bg-white/70 px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+          >
+            <option value="all">All departments</option>
+            {departments.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+          <select
+            value={yearFilter === 'all' ? 'all' : String(yearFilter)}
+            onChange={(e) =>
+              setYearFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))
+            }
+            className="h-10 rounded-xl border border-white/60 bg-white/70 px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+          >
+            <option value="all">All years</option>
+            {[1, 2, 3, 4].map((y) => (
+              <option key={y} value={y}>
+                {formatStudentYearLabel(y)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-600">Hostel block</p>
+          <div className="flex flex-wrap gap-2">
+            <DashboardFilterChip
+              active={blockFilter === 'all'}
+              onSelect={() => setBlockFilter('all')}
+              onDeselect={() => setBlockFilter('all')}
+            >
+              All blocks
+            </DashboardFilterChip>
+            {blocks.map((block) => (
+              <DashboardFilterChip
+                key={block}
+                active={blockFilter === block}
+                onSelect={() => setBlockFilter(block)}
+                onDeselect={() => setBlockFilter('all')}
+              >
+                {formatBlockLabel(block)}
+              </DashboardFilterChip>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <FilterChip active={blockFilter === 'all'} onClick={() => setBlockFilter('all')}>
-          All blocks
-        </FilterChip>
-        {blocks.map((block) => (
-          <FilterChip key={block} active={blockFilter === block} onClick={() => setBlockFilter(block)}>
-            Block {block}
-          </FilterChip>
-        ))}
-      </div>
-
-      <div className="dashboard-surface overflow-hidden">
-        <DataTable
-          data={students}
-          getRowKey={(row) => row.id}
-          getRowClassName={() => 'cursor-pointer'}
-          onRowClick={(row) => {
-            setSelected(row)
-            setSearchParams({ student: row.id })
-          }}
-          emptyMessage="No students match your filters."
-          columns={[
-            {
-              header: 'Name',
-              accessor: 'id',
-              render: (row) => row.profiles?.full_name ?? '—',
-            },
-            { header: 'Reg No', accessor: 'reg_number' },
-            { header: 'Room', accessor: 'room_number' },
-            { header: 'Block', accessor: 'hostel_block' },
-            { header: 'Dept', accessor: 'department' },
-            { header: 'Year', accessor: 'year_of_study' },
-            { header: 'Parent phone', accessor: 'parent_phone' },
-            {
-              header: 'Status',
-              accessor: 'is_active',
-              render: (row) => (
-                <span
-                  className={cn(
-                    'rounded-full px-2 py-0.5 text-xs font-semibold',
-                    row.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600',
-                  )}
-                >
-                  {row.is_active ? 'Active' : 'Inactive'}
-                </span>
-              ),
-            },
-            {
-              header: 'Campus',
-              accessor: 'campus_status',
-              render: (row) => <CampusBadge status={row.campus_status} />,
-            },
-            {
-              header: 'Actions',
-              accessor: 'id',
-              render: (row) => (
-                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
-                    aria-label="Edit"
-                    onClick={() => {
-                      setSelected(row)
-                      setSearchParams({ student: row.id })
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  {row.is_active && (
-                    <button
-                      type="button"
-                      className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
-                      aria-label="Deactivate"
-                      onClick={async () => {
-                        await deactivateStudent(row.id)
-                        await refetch()
-                      }}
-                    >
-                      <UserX className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              ),
-            },
-          ]}
-        />
-      </div>
+      {yearGroups.length === 0 ? (
+        <div className="dashboard-surface px-6 py-12 text-center text-sm text-slate-600">
+          No students match your filters.
+        </div>
+      ) : (
+        <div className="space-y-8 sm:space-y-10">
+          {yearGroups.map((group) => (
+            <AdminStudentsYearGroup
+              key={group.year}
+              year={group.year}
+              students={group.students}
+              onSelectStudent={openStudent}
+              onDeactivateStudent={deactivateStudent}
+              onRefetch={refetch}
+            />
+          ))}
+        </div>
+      )}
 
       <AdminStudentDrawer
         student={selected}
@@ -197,44 +169,5 @@ export function AdminStudentsPage() {
         onSave={updateStudent}
       />
     </div>
-  )
-}
-
-function FilterChip({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-        active
-          ? 'bg-[#1A5CA0] text-white'
-          : 'bg-white/60 text-slate-700 hover:bg-white/80',
-      )}
-    >
-      {children}
-    </button>
-  )
-}
-
-function CampusBadge({ status }: { status: AdminStudentRow['campus_status'] }) {
-  const styles = {
-    inside: 'bg-emerald-100 text-emerald-800',
-    outside: 'bg-blue-100 text-blue-800',
-    overdue: 'bg-red-100 text-red-800',
-  }
-  const labels = { inside: 'Inside', outside: 'Outside', overdue: 'Overdue' }
-  return (
-    <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', styles[status])}>
-      {labels[status]}
-    </span>
   )
 }

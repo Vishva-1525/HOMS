@@ -50,18 +50,20 @@ export function Login() {
       <div className="flex min-h-[100dvh] flex-col lg:flex-row">
         <LoginBrandPanel className="hidden min-h-[100dvh] lg:flex lg:w-[46%] xl:w-1/2" />
 
-        <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
+        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
           <div className="glass-panel-strong w-full max-w-[440px] p-7 sm:p-9">
             <div className="mb-8 flex flex-col items-center text-center lg:items-start lg:text-left">
-              <SvceEmblem size="lg" withRing className="lg:hidden" />
-              <div className="mt-5 lg:mt-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  {SVCE_APP_SHORT}
-                </p>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-                  Welcome back
-                </h1>
-                <p className="mt-1.5 text-sm text-slate-600">Sign in to continue to your dashboard</p>
+              <div className="flex flex-col items-center lg:items-start">
+                <SvceEmblem size="lg" withRing className="lg:hidden" />
+                <div className="mt-6 space-y-1 lg:mt-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    {SVCE_APP_SHORT}
+                  </p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                    Welcome back
+                  </h1>
+                  <p className="text-sm text-slate-600">Sign in to continue to your dashboard</p>
+                </div>
               </div>
             </div>
 

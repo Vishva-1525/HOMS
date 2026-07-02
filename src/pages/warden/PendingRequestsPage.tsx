@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { BulkActionBar } from '@/components/shared/BulkActionBar'
 import { PassLimitBadge } from '@/components/shared/PassLimitBadge'
-import { PassListFilters } from '@/components/shared/PassListFilters'
+import { PassListFilters, PENDING_PAGE_FILTER_DEFAULTS } from '@/components/shared/PassListFilters'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -173,6 +173,15 @@ export function PendingRequestsPage() {
     await refetch()
   }
 
+  function clearAllFilters() {
+    setNameSearch(PENDING_PAGE_FILTER_DEFAULTS.nameSearch)
+    setRegSearch(PENDING_PAGE_FILTER_DEFAULTS.regSearch)
+    setTypeFilter(PENDING_PAGE_FILTER_DEFAULTS.typeFilter)
+    setStatusFilter(PENDING_PAGE_FILTER_DEFAULTS.statusFilter)
+    setDateFrom(PENDING_PAGE_FILTER_DEFAULTS.dateFrom)
+    setDateTo(PENDING_PAGE_FILTER_DEFAULTS.dateTo)
+  }
+
   if (loading) {
     return (
       <div className="dashboard-loading-panel">
@@ -182,7 +191,7 @@ export function PendingRequestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <PageHeader
         title="Pending requests"
         subtitle={`${filteredPasses.length} matching your filters`}
@@ -207,6 +216,7 @@ export function PendingRequestsPage() {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
+        onClearAll={clearAllFilters}
       />
 
       <BulkActionBar

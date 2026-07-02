@@ -2,8 +2,8 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
-import { AcademicCalendarPicker } from '@/components/student/AcademicCalendarPicker'
 import { PassTypeSelector } from '@/components/student/PassTypeSelector'
+import { DateTimePicker } from '@/components/ui/DateTimePicker'
 import { SpecialPassFields } from '@/components/student/SpecialPassFields'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -208,41 +208,31 @@ export function StudentNewRequestPage() {
           </div>
         ) : null}
 
-        <AcademicCalendarPicker
-          days={days}
+        <DateTimePicker
+          id="departure-at"
+          label="Departure date & time"
+          value={form.departureAt}
+          onChange={(value) => updateField('departureAt', value)}
+          disabled={submitting}
+          error={errors.departureAt}
+          calendarDays={days}
           calendarMap={calendarMap}
-          loading={calendarLoading}
+          calendarLoading={calendarLoading}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="departure-at">Departure date &amp; time</Label>
-          <Input
-            id="departure-at"
-            type="datetime-local"
-            required
-            value={form.departureAt}
-            onChange={(e) => updateField('departureAt', e.target.value)}
-            disabled={submitting}
-          />
-          {errors.departureAt && (
-            <p className="text-sm text-[#DC2626]">{errors.departureAt}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="return-by">Expected return date &amp; time</Label>
-          <Input
-            id="return-by"
-            type="datetime-local"
-            required
-            min={returnBounds.min}
-            max={returnBounds.max}
-            value={form.returnBy}
-            onChange={(e) => updateField('returnBy', e.target.value)}
-            disabled={submitting || !form.passType}
-          />
-          {errors.returnBy && <p className="text-sm text-[#DC2626]">{errors.returnBy}</p>}
-        </div>
+        <DateTimePicker
+          id="return-by"
+          label="Expected return date & time"
+          value={form.returnBy}
+          onChange={(value) => updateField('returnBy', value)}
+          min={returnBounds.min}
+          max={returnBounds.max}
+          disabled={submitting || !form.passType}
+          error={errors.returnBy}
+          calendarDays={days}
+          calendarMap={calendarMap}
+          calendarLoading={calendarLoading}
+        />
 
         {errors.submit && <p className="text-sm text-[#DC2626]">{errors.submit}</p>}
 

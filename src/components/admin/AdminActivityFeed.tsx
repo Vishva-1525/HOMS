@@ -11,9 +11,12 @@ export function AdminActivityFeed({ onStudentClick }: AdminActivityFeedProps) {
 
   return (
     <div className="dashboard-surface overflow-hidden">
-      <div className="border-b border-slate-200/80 px-4 py-3 sm:px-5">
-        <h2 className="dashboard-heading text-sm">Live activity</h2>
-        <p className="dashboard-muted mt-0.5 text-xs">Last 30 events across the system</p>
+      <div className="border-b border-slate-200/80 px-4 py-4 sm:px-5">
+        <h2 className="dashboard-section-heading text-sm sm:text-base">
+          <span className="dashboard-section-accent" aria-hidden />
+          Live activity
+        </h2>
+        <p className="dashboard-muted mt-1 text-xs">Last 30 events across the system</p>
       </div>
 
       {loading ? (

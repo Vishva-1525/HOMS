@@ -144,21 +144,31 @@ export function WardenHomePage() {
       <PassPeriodStatsPanel title="RT pass statistics" />
 
       {!violationsLoading && violations.length > 0 && (
-        <section className="dashboard-surface-muted space-y-3 p-4">
+        <section className="dashboard-surface-muted space-y-4 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="dashboard-heading text-sm font-semibold">Pass limit warnings</h2>
-            <span className="rounded-full bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-medium text-[#991B1B]">
+            <h2 className="dashboard-section-heading text-sm sm:text-base">
+              <span className="dashboard-section-accent" aria-hidden />
+              Pass limit warnings
+            </h2>
+            <span className="rounded-full bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-semibold text-[#991B1B]">
               {violations.length} student{violations.length === 1 ? '' : 's'}
             </span>
           </div>
-          <ul className="divide-y divide-slate-200/60 rounded-xl border border-white/55 bg-white/40">
+          <ul className="divide-y divide-slate-200/60 overflow-hidden rounded-xl border border-white/55 bg-white/40">
             {violations.slice(0, 5).map((v) => (
-              <li key={v.student_id} className="flex flex-wrap justify-between gap-2 px-4 py-3 text-sm">
-                <span className="font-medium text-slate-900">
+              <li
+                key={v.student_id}
+                className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <span className="text-sm font-medium text-slate-900">
                   {v.student_name} · {v.reg_number}
                 </span>
                 <span className="text-xs text-slate-600">
-                  W {v.weekly_used}/{v.weekly_limit} · M {v.monthly_used}/{v.monthly_limit}
+                  <span className="font-medium text-slate-700">Weekly</span>{' '}
+                  {v.weekly_used}/{v.weekly_limit}
+                  <span className="mx-2 text-slate-400">·</span>
+                  <span className="font-medium text-slate-700">Monthly</span>{' '}
+                  {v.monthly_used}/{v.monthly_limit}
                 </span>
               </li>
             ))}
@@ -168,7 +178,10 @@ export function WardenHomePage() {
 
       <div>
         <div className="dashboard-section-bar">
-          <h2 className="text-base font-semibold text-slate-900">Pending requests</h2>
+          <h2 className="dashboard-section-heading text-base">
+            <span className="dashboard-section-accent" aria-hidden />
+            Pending requests
+          </h2>
           <Link to="/warden/pending" className="dashboard-link text-sm">
             View all
           </Link>

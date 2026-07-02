@@ -19,8 +19,11 @@ export function StudentRecentRequestsTable({
 }: StudentRecentRequestsTableProps) {
   return (
     <div className="dashboard-surface overflow-hidden">
-      <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 sm:px-5">
-        <h2 className="dashboard-heading text-sm">Recent requests</h2>
+      <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-5">
+        <h2 className="dashboard-section-heading text-sm sm:text-base">
+          <span className="dashboard-section-accent" aria-hidden />
+          Recent requests
+        </h2>
         <Link
           to="/student/passes"
           className="dashboard-link text-xs underline-offset-4"

@@ -7,6 +7,7 @@ import { PASS_TYPE_LABELS } from '@/lib/outpass'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import type { AdminStudentRow } from '@/lib/admin-types'
 import type { GateLog, OutpassRequest } from '@/lib/types'
+import { formatStudentYearLabel } from '@/lib/student-year'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { cn } from '@/lib/utils'
 
@@ -118,7 +119,7 @@ export function AdminStudentDrawer({
               <Row label="Reg no" value={student.reg_number} />
               <Row label="Room" value={`${student.room_number} · ${student.hostel_block}`} />
               <Row label="Department" value={student.department} />
-              <Row label="Year" value={String(student.year_of_study)} />
+              <Row label="Year" value={formatStudentYearLabel(student.year_of_study)} />
               <Row label="Parent phone" value={student.parent_phone || '—'} />
               <Row label="Parent email" value={student.parent_email || '—'} />
             </dl>

@@ -159,11 +159,65 @@
   }
 
   .dashboard-section {
-    @apply space-y-3 rounded-2xl;
+    @apply space-y-4 rounded-2xl;
   }
 
   .dashboard-section-title {
     @apply px-1 text-sm font-semibold tracking-tight text-slate-900 sm:text-base;
+  }
+
+  .dashboard-section-heading {
+    @apply flex items-center gap-3 px-1 text-base font-semibold tracking-tight text-slate-900 sm:text-lg;
+  }
+
+  .dashboard-section-accent {
+    @apply h-5 w-1 shrink-0 rounded-full bg-[#1A5CA0];
+  }
+
+  .time-scroll-picker {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(26 92 160 / 0.35) transparent;
+  }
+
+  .time-scroll-picker::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .time-scroll-picker::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(26 92 160 / 0.35);
+  }
+
+  .qr-action-primary {
+    @apply bg-[#1A5CA0] text-white shadow-md hover:bg-[#0D3F72];
+  }
+
+  .qr-action-secondary {
+    @apply border-2 border-[#1A5CA0] bg-white font-semibold text-[#0D3F72] shadow-sm hover:bg-[#EBF3FF];
+  }
+
+  .admin-row-action-btn {
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] focus-visible:outline-offset-1;
+  }
+
+  .admin-row-action-btn-danger {
+    @apply border-red-300/90 bg-red-50 text-red-700 hover:bg-red-100;
+  }
+
+  .admin-row-action-btn:disabled {
+    @apply cursor-not-allowed border-slate-200/70 bg-slate-100/90 text-slate-400 opacity-100 hover:bg-slate-100/90;
+  }
+
+  .admin-table-actions-head {
+    @apply sticky right-0 z-10 bg-slate-50/98;
+  }
+
+  .admin-table-actions-cell {
+    @apply sticky right-0 z-10 bg-white/98;
+  }
+
+  .dashboard-table-row:hover .admin-table-actions-cell {
+    @apply bg-slate-50/95;
   }
 
   .dashboard-table-head {
@@ -292,6 +346,67 @@
   html.dark .dashboard-shell .bg-white\/75,
   html.dark .dashboard-shell .bg-white\/80 {
     background-color: rgb(30 41 59 / 0.55) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-section-heading {
+    color: rgb(248 250 252) !important;
+  }
+
+  html.dark .dashboard-shell .qr-action-primary {
+    background-color: #1a5ca0 !important;
+    color: #fff !important;
+  }
+
+  html.dark .dashboard-shell .qr-action-primary:hover {
+    background-color: #0d3f72 !important;
+  }
+
+  html.dark .dashboard-shell .qr-action-secondary {
+    border-color: #60a5fa !important;
+    background-color: rgb(30 41 59 / 0.9) !important;
+    color: #93c5fd !important;
+  }
+
+  html.dark .dashboard-shell .qr-action-secondary:hover {
+    background-color: rgb(26 92 160 / 0.25) !important;
+  }
+
+  html.dark .dashboard-shell .admin-row-action-btn {
+    border-color: rgb(255 255 255 / 0.14) !important;
+    background-color: rgb(30 41 59 / 0.9) !important;
+    color: rgb(226 232 240) !important;
+  }
+
+  html.dark .dashboard-shell .admin-row-action-btn:hover {
+    background-color: rgb(51 65 85 / 0.95) !important;
+  }
+
+  html.dark .dashboard-shell .admin-row-action-btn-danger {
+    border-color: rgb(248 113 113 / 0.45) !important;
+    background-color: rgb(127 29 29 / 0.35) !important;
+    color: rgb(252 165 165) !important;
+  }
+
+  html.dark .dashboard-shell .admin-row-action-btn-danger:hover {
+    background-color: rgb(127 29 29 / 0.55) !important;
+  }
+
+  html.dark .dashboard-shell .admin-row-action-btn:disabled {
+    border-color: rgb(255 255 255 / 0.08) !important;
+    background-color: rgb(30 41 59 / 0.55) !important;
+    color: rgb(100 116 139) !important;
+  }
+
+  html.dark .dashboard-shell .admin-table-actions-head {
+    background-color: rgb(15 23 42 / 0.98) !important;
+  }
+
+  html.dark .dashboard-shell .admin-table-actions-cell {
+    background-color: rgb(15 23 42 / 0.97) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-table-row:hover .admin-table-actions-cell {
+    background-color: rgb(30 41 59 / 0.95) !important;
   }
 
   html.dark .dashboard-shell [class*='border-[var(--svce-border-default)]'] {

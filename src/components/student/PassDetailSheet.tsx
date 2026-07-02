@@ -29,6 +29,7 @@ interface PassDetailSheetProps {
   gateLogs?: GateLog[]
   quotas?: StudentPassQuotas
   approvedPasses?: OutpassRequest[]
+  initialAction?: 'extension'
   onClose: () => void
   onUpdated: () => void
 }
@@ -61,6 +62,7 @@ export function PassDetailSheet({
   gateLogs = [],
   quotas,
   approvedPasses,
+  initialAction,
   onClose,
   onUpdated,
 }: PassDetailSheetProps) {
@@ -95,6 +97,20 @@ export function PassDetailSheet({
       .maybeSingle()
       .then(({ data }) => setWardenName(data?.full_name ?? null))
   }, [pass?.approved_by])
+
+  useEffect(() => {
+    setShowExtensionForm(false)
+    setExtensionDurationHours('2')
+    setExtensionReason('')
+    setExtensionError(null)
+  }, [pass?.id])
+
+  useEffect(() => {
+    if (!pass || initialAction !== 'extension') return
+    if (canRequestExtension(pass, gateLogs)) {
+      setShowExtensionForm(true)
+    }
+  }, [pass?.id, initialAction, gateLogs])
 
   if (!pass) return null
 
@@ -320,8 +336,7 @@ export function PassDetailSheet({
             {showExtensionButton && (
               <Button
                 type="button"
-                variant="secondary"
-                className="mt-4 w-full"
+                className="mt-4 w-full gap-2"
                 onClick={() => setShowExtensionForm(true)}
               >
                 Request extension

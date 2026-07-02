@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { DashboardFilterChip } from '@/components/ui/DashboardFilterChip'
 import { StatCard } from '@/components/ui/StatCard'
 import { Spinner } from '@/components/ui/spinner'
 import { usePassPeriodStats } from '@/hooks/usePassPeriodStats'
@@ -25,24 +26,22 @@ export function PassPeriodStatsPanel({
   const { stats, loading, error } = usePassPeriodStats(period)
 
   return (
-    <section className={cn('space-y-3', className)}>
+    <section className={cn('dashboard-section', className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="dashboard-heading text-sm font-semibold">{title}</h2>
+        <h2 className="dashboard-section-heading">
+          <span className="dashboard-section-accent" aria-hidden />
+          {title}
+        </h2>
         <div className="flex flex-wrap gap-2">
           {PERIOD_TABS.map((tab) => (
-            <button
+            <DashboardFilterChip
               key={tab.id}
-              type="button"
-              onClick={() => setPeriod(tab.id)}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                period === tab.id
-                  ? 'bg-[#1A5CA0] text-white'
-                  : 'bg-white/60 text-slate-700 hover:bg-white/80',
-              )}
+              active={period === tab.id}
+              onSelect={() => setPeriod(tab.id)}
+              aria-label={`Show ${tab.label} statistics`}
             >
               {tab.label}
-            </button>
+            </DashboardFilterChip>
           ))}
         </div>
       </div>
@@ -54,7 +53,7 @@ export function PassPeriodStatsPanel({
       )}
 
       {loading ? (
-        <div className="flex min-h-[120px] items-center justify-center">
+        <div className="dashboard-loading-panel min-h-[120px]">
           <Spinner label="Loading statistics…" />
         </div>
       ) : (

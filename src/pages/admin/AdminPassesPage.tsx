@@ -3,7 +3,7 @@ import { QrCode, Settings2 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { BulkActionBar } from '@/components/shared/BulkActionBar'
 import { PassLimitBadge } from '@/components/shared/PassLimitBadge'
-import { PassListFilters } from '@/components/shared/PassListFilters'
+import { PassListFilters, ALL_PASS_FILTER_DEFAULTS } from '@/components/shared/PassListFilters'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -156,6 +156,15 @@ export function AdminPassesPage() {
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1
   const rangeEnd = Math.min(page * pageSize, total)
 
+  function clearAllFilters() {
+    setNameSearch(ALL_PASS_FILTER_DEFAULTS.nameSearch)
+    setRegSearch(ALL_PASS_FILTER_DEFAULTS.regSearch)
+    setStatusFilter(ALL_PASS_FILTER_DEFAULTS.statusFilter)
+    setTypeFilter(ALL_PASS_FILTER_DEFAULTS.typeFilter)
+    setDateFrom(ALL_PASS_FILTER_DEFAULTS.dateFrom)
+    setDateTo(ALL_PASS_FILTER_DEFAULTS.dateTo)
+  }
+
   return (
     <div className="space-y-6">
       <div className="dashboard-page-header">
@@ -182,6 +191,8 @@ export function AdminPassesPage() {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
+        onClearAll={clearAllFilters}
+        filterDefaults={ALL_PASS_FILTER_DEFAULTS}
       />
 
       <BulkActionBar
