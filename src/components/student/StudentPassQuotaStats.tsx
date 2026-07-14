@@ -9,7 +9,7 @@ interface StudentPassQuotaStatsProps {
 function usageTone(used: number, limit: number): string {
   if (used >= limit) return 'text-red-700'
   if (used >= limit - 1) return 'text-amber-700'
-  return 'text-[#0D3F72]'
+  return 'text-[#0D3F72] dark:text-sky-300'
 }
 
 export function StudentPassQuotaStats({ quotas }: StudentPassQuotaStatsProps) {

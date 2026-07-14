@@ -16,16 +16,16 @@ export function StudentDashboardStatCard({
   return (
     <div className="glass-panel relative overflow-hidden p-4 sm:p-5">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1A5CA0]/0 via-[#1A5CA0]/35 to-[#1A5CA0]/0" />
-      <p className="dashboard-muted text-xs font-medium">{label}</p>
+      <p className="dashboard-muted text-xs font-semibold uppercase tracking-wide">{label}</p>
       <p
         className={cn(
-          'mt-1 text-[28px] font-semibold leading-none tabular-nums text-slate-900',
+          'mt-1.5 text-[28px] font-semibold leading-none tabular-nums tracking-tight text-slate-950',
           valueClassName,
         )}
       >
         {value}
       </p>
-      <p className="dashboard-muted mt-1.5 text-xs">{subtext}</p>
+      <p className="dashboard-muted mt-2 text-xs leading-relaxed">{subtext}</p>
     </div>
   )
 }

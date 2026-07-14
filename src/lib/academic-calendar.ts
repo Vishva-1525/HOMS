@@ -8,10 +8,14 @@ export const ACADEMIC_DAY_LABELS: Record<AcademicDayType, string> = {
 }
 
 export const ACADEMIC_DAY_STYLES: Record<AcademicDayType, string> = {
-  holiday: 'bg-red-100 text-red-800 border-red-200',
-  working_day: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  exam_day: 'bg-amber-100 text-amber-900 border-amber-200',
-  study_holiday: 'bg-sky-100 text-sky-800 border-sky-200',
+  holiday:
+    'bg-red-100/95 text-red-900 border-red-200/90 dark:bg-red-950/55 dark:text-red-100 dark:border-red-800/50',
+  working_day:
+    'bg-emerald-50/95 text-emerald-900 border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-100 dark:border-emerald-800/45',
+  exam_day:
+    'bg-amber-100/95 text-amber-950 border-amber-300/80 dark:bg-amber-950/45 dark:text-amber-100 dark:border-amber-700/50',
+  study_holiday:
+    'bg-sky-100/95 text-sky-950 border-sky-200/90 dark:bg-sky-950/45 dark:text-sky-100 dark:border-sky-800/50',
 }
 
 export function toDateKey(date: Date): string {

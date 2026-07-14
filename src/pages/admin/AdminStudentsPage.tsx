@@ -1,22 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Upload } from 'lucide-react'
 import { AdminStudentDrawer } from '@/components/admin/AdminStudentDrawer'
 import {
   AdminStudentsYearGroup,
   groupStudentsByYear,
 } from '@/components/admin/AdminStudentsYearGroup'
+import { BulkStudentUploadModal } from '@/components/admin/BulkStudentUploadModal'
 import { DashboardFilterChip } from '@/components/ui/DashboardFilterChip'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { useAdminStudents } from '@/hooks/admin/useAdminStudents'
 import type { AdminStudentRow } from '@/lib/admin-types'
+import type { BulkImportResult } from '@/lib/bulk-student-import'
 import { formatBlockLabel } from '@/lib/block-display'
 import { formatStudentYearLabel } from '@/lib/student-year'
+import { supabase } from '@/lib/supabase'
+import type { GateLog, OutpassRequest } from '@/lib/types'
 
 export function AdminStudentsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const {
     students,
+    totalCount,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
     blocks,
     departments,
     summary,
@@ -33,28 +44,74 @@ export function AdminStudentsPage() {
     deactivateStudent,
     updateStudent,
     getStudentPasses,
-    gateLogs,
-    allStudents,
     refetch,
   } = useAdminStudents()
 
   const [selected, setSelected] = useState<AdminStudentRow | null>(null)
+  const [drawerPasses, setDrawerPasses] = useState<OutpassRequest[]>([])
+  const [drawerGateLogs, setDrawerGateLogs] = useState<GateLog[]>([])
+  const [importOpen, setImportOpen] = useState(false)
+  const [importBanner, setImportBanner] = useState<string | null>(null)
 
   const yearGroups = useMemo(() => groupStudentsByYear(students), [students])
+
+  const rangeStart = totalCount === 0 ? 0 : (page - 1) * pageSize + 1
+  const rangeEnd = Math.min(page * pageSize, totalCount)
 
   useEffect(() => {
     const id = searchParams.get('student')
     if (!id) return
-    const student = allStudents.find((s) => s.id === id)
+    const student = students.find((s) => s.id === id)
     if (student) setSelected(student)
-  }, [searchParams, allStudents])
+  }, [searchParams, students])
+
+  useEffect(() => {
+    if (!selected) {
+      setDrawerPasses([])
+      setDrawerGateLogs([])
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const passes = await getStudentPasses(selected.id)
+        if (cancelled) return
+        setDrawerPasses(passes)
+        const ids = passes.map((p) => p.id)
+        if (ids.length === 0) {
+          setDrawerGateLogs([])
+          return
+        }
+        const { data } = await supabase.from('gate_logs').select('*').in('outpass_id', ids)
+        if (!cancelled) setDrawerGateLogs((data ?? []) as GateLog[])
+      } catch {
+        if (!cancelled) {
+          setDrawerPasses([])
+          setDrawerGateLogs([])
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [selected, getStudentPasses])
 
   function openStudent(student: AdminStudentRow) {
     setSelected(student)
     setSearchParams({ student: student.id })
   }
 
-  if (loading) {
+  async function handleImportSuccess(result: BulkImportResult) {
+    const imported = result.importedCount ?? 0
+    const updated = result.updatedCount ?? 0
+    const failed = result.errorCount ?? result.errors?.length ?? 0
+    const parts = [`Imported ${imported} new`, `updated ${updated}`]
+    if (failed > 0) parts.push(`${failed} failed`)
+    setImportBanner(`${parts.join(' · ')}.`)
+    await refetch()
+  }
+
+  if (loading && students.length === 0) {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading students…" />
@@ -64,12 +121,40 @@ export function AdminStudentsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div className="dashboard-page-header">
-        <h1 className="dashboard-heading text-xl md:text-2xl">Students</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm">
-          {summary.active} students · {summary.outside} currently out · {summary.overdue} overdue
-        </p>
+      <div className="dashboard-page-header flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="dashboard-heading text-xl md:text-2xl">Students</h1>
+          <p className="dashboard-subheading mt-1.5 text-sm">
+            {summary.active} students · {summary.outside} currently out · {summary.overdue} overdue
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          className="shrink-0 gap-1.5 self-start"
+          onClick={() => {
+            setImportBanner(null)
+            setImportOpen(true)
+          }}
+        >
+          <Upload className="h-4 w-4" />
+          Import CSV
+        </Button>
       </div>
+
+      {importBanner && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <span>{importBanner}</span>
+          <button
+            type="button"
+            className="font-semibold text-[#1A5CA0] hover:underline"
+            onClick={() => setImportBanner(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -157,16 +242,50 @@ export function AdminStudentsPage() {
         </div>
       )}
 
+      <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+        <p>
+          Showing {rangeStart}–{rangeEnd} of {totalCount}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
       <AdminStudentDrawer
         student={selected}
-        passes={selected ? getStudentPasses(selected.id) : []}
-        gateLogs={gateLogs}
+        passes={drawerPasses}
+        gateLogs={drawerGateLogs}
         onClose={() => {
           setSelected(null)
           setSearchParams({})
         }}
         onDeactivate={deactivateStudent}
         onSave={updateStudent}
+      />
+
+      <BulkStudentUploadModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={(result) => {
+          void handleImportSuccess(result)
+        }}
       />
     </div>
   )

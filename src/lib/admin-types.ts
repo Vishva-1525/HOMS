@@ -61,8 +61,10 @@ export interface AdminPassRow {
   reg_number: string
   room_number: string
   hostel_block: string
+  /** Populated only when a bounded page-scoped gate lookup is used; usually null after pagination refactor. */
   exit_at: string | null
   entry_at: string | null
+  /** Kept for status helpers; empty after removing unbounded gate_logs fetch. */
   gate_logs: import('@/lib/types').GateLog[]
 }
 

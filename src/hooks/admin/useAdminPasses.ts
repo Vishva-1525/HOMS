@@ -1,16 +1,72 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AdminPassRow } from '@/lib/admin-types'
-import { classifyPass } from '@/lib/pass-classification'
 import type { PassClassificationFilter } from '@/components/shared/PassListFilters'
-import { getExitTime, getEntryTime } from '@/lib/warden'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { formatNetworkError } from '@/lib/network-error'
+import { debounce } from '@/lib/debounce'
 import { supabase } from '@/lib/supabase'
 import type { GateLog, OutpassRequest, OutpassStatus, PassType } from '@/lib/types'
+import { getEntryTime, getExitTime } from '@/lib/warden'
 
 const PAGE_SIZE = 25
+const REALTIME_DEBOUNCE_MS = 500
+
+type PassWithStudent = OutpassRequest & {
+  students: {
+    reg_number: string
+    room_number: string
+    hostel_block: string
+    profiles: { full_name: string } | null
+  } | null
+}
+
+function mapPassRow(p: PassWithStudent, pageLogs: GateLog[]): AdminPassRow {
+  const gate_logs = pageLogs.filter((log) => log.outpass_id === p.id)
+  return {
+    pass: p,
+    student_id: p.student_id,
+    student_name: p.students?.profiles?.full_name ?? '—',
+    reg_number: p.students?.reg_number ?? '—',
+    room_number: p.students?.room_number ?? '—',
+    hostel_block: p.students?.hostel_block ?? '—',
+    exit_at: getExitTime(p.id, gate_logs),
+    entry_at: getEntryTime(p.id, gate_logs),
+    gate_logs,
+  }
+}
+
+/** Apply UI status chips as PostgREST column filters (approximate where gate-dependent). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyStatusFilter(query: any, statusFilter: PassClassificationFilter) {
+  switch (statusFilter) {
+    case 'pending':
+      return query.eq('status', 'pending')
+    case 'approved':
+      return query.in('status', ['approved', 'extended']).eq('is_overdue', false)
+    case 'rejected':
+      return query.eq('status', 'rejected')
+    case 'cancelled':
+      return query.eq('status', 'cancelled')
+    case 'overdue':
+      return query.eq('is_overdue', true)
+    case 'expired':
+      return query
+        .in('status', ['approved', 'extended'])
+        .eq('is_overdue', false)
+        .lt('return_by', new Date().toISOString())
+    case 'return_completed':
+      return query.in('status', ['approved', 'extended'])
+    case 'completed':
+      return query.eq('status', 'cancelled')
+    case 'all':
+    default:
+      return query
+  }
+}
 
 export function useAdminPasses() {
   const [rows, setRows] = useState<AdminPassRow[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,118 +80,138 @@ export function useAdminPasses() {
   const debouncedName = useDebouncedValue(nameSearch, 300)
   const debouncedReg = useDebouncedValue(regSearch, 300)
 
+  const pageSize = PAGE_SIZE
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const fetchDataRef = useRef<() => Promise<void>>(async () => {})
+
   const fetchData = useCallback(async () => {
     setError(null)
-
-    const { data: passes, error: passError } = await supabase
-      .from('outpass_requests')
-      .select(
-        `
-        *,
-        students (
-          reg_number,
-          room_number,
-          hostel_block,
-          profiles ( full_name )
-        )
-      `,
-      )
-      .order('created_at', { ascending: false })
-
-    if (passError) {
-      setError(passError.message)
-      setLoading(false)
-      return
-    }
-
-    const allPasses = (passes ?? []) as (OutpassRequest & {
-      students: {
-        reg_number: string
-        room_number: string
-        hostel_block: string
-        profiles: { full_name: string } | null
-      } | null
-    })[]
-
-    const passIds = allPasses.map((p) => p.id)
-    let gateLogs: GateLog[] = []
-    if (passIds.length > 0) {
-      const { data: logs } = await supabase.from('gate_logs').select('*').in('outpass_id', passIds)
-      gateLogs = (logs ?? []) as GateLog[]
-    }
-
-    const mapped: AdminPassRow[] = allPasses.map((p) => ({
-      pass: p,
-      student_id: p.student_id,
-      student_name: p.students?.profiles?.full_name ?? '—',
-      reg_number: p.students?.reg_number ?? '—',
-      room_number: p.students?.room_number ?? '—',
-      hostel_block: p.students?.hostel_block ?? '—',
-      exit_at: getExitTime(p.id, gateLogs),
-      entry_at: getEntryTime(p.id, gateLogs),
-      gate_logs: gateLogs.filter((l) => l.outpass_id === p.id),
-    }))
-
-    setRows(mapped)
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
     setLoading(true)
-    fetchData()
 
-    const channel = supabase
-      .channel('admin-passes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'outpass_requests' }, () =>
-        fetchData(),
-      )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, () =>
-        fetchData(),
-      )
-      .subscribe()
+    try {
+      const from = (page - 1) * PAGE_SIZE
+      const to = from + PAGE_SIZE - 1
+      const nameQ = debouncedName.trim()
+      const regQ = debouncedReg.trim()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [fetchData])
-
-  const filtered = useMemo(() => {
-    const nameQ = debouncedName.trim().toLowerCase()
-    const regQ = debouncedReg.trim().toLowerCase()
-
-    return rows.filter(({ pass, student_name, reg_number, gate_logs }) => {
-      if (typeFilter !== 'all' && pass.pass_type !== typeFilter) return false
-
-      if (dateFrom && new Date(pass.departure_at) < new Date(dateFrom)) return false
-      if (dateTo) {
-        const end = new Date(dateTo)
-        end.setHours(23, 59, 59, 999)
-        if (new Date(pass.departure_at) > end) return false
-      }
-
-      const classification = classifyPass(pass, gate_logs)
-
-      if (statusFilter !== 'all') {
-        if (statusFilter === 'completed') {
-          if (classification !== 'return_completed' && pass.status !== 'cancelled') return false
-        } else if (classification !== statusFilter) {
-          return false
+      // Resolve student IDs for name/reg filters without downloading all passes.
+      let studentIdFilter: string[] | null = null
+      if (nameQ || regQ) {
+        let studentQuery = supabase.from('students').select('id, profiles!inner(full_name)')
+        if (regQ) studentQuery = studentQuery.ilike('reg_number', `%${regQ}%`)
+        if (nameQ) studentQuery = studentQuery.ilike('profiles.full_name', `%${nameQ}%`)
+        const { data: studentHits, error: studentError } = await studentQuery.limit(500)
+        if (studentError) {
+          setError(formatNetworkError(studentError.message))
+          setRows([])
+          setTotalCount(0)
+          return
+        }
+        studentIdFilter = (studentHits ?? []).map((s) => s.id as string)
+        if (studentIdFilter.length === 0) {
+          setRows([])
+          setTotalCount(0)
+          return
         }
       }
 
-      if (nameQ && !student_name.toLowerCase().includes(nameQ)) return false
-      if (regQ && !reg_number.toLowerCase().includes(regQ)) return false
+      let query = applyStatusFilter(
+        supabase
+          .from('outpass_requests')
+          .select(
+            `
+          *,
+          students (
+            reg_number,
+            room_number,
+            hostel_block,
+            profiles ( full_name )
+          )
+        `,
+            { count: 'exact' },
+          ),
+        statusFilter,
+      )
+        .order('created_at', { ascending: false })
+        .range(from, to)
 
-      return true
-    })
-  }, [rows, debouncedName, debouncedReg, statusFilter, typeFilter, dateFrom, dateTo])
+      if (typeFilter !== 'all') query = query.eq('pass_type', typeFilter)
+      if (dateFrom) query = query.gte('departure_at', new Date(dateFrom).toISOString())
+      if (dateTo) {
+        const end = new Date(dateTo)
+        end.setHours(23, 59, 59, 999)
+        query = query.lte('departure_at', end.toISOString())
+      }
+      if (studentIdFilter) query = query.in('student_id', studentIdFilter)
+
+      const { data, error: passError, count } = await query
+
+      if (passError) {
+        setError(formatNetworkError(passError.message))
+        setRows([])
+        setTotalCount(0)
+        return
+      }
+
+      const passPage = (data ?? []) as PassWithStudent[]
+      const passIds = passPage.map((p) => p.id)
+
+      // Page-scoped only (≤ PAGE_SIZE) — never an unbounded gate_logs dump.
+      let pageLogs: GateLog[] = []
+      if (passIds.length > 0) {
+        const { data: logs, error: logsError } = await supabase
+          .from('gate_logs')
+          .select('*')
+          .in('outpass_id', passIds)
+        if (logsError) {
+          console.warn('gate_logs page lookup soft-failed:', logsError.message)
+        } else {
+          pageLogs = (logs ?? []) as GateLog[]
+        }
+      }
+
+      const mapped = passPage.map((p) => mapPassRow(p, pageLogs))
+      setRows(mapped)
+      setTotalCount(count ?? mapped.length)
+    } catch (err) {
+      setError(formatNetworkError(err, 'Failed to load passes.'))
+      setRows([])
+      setTotalCount(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, debouncedName, debouncedReg, statusFilter, typeFilter, dateFrom, dateTo])
+
+  fetchDataRef.current = fetchData
 
   useEffect(() => {
     setPage(1)
   }, [debouncedName, debouncedReg, statusFilter, typeFilter, dateFrom, dateTo])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
+
+  useEffect(() => {
+    const scheduleRefresh = debounce(() => {
+      // Only re-fetch the current page — never an unbounded full-table dump.
+      void fetchDataRef.current()
+    }, REALTIME_DEBOUNCE_MS)
+
+    const channel = supabase
+      .channel('admin-passes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'outpass_requests' },
+        () => scheduleRefresh(),
+      )
+      .subscribe()
+
+    return () => {
+      scheduleRefresh.cancel()
+      void supabase.removeChannel(channel)
+    }
+  }, [])
 
   async function overridePassStatus(passId: string, status: OutpassStatus, note: string) {
     const { error: updateError } = await supabase
@@ -151,12 +227,12 @@ export function useAdminPasses() {
   }
 
   return {
-    rows: pageRows,
-    allRows: rows,
-    filteredRows: filtered,
-    total: filtered.length,
+    rows,
+    data: rows,
+    totalCount,
+    total: totalCount,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
     totalPages,
     setPage,
     loading,

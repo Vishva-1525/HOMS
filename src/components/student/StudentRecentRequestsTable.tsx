@@ -26,7 +26,7 @@ export function StudentRecentRequestsTable({
         </h2>
         <Link
           to="/student/passes"
-          className="dashboard-link text-xs underline-offset-4"
+          className="dashboard-link text-xs font-semibold underline-offset-4"
         >
           View all
         </Link>

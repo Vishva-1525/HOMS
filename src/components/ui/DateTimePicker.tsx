@@ -55,12 +55,12 @@ export function DateTimePicker({
 
       <div
         className={cn(
-          'space-y-4 rounded-xl border border-white/55 bg-white/35 p-4 backdrop-blur-md',
+          'space-y-4 rounded-2xl border border-white/55 bg-white/45 p-4 shadow-sm backdrop-blur-md',
           disabled && 'opacity-50',
         )}
       >
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-600">Date</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-700">Date</p>
           <AcademicCalendarPicker
             days={calendarDays}
             calendarMap={calendarMap}
@@ -72,7 +72,7 @@ export function DateTimePicker({
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-600">Time</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-700">Time</p>
           <TimeScrollPicker
             id={id}
             value={value}

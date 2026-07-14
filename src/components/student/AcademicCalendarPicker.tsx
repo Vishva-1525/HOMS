@@ -92,22 +92,17 @@ export function AcademicCalendarPicker({
   }
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-white/55 bg-white/40 backdrop-blur-md',
-        compact ? 'border-0 bg-transparent p-0' : 'p-4',
-      )}
-    >
+    <div className={cn(compact ? 'p-0' : 'academic-calendar-panel')}>
       {!compact && (
-        <p className="text-sm font-semibold text-slate-900">Academic calendar</p>
+        <p className="dashboard-heading text-sm">Academic calendar</p>
       )}
 
       <div className={cn('flex flex-wrap items-center justify-between gap-2', !compact && 'mt-3')}>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => shiftMonth(-1)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            className="academic-calendar-nav-btn"
             aria-label="Previous month"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -117,7 +112,7 @@ export function AcademicCalendarPicker({
             value={month}
             onChange={(e) => setMonthIndex(Number(e.target.value))}
             aria-label="Select month"
-            className="h-8 min-w-[7rem] rounded-lg border border-white/60 bg-white/70 px-2 text-xs font-medium text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            className="academic-calendar-select min-w-[7.5rem]"
           >
             {MONTH_NAMES.map((name, index) => (
               <option key={name} value={index}>
@@ -130,7 +125,7 @@ export function AcademicCalendarPicker({
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             aria-label="Select year"
-            className="h-8 min-w-[5rem] rounded-lg border border-white/60 bg-white/70 px-2 text-xs font-medium text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            className="academic-calendar-select min-w-[5.25rem]"
           >
             {yearOptions.map((y) => (
               <option key={y} value={y}>
@@ -142,7 +137,7 @@ export function AcademicCalendarPicker({
           <button
             type="button"
             onClick={() => shiftMonth(1)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            className="academic-calendar-nav-btn"
             aria-label="Next month"
           >
             <ChevronRight className="h-4 w-4" />
@@ -151,12 +146,12 @@ export function AcademicCalendarPicker({
       </div>
 
       {!compact && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3.5 flex flex-wrap gap-2">
           {LEGEND_TYPES.map((type) => (
             <span
               key={type}
               className={cn(
-                'rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                'rounded-full border px-2.5 py-1 text-[10px] font-semibold tracking-wide',
                 ACADEMIC_DAY_STYLES[type],
               )}
             >
@@ -170,12 +165,12 @@ export function AcademicCalendarPicker({
         <p className="dashboard-muted mt-4 text-center text-xs">Loading calendar…</p>
       ) : (
         <>
-          <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          <div className="mt-3.5 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-600">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
               <span key={d}>{d}</span>
             ))}
           </div>
-          <div className="mt-1 grid grid-cols-7 gap-1">
+          <div className="mt-1.5 grid grid-cols-7 gap-1.5">
             {cells.map((dateKey, index) => {
               if (!dateKey) {
                 return <div key={`empty-${index}`} className="aspect-square" />
@@ -194,14 +189,19 @@ export function AcademicCalendarPicker({
                   type="button"
                   disabled={!selectable || !onSelectDate}
                   title={entry?.label || ACADEMIC_DAY_LABELS[dayType]}
+                  aria-current={isToday ? 'date' : undefined}
+                  aria-pressed={isSelected}
                   onClick={() => onSelectDate?.(dateKey)}
                   className={cn(
-                    'aspect-square rounded-lg border text-xs font-semibold transition-all',
-                    ACADEMIC_DAY_STYLES[dayType],
-                    !selectable && 'cursor-not-allowed opacity-40',
-                    isSelected && 'ring-2 ring-[#1A5CA0] ring-offset-1 shadow-sm',
-                    isToday && !isSelected && 'ring-1 ring-[#1A5CA0]/40',
-                    selectable && onSelectDate && 'hover:brightness-95 hover:shadow-sm',
+                    'academic-calendar-day',
+                    !isSelected && ACADEMIC_DAY_STYLES[dayType],
+                    isSelected && 'academic-calendar-day-selected',
+                    isToday && 'academic-calendar-day-today',
+                    !selectable && 'cursor-not-allowed opacity-35 grayscale',
+                    selectable &&
+                      onSelectDate &&
+                      !isSelected &&
+                      'hover:-translate-y-0.5 hover:shadow-md hover:brightness-[0.97] active:translate-y-0',
                   )}
                 >
                   {dayNum}
@@ -209,7 +209,7 @@ export function AcademicCalendarPicker({
               )
             })}
           </div>
-          <p className="dashboard-muted mt-3 text-[11px]">
+          <p className="dashboard-muted mt-3.5 text-[11px] leading-relaxed">
             {onSelectDate
               ? 'Tap a working day or study holiday to select your date.'
               : 'Select departure/return dates on working days or study holidays only.'}
