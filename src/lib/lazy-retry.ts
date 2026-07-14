@@ -16,7 +16,7 @@ function isChunkLoadError(error: unknown): boolean {
  * Retries a dynamic import once, then reloads the page after a new deploy
  * invalidates cached chunk URLs (common cause of refresh failures on SPAs).
  */
-export function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
+export function lazyWithRetry<T extends { default: ComponentType<any> }>(
   importer: () => Promise<T>,
 ): Promise<T> {
   return importer().catch((error: unknown) => {

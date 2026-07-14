@@ -321,7 +321,7 @@ export function ReportsPanel({
     }
   }, [activeRange, fixedHostelBlock, blockFilter, departmentFilter])
 
-  const { rows, stats, loading, error, fetchAllForExport } = useReportData(reportFilters)
+  const { rows, stats, loading, error, fetchAllForExport, viewLimit } = useReportData(reportFilters)
 
   const exportReportType = reportTypeLabel(periodTab)
   const exportDateLabel = dateSubtitle
@@ -560,6 +560,12 @@ export function ReportsPanel({
         )
       ) : (
         <div className="dashboard-surface">
+          {rows.length >= viewLimit && (
+            <p className="border-b border-slate-200/70 px-4 py-2 text-xs text-slate-600">
+              Showing the latest {viewLimit} rows on screen. Exports still include the full period
+              (up to 10,000 rows).
+            </p>
+          )}
           <DataTable
             columns={REPORT_COLUMNS}
             data={rows}

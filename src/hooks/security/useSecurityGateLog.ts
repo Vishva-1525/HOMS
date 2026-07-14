@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { debounce } from '@/lib/debounce'
 import { supabase } from '@/lib/supabase'
 import {
   fetchAdmissionNosByStudentIds,
@@ -45,11 +46,19 @@ export interface GateLogSummary {
 }
 
 const HISTORY_DAYS = 30
+const REALTIME_DEBOUNCE_MS = 500
+const ACTIVE_PASS_LOOKBACK_DAYS = 90
 
 function historyStartIso(): string {
   const d = new Date()
   d.setDate(d.getDate() - HISTORY_DAYS)
   d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
+
+function activePassCutoffIso(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - ACTIVE_PASS_LOOKBACK_DAYS)
   return d.toISOString()
 }
 
@@ -162,60 +171,100 @@ export function useSecurityGateLog(enabled = true) {
   const [activePasses, setActivePasses] = useState<OutpassWithStudent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const inFlightRef = useRef<Promise<void> | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!enabled) return
-
-    setLoading(true)
-    setError(null)
-
-    const [historyResult, passesResult] = await Promise.all([
-      supabase
-        .from('gate_logs')
-        .select('*')
-        .gte('scanned_at', historyStartIso())
-        .order('scanned_at', { ascending: false })
-        .limit(500),
-      supabase
-        .from('outpass_requests')
-        .select('*')
-        .in('status', ['approved', 'extended']),
-    ])
-
-    if (historyResult.error) {
-      setError(historyResult.error.message)
-      setLoading(false)
+    if (inFlightRef.current) {
+      await inFlightRef.current
       return
     }
 
-    const rawLogs = (historyResult.data ?? []) as GateLog[]
-    setRecentRawLogs(rawLogs)
+    const run = (async () => {
+      setLoading(true)
+      setError(null)
 
-    const scannerMap = await fetchScannerNameMap(rawLogs)
-    const enriched = await enrichGateLogs(rawLogs, scannerMap)
-    setLogs(enriched)
+      const [historyResult, passesResult] = await Promise.all([
+        supabase
+          .from('gate_logs')
+          .select('id, outpass_id, scanned_by, event_type, scanned_at')
+          .gte('scanned_at', historyStartIso())
+          .order('scanned_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('outpass_requests')
+          .select(
+            `
+            id,
+            student_id,
+            pass_type,
+            destination,
+            departure_at,
+            return_by,
+            status,
+            is_overdue,
+            created_at,
+            students (
+              reg_number,
+              room_number,
+              hostel_block,
+              profiles ( full_name )
+            )
+          `,
+          )
+          .in('status', ['approved', 'extended'])
+          .or(`is_overdue.eq.true,created_at.gte.${activePassCutoffIso()}`)
+          .limit(400),
+      ])
 
-    const passes = (passesResult.error ? [] : passesResult.data ?? []) as OutpassWithStudent[]
-    setActivePasses(passes)
-    setPassHistory(buildPassScanHistory(enriched))
+      if (historyResult.error) {
+        setError(historyResult.error.message)
+        setLoading(false)
+        return
+      }
 
-    setLoading(false)
+      const rawLogs = (historyResult.data ?? []) as GateLog[]
+      setRecentRawLogs(rawLogs)
+
+      const scannerMap = await fetchScannerNameMap(rawLogs)
+      const enriched = await enrichGateLogs(rawLogs, scannerMap)
+      setLogs(enriched)
+
+      const passes = (
+        passesResult.error ? [] : ((passesResult.data ?? []) as unknown as OutpassWithStudent[])
+      )
+      setActivePasses(passes)
+      setPassHistory(buildPassScanHistory(enriched))
+      setLoading(false)
+    })()
+
+    inFlightRef.current = run
+    try {
+      await run
+    } finally {
+      inFlightRef.current = null
+    }
   }, [enabled])
 
   useEffect(() => {
     if (!enabled) return
 
-    fetchData()
+    void fetchData()
+
+    const scheduleRefresh = debounce(() => {
+      void fetchData()
+    }, REALTIME_DEBOUNCE_MS)
 
     const channel = supabase
       .channel('security-gate-log')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, () =>
-        fetchData(),
+        scheduleRefresh(),
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      scheduleRefresh.cancel()
+      void supabase.removeChannel(channel)
     }
   }, [enabled, fetchData])
 

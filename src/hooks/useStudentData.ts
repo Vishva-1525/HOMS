@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { debounce } from '@/lib/debounce'
 import { formatNetworkError } from '@/lib/network-error'
@@ -18,6 +18,7 @@ const DEFAULT_QUOTAS: StudentPassQuotas = {
 }
 
 const REALTIME_DEBOUNCE_MS = 600
+const PASS_LIMIT = 150
 
 export interface StudentDataValue {
   student: Student | null
@@ -51,6 +52,7 @@ export function useStudentData(): StudentDataValue {
   const hasLoadedRef = useRef(false)
   const inFlightRef = useRef<Promise<void> | null>(null)
   const userIdRef = useRef<string | null>(null)
+  const passIdsRef = useRef<Set<string>>(new Set())
 
   const fetchData = useCallback(async () => {
     const userId = userIdRef.current
@@ -70,9 +72,12 @@ export function useStudentData(): StudentDataValue {
           fetchStudentRecord(userId),
           supabase
             .from('outpass_requests')
-            .select('*')
+            .select(
+              'id, student_id, pass_type, destination, reason, departure_at, return_by, status, warden_remark, approved_by, approved_at, is_overdue, qr_code_data, created_at, special_purpose, special_remarks, document_url, requires_hod_approval, entry_code',
+            )
             .eq('student_id', userId)
-            .order('created_at', { ascending: false }),
+            .order('created_at', { ascending: false })
+            .limit(PASS_LIMIT),
           supabase.rpc('get_student_pass_quotas', { p_student_id: userId }),
         ])
 
@@ -89,6 +94,7 @@ export function useStudentData(): StudentDataValue {
         const allPasses = (passesResult.data ?? []) as OutpassRequest[]
         setStudent(studentResult.student)
         setPasses(allPasses)
+        passIdsRef.current = new Set(allPasses.map((p) => p.id))
 
         if (quotasResult.error) {
           console.warn('pass quotas soft-failed:', quotasResult.error.message)
@@ -105,8 +111,14 @@ export function useStudentData(): StudentDataValue {
         }
 
         const [logsResult, extensionsResult] = await Promise.all([
-          supabase.from('gate_logs').select('*').in('outpass_id', passIds),
-          supabase.from('extension_requests').select('*').in('outpass_id', passIds),
+          supabase
+            .from('gate_logs')
+            .select('id, outpass_id, scanned_by, event_type, scanned_at')
+            .in('outpass_id', passIds),
+          supabase
+            .from('extension_requests')
+            .select('id, outpass_id, new_return_time, reason, status, created_at')
+            .in('outpass_id', passIds),
         ])
 
         if (!logsResult.error) {
@@ -150,6 +162,7 @@ export function useStudentData(): StudentDataValue {
       setHasLoaded(false)
       setRefreshing(false)
       setError(null)
+      passIdsRef.current = new Set()
       return
     }
 
@@ -178,12 +191,20 @@ export function useStudentData(): StudentDataValue {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'gate_logs' },
-        () => scheduleRefresh(),
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { outpass_id?: string } | null
+          if (row?.outpass_id && !passIdsRef.current.has(row.outpass_id)) return
+          scheduleRefresh()
+        },
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'extension_requests' },
-        () => scheduleRefresh(),
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { outpass_id?: string } | null
+          if (row?.outpass_id && !passIdsRef.current.has(row.outpass_id)) return
+          scheduleRefresh()
+        },
       )
       .on(
         'postgres_changes',
@@ -203,15 +224,18 @@ export function useStudentData(): StudentDataValue {
     }
   }, [user?.id, fetchData])
 
-  return {
-    student,
-    passes,
-    gateLogs,
-    extensions,
-    quotas,
-    loading: Boolean(user) && !hasLoaded,
-    refreshing,
-    error,
-    refetch: fetchData,
-  }
+  return useMemo(
+    () => ({
+      student,
+      passes,
+      gateLogs,
+      extensions,
+      quotas,
+      loading: Boolean(user) && !hasLoaded,
+      refreshing,
+      error,
+      refetch: fetchData,
+    }),
+    [student, passes, gateLogs, extensions, quotas, user, hasLoaded, refreshing, error, fetchData],
+  )
 }

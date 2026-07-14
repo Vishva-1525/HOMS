@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { cachedQuery, invalidateCachedQuery } from '@/lib/query-cache'
 import { supabase } from '@/lib/supabase'
 
 export interface PassLimitViolation {
@@ -14,35 +15,54 @@ export interface PassLimitViolation {
   monthly_exceeded: boolean
 }
 
+const VIOLATIONS_TTL_MS = 60_000
+const CACHE_KEY = 'rpc:get_pass_limit_violations'
+
 export function usePassLimitViolations() {
   const [violations, setViolations] = useState<PassLimitViolation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchViolations = useCallback(async () => {
+  const fetchViolations = useCallback(async (force = false) => {
     setLoading(true)
     setError(null)
 
-    const { data, error: rpcError } = await supabase.rpc('get_pass_limit_violations')
-
-    if (rpcError) {
-      setError(rpcError.message)
+    try {
+      if (force) invalidateCachedQuery(CACHE_KEY)
+      const data = await cachedQuery(CACHE_KEY, VIOLATIONS_TTL_MS, async () => {
+        const { data: rows, error: rpcError } = await supabase.rpc('get_pass_limit_violations')
+        if (rpcError) throw new Error(rpcError.message)
+        return (rows ?? []) as PassLimitViolation[]
+      })
+      setViolations(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load violations')
       setViolations([])
-    } else {
-      setViolations((data ?? []) as PassLimitViolation[])
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }, [])
 
   useEffect(() => {
-    fetchViolations()
+    void fetchViolations()
   }, [fetchViolations])
 
+  const violationIndex = useMemo(() => {
+    const map = new Map<string, PassLimitViolation>()
+    for (const v of violations) map.set(v.student_id, v)
+    return map
+  }, [violations])
+
   const violationByStudentId = useCallback(
-    (studentId: string) => violations.find((v) => v.student_id === studentId) ?? null,
-    [violations],
+    (studentId: string) => violationIndex.get(studentId) ?? null,
+    [violationIndex],
   )
 
-  return { violations, loading, error, violationByStudentId, refetch: fetchViolations }
+  return {
+    violations,
+    loading,
+    error,
+    violationByStudentId,
+    refetch: () => fetchViolations(true),
+  }
 }

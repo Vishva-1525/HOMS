@@ -16,8 +16,6 @@ export default defineConfig({
       includeAssets: [
         'pwa-icon-192.png',
         'pwa-icon-512.png',
-        'pwa-screenshot-mobile.png',
-        'pwa-screenshot-wide.png',
         'favicon.svg',
       ],
       manifest: {
@@ -69,10 +67,12 @@ export default defineConfig({
         ],
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,woff2}'],
+        // Keep precache lean — large screenshots/campus photo stay network-first.
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}', 'pwa-icon-*.png'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
       },
     }),
@@ -80,6 +80,27 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    target: 'es2022',
+    cssCodeSplit: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
+            return 'vendor-react'
+          }
+          if (id.includes('@supabase')) return 'vendor-supabase'
+          if (id.includes('lucide-react') || id.includes('@tabler/icons-react')) {
+            return 'vendor-icons'
+          }
+          if (id.includes('xlsx') || id.includes('jspdf')) return 'vendor-export'
+          if (id.includes('@zxing') || id.includes('qrcode')) return 'vendor-scan'
+        },
+      },
     },
   },
 })

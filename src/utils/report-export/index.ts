@@ -17,14 +17,15 @@ export {
 
 export { REPORT_EXPORT_HEADERS, reportRowToExportRow } from '@/utils/report-export/report-columns'
 
-export { exportReportToExcel } from '@/utils/report-export/export-excel'
-export { exportReportToPdf } from '@/utils/report-export/export-pdf'
-
-import type { ReportExportFormat, ReportExportOptions } from '@/utils/report-export/types'
-import { exportReportToExcel } from '@/utils/report-export/export-excel'
-import { exportReportToPdf } from '@/utils/report-export/export-pdf'
-
-export function exportReport(format: ReportExportFormat, options: ReportExportOptions): string {
-  if (format === 'pdf') return exportReportToPdf(options)
+/** Prefer dynamic import of export-excel / export-pdf at call sites to keep xlsx/jspdf out of the main graph. */
+export async function exportReport(
+  format: import('@/utils/report-export/types').ReportExportFormat,
+  options: import('@/utils/report-export/types').ReportExportOptions,
+): Promise<string> {
+  if (format === 'pdf') {
+    const { exportReportToPdf } = await import('@/utils/report-export/export-pdf')
+    return exportReportToPdf(options)
+  }
+  const { exportReportToExcel } = await import('@/utils/report-export/export-excel')
   return exportReportToExcel(options)
 }

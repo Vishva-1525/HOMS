@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Upload } from 'lucide-react'
 import { AdminStudentDrawer } from '@/components/admin/AdminStudentDrawer'
@@ -6,7 +6,6 @@ import {
   AdminStudentsYearGroup,
   groupStudentsByYear,
 } from '@/components/admin/AdminStudentsYearGroup'
-import { BulkStudentUploadModal } from '@/components/admin/BulkStudentUploadModal'
 import { DashboardFilterChip } from '@/components/ui/DashboardFilterChip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +17,12 @@ import { formatBlockLabel } from '@/lib/block-display'
 import { formatStudentYearLabel } from '@/lib/student-year'
 import { supabase } from '@/lib/supabase'
 import type { GateLog, OutpassRequest } from '@/lib/types'
+
+const BulkStudentUploadModal = lazy(() =>
+  import('@/components/admin/BulkStudentUploadModal').then((m) => ({
+    default: m.BulkStudentUploadModal,
+  })),
+)
 
 export function AdminStudentsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -280,13 +285,17 @@ export function AdminStudentsPage() {
         onSave={updateStudent}
       />
 
-      <BulkStudentUploadModal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        onSuccess={(result) => {
-          void handleImportSuccess(result)
-        }}
-      />
+      <Suspense fallback={null}>
+        {importOpen && (
+          <BulkStudentUploadModal
+            open={importOpen}
+            onClose={() => setImportOpen(false)}
+            onSuccess={(result) => {
+              void handleImportSuccess(result)
+            }}
+          />
+        )}
+      </Suspense>
     </div>
   )
 }

@@ -5,7 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const BATCH_SIZE = 15
 const NIL_UUID = '00000000-0000-0000-0000-000000000000'
 
 type ImportMode = 'append' | 'replace'
@@ -19,6 +18,18 @@ interface StudentImportRow {
   hostel_block?: string
   department?: string
   year_of_study?: number | string
+}
+
+interface StudentUpsertRow {
+  id: string
+  reg_number: string
+  room_number: string
+  hostel_block: string
+  department: string
+  year_of_study: number
+  parent_phone: string
+  parent_email: string
+  is_active: true
 }
 
 interface ImportError {
@@ -47,7 +58,9 @@ function firstNameToken(fullName: string): string {
 
 function generatePassword(fullName: string, regNumber: string): string {
   const base = firstNameToken(fullName)
-  const suffix = regNumber.replace(/[^a-zA-Z0-9]/g, '').slice(-4) || String(Math.floor(1000 + Math.random() * 9000))
+  const suffix =
+    regNumber.replace(/[^a-zA-Z0-9]/g, '').slice(-4)
+    || String(Math.floor(1000 + Math.random() * 9000))
   return `${base}${suffix}`
 }
 
@@ -74,7 +87,6 @@ async function findAuthUserIdByEmail(
 ): Promise<string | null> {
   const normalized = email.trim().toLowerCase()
 
-  // Prefer linked student row (we store login email on parent_email for imports).
   const { data: byParent } = await admin
     .from('students')
     .select('id')
@@ -83,7 +95,6 @@ async function findAuthUserIdByEmail(
     .maybeSingle()
   if (byParent?.id) return byParent.id as string
 
-  // GoTrue admin filter (supported on hosted Supabase).
   try {
     const url = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -107,7 +118,7 @@ async function findAuthUserIdByEmail(
       }
     }
   } catch {
-    // fall through to pagination
+    // fall through
   }
 
   let page = 1
@@ -123,6 +134,10 @@ async function findAuthUserIdByEmail(
   return null
 }
 
+/**
+ * Creates (or resolves) an Auth user one at a time.
+ * Must never be called concurrently — `handle_new_user` locks `profiles`.
+ */
 async function ensureAuthUser(
   admin: SupabaseClient,
   row: StudentImportRow,
@@ -144,13 +159,17 @@ async function ensureAuthUser(
   })
 
   if (!createError && created.user) {
-    await admin.from('profiles').upsert({
+    // Trigger already inserted profiles; serialize profile write after Auth settles.
+    const { error: profileError } = await admin.from('profiles').upsert({
       id: created.user.id,
       role: 'student',
       full_name: fullName,
       phone,
       password_changed: false,
     })
+    if (profileError) {
+      throw new Error(`Profile upsert failed for ${email}: ${profileError.message}`)
+    }
     return { userId: created.user.id, created: true, password }
   }
 
@@ -163,12 +182,15 @@ async function ensureAuthUser(
     throw new Error(`Auth user exists for ${email} but could not resolve user id`)
   }
 
-  await admin.from('profiles').upsert({
+  const { error: profileError } = await admin.from('profiles').upsert({
     id: existingId,
     role: 'student',
     full_name: fullName,
     phone,
   })
+  if (profileError) {
+    throw new Error(`Profile upsert failed for ${email}: ${profileError.message}`)
+  }
 
   return { userId: existingId, created: false }
 }
@@ -225,10 +247,11 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: false, error: 'Maximum 2000 students per import' }, 400)
     }
 
+    // ── 1. Soft-delete must fully complete before any Auth / upsert work ──
     if (importMode === 'replace') {
-      const { error: archiveError } = await admin
+      const { error: archiveError, count: archivedCount } = await admin
         .from('students')
-        .update({ is_active: false })
+        .update({ is_active: false }, { count: 'exact' })
         .neq('id', NIL_UUID)
 
       if (archiveError) {
@@ -237,121 +260,139 @@ Deno.serve(async (req) => {
           error: `Failed to archive existing students: ${archiveError.message}`,
         }, 500)
       }
+
+      // Explicit barrier: soft-delete transaction resolved before continuing.
+      console.info(
+        `bulk-import: replace mode archived ${archivedCount ?? 'unknown'} students; proceeding sequentially`,
+      )
+    }
+
+    const errors: ImportError[] = []
+    const newAccounts: NewAccount[] = []
+    const mappedStudents: StudentUpsertRow[] = []
+    const preexistingRegNumbers = new Set<string>()
+
+    // ── 2. Sequential Auth + profile resolution (never Promise.all) ──
+    for (const raw of students) {
+      const email = String(raw.email ?? '').trim().toLowerCase()
+      const regNumber = String(raw.reg_number ?? '').trim()
+      const fullName = String(raw.full_name ?? '').trim()
+
+      if (!email || !regNumber || !fullName) {
+        errors.push({
+          email: email || undefined,
+          reg_number: regNumber || undefined,
+          message: 'Missing required fields (email, reg_number, full_name)',
+        })
+        continue
+      }
+
+      if (!email.includes('@')) {
+        errors.push({ email, reg_number: regNumber, message: 'Invalid email' })
+        continue
+      }
+
+      try {
+        const { data: existingStudent } = await admin
+          .from('students')
+          .select('id')
+          .eq('reg_number', regNumber)
+          .maybeSingle()
+
+        let userId: string
+
+        if (existingStudent?.id) {
+          preexistingRegNumbers.add(regNumber)
+          userId = existingStudent.id as string
+
+          const { error: profileError } = await admin
+            .from('profiles')
+            .update({
+              full_name: fullName,
+              phone: String(raw.phone ?? '').trim(),
+            })
+            .eq('id', userId)
+
+          if (profileError) {
+            throw new Error(profileError.message)
+          }
+        } else {
+          const ensured = await ensureAuthUser(admin, {
+            email,
+            reg_number: regNumber,
+            full_name: fullName,
+            phone: raw.phone,
+          })
+          userId = ensured.userId
+          if (ensured.created && ensured.password) {
+            newAccounts.push({
+              email,
+              reg_number: regNumber,
+              password: ensured.password,
+            })
+          }
+        }
+
+        mappedStudents.push({
+          id: userId,
+          reg_number: regNumber,
+          room_number: String(raw.room_number ?? '').trim(),
+          hostel_block: String(raw.hostel_block ?? '').trim(),
+          department: String(raw.department ?? '').trim(),
+          year_of_study: normalizeYear(raw.year_of_study),
+          parent_phone: String(raw.phone ?? '').trim(),
+          parent_email: email,
+          is_active: true,
+        })
+      } catch (err) {
+        errors.push({
+          email,
+          reg_number: regNumber,
+          message: err instanceof Error ? err.message : 'Import failed',
+        })
+      }
+    }
+
+    if (mappedStudents.length === 0) {
+      return jsonResponse({
+        success: errors.length === 0,
+        importMode,
+        importedCount: 0,
+        updatedCount: 0,
+        errorCount: errors.length,
+        errors,
+        newAccounts,
+      })
+    }
+
+    // ── 3. Sort by unique key before bulk upsert (prevents row-lock deadlocks) ──
+    mappedStudents.sort((a, b) => a.reg_number.localeCompare(b.reg_number))
+
+    // ── 4. Single awaited bulk upsert (no concurrent / chunked upserts) ──
+    const { error: upsertError } = await admin
+      .from('students')
+      .upsert(mappedStudents, { onConflict: 'reg_number' })
+
+    if (upsertError) {
+      return jsonResponse({
+        success: false,
+        importMode,
+        importedCount: 0,
+        updatedCount: 0,
+        errorCount: errors.length + 1,
+        errors: [
+          ...errors,
+          { message: `Bulk upsert failed: ${upsertError.message}` },
+        ],
+        newAccounts,
+      }, 500)
     }
 
     let importedCount = 0
     let updatedCount = 0
-    const errors: ImportError[] = []
-    const newAccounts: NewAccount[] = []
-
-    for (let i = 0; i < students.length; i += BATCH_SIZE) {
-      const batch = students.slice(i, i + BATCH_SIZE)
-
-      for (const raw of batch) {
-        const email = String(raw.email ?? '').trim().toLowerCase()
-        const regNumber = String(raw.reg_number ?? '').trim()
-        const fullName = String(raw.full_name ?? '').trim()
-
-        if (!email || !regNumber || !fullName) {
-          errors.push({
-            email: email || undefined,
-            reg_number: regNumber || undefined,
-            message: 'Missing required fields (email, reg_number, full_name)',
-          })
-          continue
-        }
-
-        if (!email.includes('@')) {
-          errors.push({ email, reg_number: regNumber, message: 'Invalid email' })
-          continue
-        }
-
-        try {
-          const { data: existingStudent } = await admin
-            .from('students')
-            .select('id')
-            .eq('reg_number', regNumber)
-            .maybeSingle()
-
-          const studentFields = {
-            room_number: String(raw.room_number ?? '').trim(),
-            hostel_block: String(raw.hostel_block ?? '').trim(),
-            department: String(raw.department ?? '').trim(),
-            year_of_study: normalizeYear(raw.year_of_study),
-            parent_phone: String(raw.phone ?? '').trim(),
-            parent_email: email,
-            is_active: true,
-          }
-
-          if (existingStudent?.id) {
-            await admin.from('profiles').update({
-              full_name: fullName,
-              phone: String(raw.phone ?? '').trim(),
-            }).eq('id', existingStudent.id)
-
-            const { error: upsertError } = await admin.from('students').upsert(
-              {
-                id: existingStudent.id as string,
-                reg_number: regNumber,
-                ...studentFields,
-              },
-              { onConflict: 'reg_number' },
-            )
-
-            if (upsertError) throw new Error(upsertError.message)
-            updatedCount += 1
-          } else {
-            const ensured = await ensureAuthUser(admin, {
-              email,
-              reg_number: regNumber,
-              full_name: fullName,
-              phone: raw.phone,
-            })
-
-            const { error: upsertError } = await admin.from('students').upsert(
-              {
-                id: ensured.userId,
-                reg_number: regNumber,
-                ...studentFields,
-              },
-              { onConflict: 'reg_number' },
-            )
-
-            if (upsertError) {
-              if (upsertError.code === '23505' || upsertError.message.toLowerCase().includes('duplicate')) {
-                const { error: updateError } = await admin
-                  .from('students')
-                  .update(studentFields)
-                  .eq('reg_number', regNumber)
-                if (updateError) throw new Error(updateError.message)
-                updatedCount += 1
-              } else {
-                throw new Error(upsertError.message)
-              }
-            } else {
-              importedCount += 1
-              if (ensured.created && ensured.password) {
-                newAccounts.push({
-                  email,
-                  reg_number: regNumber,
-                  password: ensured.password,
-                })
-              }
-            }
-          }
-        } catch (err) {
-          errors.push({
-            email,
-            reg_number: regNumber,
-            message: err instanceof Error ? err.message : 'Import failed',
-          })
-        }
-      }
-
-      // Soft pause between batches to ease Auth rate limits
-      if (i + BATCH_SIZE < students.length) {
-        await new Promise((resolve) => setTimeout(resolve, 250))
-      }
+    for (const row of mappedStudents) {
+      if (preexistingRegNumbers.has(row.reg_number)) updatedCount += 1
+      else importedCount += 1
     }
 
     return jsonResponse({

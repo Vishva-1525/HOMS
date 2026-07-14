@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchParentWards, type ParentWard } from '@/lib/parent-data'
 import {
   buildParentAlerts,
@@ -6,6 +6,7 @@ import {
   type ParentAlert,
   type WardStatusSummary,
 } from '@/lib/parent-alerts'
+import { debounce } from '@/lib/debounce'
 import { isPassCompleted } from '@/lib/pass-filters'
 import { supabase } from '@/lib/supabase'
 import type { ExtensionRequest, GateLog, OutpassRequest } from '@/lib/types'
@@ -18,6 +19,9 @@ export interface ParentStats {
   overdue: number
 }
 
+const REALTIME_DEBOUNCE_MS = 600
+const PASS_LIMIT = 100
+
 export function useParentData() {
   const [wards, setWards] = useState<ParentWard[]>([])
   const [selectedWardId, setSelectedWardId] = useState<string | null>(null)
@@ -27,54 +31,77 @@ export function useParentData() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const passIdsRef = useRef<Set<string>>(new Set())
+  const inFlightRef = useRef<Promise<void> | null>(null)
+
   const activeWard = useMemo(
     () => wards.find((w) => w.student.id === selectedWardId) ?? wards[0] ?? null,
     [wards, selectedWardId],
   )
 
   const fetchWardData = useCallback(async (studentId: string) => {
-    const passesResult = await supabase
-      .from('outpass_requests')
-      .select('*')
-      .eq('student_id', studentId)
-      .order('created_at', { ascending: false })
-
-    if (passesResult.error) {
-      setError(passesResult.error.message)
+    if (inFlightRef.current) {
+      await inFlightRef.current
       return
     }
 
-    const wardPasses = (passesResult.data ?? []) as OutpassRequest[]
-    setPasses(wardPasses)
+    const run = (async () => {
+      const passesResult = await supabase
+        .from('outpass_requests')
+        .select(
+          'id, student_id, pass_type, destination, reason, departure_at, return_by, status, warden_remark, approved_at, is_overdue, created_at',
+        )
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false })
+        .limit(PASS_LIMIT)
 
-    const passIds = wardPasses.map((p) => p.id)
-    if (passIds.length === 0) {
-      setGateLogs([])
-      setExtensions([])
-      return
-    }
+      if (passesResult.error) {
+        setError(passesResult.error.message)
+        return
+      }
 
-    const [logsResult, extensionsResult] = await Promise.all([
-      supabase.from('gate_logs').select('*').in('outpass_id', passIds).order('scanned_at', {
-        ascending: false,
-      }),
-      supabase
-        .from('extension_requests')
-        .select('*')
-        .in('outpass_id', passIds)
-        .order('created_at', { ascending: false }),
-    ])
+      const wardPasses = (passesResult.data ?? []) as OutpassRequest[]
+      setPasses(wardPasses)
+      passIdsRef.current = new Set(wardPasses.map((p) => p.id))
 
-    if (logsResult.error) {
-      setError(logsResult.error.message)
-    } else {
-      setGateLogs((logsResult.data ?? []) as GateLog[])
-    }
+      const passIds = wardPasses.map((p) => p.id)
+      if (passIds.length === 0) {
+        setGateLogs([])
+        setExtensions([])
+        return
+      }
 
-    if (extensionsResult.error) {
-      setError(extensionsResult.error.message)
-    } else {
-      setExtensions((extensionsResult.data ?? []) as ExtensionRequest[])
+      const [logsResult, extensionsResult] = await Promise.all([
+        supabase
+          .from('gate_logs')
+          .select('id, outpass_id, scanned_by, event_type, scanned_at')
+          .in('outpass_id', passIds)
+          .order('scanned_at', { ascending: false }),
+        supabase
+          .from('extension_requests')
+          .select('id, outpass_id, new_return_time, reason, status, created_at')
+          .in('outpass_id', passIds)
+          .order('created_at', { ascending: false }),
+      ])
+
+      if (logsResult.error) {
+        console.warn('parent gate_logs soft-failed:', logsResult.error.message)
+      } else {
+        setGateLogs((logsResult.data ?? []) as GateLog[])
+      }
+
+      if (extensionsResult.error) {
+        console.warn('parent extensions soft-failed:', extensionsResult.error.message)
+      } else {
+        setExtensions((extensionsResult.data ?? []) as ExtensionRequest[])
+      }
+    })()
+
+    inFlightRef.current = run
+    try {
+      await run
+    } finally {
+      inFlightRef.current = null
     }
   }, [])
 
@@ -117,7 +144,7 @@ export function useParentData() {
       setLoading(false)
     }
 
-    loadWards()
+    void loadWards()
     return () => {
       cancelled = true
     }
@@ -125,6 +152,10 @@ export function useParentData() {
 
   useEffect(() => {
     if (!selectedWardId) return
+
+    const scheduleRefresh = debounce(() => {
+      void fetchWardData(selectedWardId)
+    }, REALTIME_DEBOUNCE_MS)
 
     const channel = supabase
       .channel(`parent-ward-${selectedWardId}`)
@@ -136,18 +167,27 @@ export function useParentData() {
           table: 'outpass_requests',
           filter: `student_id=eq.${selectedWardId}`,
         },
-        () => fetchWardData(selectedWardId),
+        () => scheduleRefresh(),
       )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, () =>
-        fetchWardData(selectedWardId),
-      )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'extension_requests' }, () =>
-        fetchWardData(selectedWardId),
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, (payload) => {
+        const row = (payload.new ?? payload.old) as { outpass_id?: string } | null
+        if (row?.outpass_id && !passIdsRef.current.has(row.outpass_id)) return
+        scheduleRefresh()
+      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'extension_requests' },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { outpass_id?: string } | null
+          if (row?.outpass_id && !passIdsRef.current.has(row.outpass_id)) return
+          scheduleRefresh()
+        },
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      scheduleRefresh.cancel()
+      void supabase.removeChannel(channel)
     }
   }, [selectedWardId, fetchWardData])
 
