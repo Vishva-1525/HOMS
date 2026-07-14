@@ -62,6 +62,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
   const [fileName, setFileName] = useState<string | null>(null)
   const [rows, setRows] = useState<ParsedStudentImportRow[]>([])
   const [parseErrors, setParseErrors] = useState<string[]>([])
+  const [parseWarnings, setParseWarnings] = useState<string[]>([])
   const [dragOver, setDragOver] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -99,6 +100,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
     setFileName(null)
     setRows([])
     setParseErrors([])
+    setParseWarnings([])
     setSubmitError(null)
     resetProgress()
     if (inputRef.current) inputRef.current.value = ''
@@ -121,15 +123,17 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
 
     if (!/\.(csv|xlsx)$/i.test(file.name)) {
       setParseErrors(['Please upload a .csv or .xlsx file.'])
+      setParseWarnings([])
       setFileName(file.name)
       setRows([])
       return
     }
 
     setFileName(file.name)
-    const { rows: parsed, errors } = await parseStudentImportFile(file)
+    const { rows: parsed, errors, warnings } = await parseStudentImportFile(file)
     setRows(parsed)
     setParseErrors(errors)
+    setParseWarnings(warnings)
   }
 
   function downloadCsvTemplate() {
@@ -460,8 +464,11 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
             Ready to import <span className="font-semibold">{rows.length}</span> student
             {rows.length === 1 ? '' : 's'}
+            {parseWarnings.length > 0
+              ? ` · ${parseWarnings.length} incomplete row${parseWarnings.length === 1 ? '' : 's'} will be skipped.`
+              : ''}
             {rows.length > CHUNK_SIZE
-              ? ` in ${Math.ceil(rows.length / CHUNK_SIZE)} batches of up to ${CHUNK_SIZE}.`
+              ? ` Uploaded in ${Math.ceil(rows.length / CHUNK_SIZE)} batches of up to ${CHUNK_SIZE}.`
               : '.'}
           </div>
         )}
@@ -494,6 +501,26 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
               <p className="text-[11px] text-slate-600">
                 Please keep this window open until the run finishes.
               </p>
+            )}
+          </div>
+        )}
+
+        {parseWarnings.length > 0 && parseErrors.length === 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            <p className="font-semibold">
+              {parseWarnings.length} row{parseWarnings.length === 1 ? '' : 's'} skipped
+            </p>
+            <p className="mt-0.5 text-xs text-amber-900/90">
+              These rows are missing Register Number (or other required fields) in the spreadsheet.
+              You can still import the valid rows; fix the skipped ones and re-import later.
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
+              {parseWarnings.slice(0, 8).map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+            {parseWarnings.length > 8 && (
+              <p className="mt-1 text-xs">+{parseWarnings.length - 8} more…</p>
             )}
           </div>
         )}

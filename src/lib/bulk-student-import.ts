@@ -27,7 +27,10 @@ export interface BulkImportResult {
 
 export interface StudentImportParseResult {
   rows: ParsedStudentImportRow[]
+  /** Fatal issues that block import (e.g. missing required columns). */
   errors: string[]
+  /** Per-row issues; those rows are skipped so valid rows can still import. */
+  warnings: string[]
 }
 
 const REQUIRED_HEADERS = [
@@ -132,6 +135,7 @@ function mapRecordsToStudents(
   rawHeaders: string[],
 ): StudentImportParseResult {
   const errors: string[] = []
+  const warnings: string[] = []
   const mapped = new Map<string, string>()
 
   for (const h of rawHeaders) {
@@ -147,6 +151,7 @@ function mapRecordsToStudents(
       errors: [
         `Missing required columns: ${missing.join(', ')}. Expected at least: Email, Reg Number, Full Name, Phone, Year. ${OPTIONAL_HEADER_HINT}.`,
       ],
+      warnings: [],
     }
   }
 
@@ -166,21 +171,34 @@ function mapRecordsToStudents(
     const department = get('department')
     const yearRaw = get('year')
     const year_of_study = Number(yearRaw)
+    const rowLabel = `Row ${index + 2}`
 
     if (!email && !reg_number && !full_name) return
 
-    if (!email || !reg_number || !full_name) {
-      errors.push(`Row ${index + 2}: Email, Reg Number, and Full Name are required.`)
+    const missingFields: string[] = []
+    if (!email) missingFields.push('Email')
+    if (!reg_number) missingFields.push('Reg Number')
+    if (!full_name) missingFields.push('Full Name')
+    if (missingFields.length > 0) {
+      warnings.push(
+        `${rowLabel}: skipped — missing ${missingFields.join(', ')}${
+          full_name ? ` (${full_name})` : ''
+        }.`,
+      )
       return
     }
 
     if (!email.includes('@')) {
-      errors.push(`Row ${index + 2}: Invalid email “${email}”.`)
+      warnings.push(`${rowLabel}: skipped — invalid email “${email}”.`)
       return
     }
 
     if (!Number.isFinite(year_of_study) || year_of_study < 1 || year_of_study > 4) {
-      errors.push(`Row ${index + 2}: Year must be 1–4 (got “${yearRaw || 'empty'}”).`)
+      warnings.push(
+        `${rowLabel}: skipped — year must be 1–4 (got “${yearRaw || 'empty'}”)${
+          full_name ? ` (${full_name})` : ''
+        }.`,
+      )
       return
     }
 
@@ -196,11 +214,15 @@ function mapRecordsToStudents(
     })
   })
 
-  if (rows.length === 0 && errors.length === 0) {
-    errors.push('File contained no student rows.')
+  if (rows.length === 0) {
+    errors.push(
+      warnings.length > 0
+        ? 'No valid student rows to import. Fix the skipped rows and try again.'
+        : 'File contained no student rows.',
+    )
   }
 
-  return { rows, errors }
+  return { rows, errors, warnings }
 }
 
 export function getCsvTemplate(): string {
@@ -250,10 +272,11 @@ export function parseStudentCsv(file: File): Promise<StudentImportParseResult> {
         resolve({
           rows: mapped.rows,
           errors: [...errors, ...mapped.errors],
+          warnings: mapped.warnings,
         })
       },
       error: (err) => {
-        resolve({ rows: [], errors: [err.message || 'Failed to parse CSV'] })
+        resolve({ rows: [], errors: [err.message || 'Failed to parse CSV'], warnings: [] })
       },
     })
   })
@@ -265,7 +288,7 @@ export async function parseStudentXlsx(file: File): Promise<StudentImportParseRe
     const workbook = XLSX.read(buffer, { type: 'array', cellDates: true })
     const sheetName = workbook.SheetNames[0]
     if (!sheetName) {
-      return { rows: [], errors: ['Excel file has no sheets.'] }
+      return { rows: [], errors: ['Excel file has no sheets.'], warnings: [] }
     }
 
     const sheet = workbook.Sheets[sheetName]
@@ -277,12 +300,12 @@ export async function parseStudentXlsx(file: File): Promise<StudentImportParseRe
     }) as unknown as unknown[][]
 
     if (!matrix.length) {
-      return { rows: [], errors: ['Excel sheet is empty.'] }
+      return { rows: [], errors: ['Excel sheet is empty.'], warnings: [] }
     }
 
     const headerRow = (matrix[0] ?? []).map((cell) => normalizeHeader(cellToString(cell)))
     if (headerRow.every((h) => !h)) {
-      return { rows: [], errors: ['Excel sheet is missing a header row.'] }
+      return { rows: [], errors: ['Excel sheet is missing a header row.'], warnings: [] }
     }
 
     const records: Record<string, string>[] = []
@@ -303,6 +326,7 @@ export async function parseStudentXlsx(file: File): Promise<StudentImportParseRe
     return {
       rows: [],
       errors: [err instanceof Error ? err.message : 'Failed to parse Excel file'],
+      warnings: [],
     }
   }
 }
@@ -322,5 +346,6 @@ export async function parseStudentImportFile(file: File): Promise<StudentImportP
   return {
     rows: [],
     errors: ['Please upload a .csv or .xlsx file.'],
+    warnings: [],
   }
 }
