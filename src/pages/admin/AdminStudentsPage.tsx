@@ -239,7 +239,7 @@ export function AdminStudentsPage() {
       </div>
 
       {loading && students.length > 0 && (
-        <p className="text-xs font-medium text-slate-500">Refreshing students…</p>
+        <p className="dashboard-on-photo-muted text-xs font-medium">Refreshing students…</p>
       )}
 
       {!students || students.length === 0 ? (
@@ -265,7 +265,7 @@ export function AdminStudentsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+      <div className="dashboard-on-photo-muted flex items-center justify-between gap-4 text-sm">
         <p>
           Showing {rangeStart}–{rangeEnd} of {totalCount}
           {totalPages > 1 ? ` · Page ${page} of ${totalPages}` : ''}

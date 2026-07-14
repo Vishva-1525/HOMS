@@ -23,7 +23,7 @@ export function DashboardBackground({ children, className, style }: DashboardBac
     >
       {/* Layered wash — soft depth so glass panels and tables stay crisp */}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0B3664]/62 via-[#0f172a]/48 to-[#020617]/64"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0B3664]/72 via-[#0f172a]/58 to-[#020617]/72"
         aria-hidden
       />
       {/* Ambient highlights */}

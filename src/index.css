@@ -135,15 +135,18 @@
   }
 
   .dashboard-heading {
-    @apply font-bold tracking-tight text-slate-950;
+    @apply font-bold tracking-tight text-white;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.25);
   }
 
   .dashboard-subheading {
-    @apply font-medium leading-relaxed text-slate-700;
+    @apply font-medium leading-relaxed text-slate-100;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
   }
 
   .dashboard-muted {
-    @apply text-slate-600;
+    @apply text-slate-100;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   }
 
   .dashboard-surface {
@@ -152,6 +155,46 @@
 
   .dashboard-surface-muted {
     @apply overflow-hidden rounded-2xl border border-white/80 bg-white/95 text-slate-900 shadow-[0_10px_36px_-12px_rgba(15,23,42,0.24)] backdrop-blur-xl;
+  }
+
+  /* On white/glass panels: invert back to dark text for readability */
+  .dashboard-page-header .dashboard-heading,
+  .dashboard-surface .dashboard-heading,
+  .dashboard-surface-muted .dashboard-heading,
+  .glass-panel .dashboard-heading,
+  .glass-panel-strong .dashboard-heading,
+  .academic-calendar-panel .dashboard-heading,
+  .dashboard-loading-panel .dashboard-heading,
+  .security-scan-card .dashboard-heading,
+  .dashboard-section-bar .dashboard-heading {
+    @apply text-slate-950;
+    text-shadow: none;
+  }
+
+  .dashboard-page-header .dashboard-subheading,
+  .dashboard-surface .dashboard-subheading,
+  .dashboard-surface-muted .dashboard-subheading,
+  .glass-panel .dashboard-subheading,
+  .glass-panel-strong .dashboard-subheading,
+  .academic-calendar-panel .dashboard-subheading,
+  .dashboard-loading-panel .dashboard-subheading,
+  .security-scan-card .dashboard-subheading,
+  .dashboard-section-bar .dashboard-subheading {
+    @apply text-slate-700;
+    text-shadow: none;
+  }
+
+  .dashboard-page-header .dashboard-muted,
+  .dashboard-surface .dashboard-muted,
+  .dashboard-surface-muted .dashboard-muted,
+  .glass-panel .dashboard-muted,
+  .glass-panel-strong .dashboard-muted,
+  .academic-calendar-panel .dashboard-muted,
+  .dashboard-loading-panel .dashboard-muted,
+  .security-scan-card .dashboard-muted,
+  .dashboard-section-bar .dashboard-muted {
+    @apply text-slate-600;
+    text-shadow: none;
   }
 
   .academic-calendar-panel {
@@ -213,15 +256,45 @@
   }
 
   .dashboard-section-title {
-    @apply px-1 text-sm font-bold tracking-tight text-slate-950 sm:text-base;
+    @apply px-1 text-sm font-bold tracking-tight text-white sm:text-base;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.25);
   }
 
   .dashboard-section-heading {
-    @apply flex items-center gap-3 px-1 text-base font-bold tracking-tight text-slate-950 sm:text-lg;
+    @apply flex items-center gap-3 px-1 text-base font-bold tracking-tight text-white sm:text-lg;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.25);
   }
 
   .dashboard-section-accent {
-    @apply h-5 w-1.5 shrink-0 rounded-full bg-[#1A5CA0];
+    @apply h-5 w-1.5 shrink-0 rounded-full bg-sky-300 shadow-[0_0_0_1px_rgba(255,255,255,0.35)];
+  }
+
+  .dashboard-page-header .dashboard-section-title,
+  .dashboard-surface .dashboard-section-title,
+  .dashboard-surface-muted .dashboard-section-title,
+  .glass-panel .dashboard-section-title,
+  .glass-panel-strong .dashboard-section-title,
+  .academic-calendar-panel .dashboard-section-title,
+  .dashboard-section-bar .dashboard-section-title,
+  .dashboard-page-header .dashboard-section-heading,
+  .dashboard-surface .dashboard-section-heading,
+  .dashboard-surface-muted .dashboard-section-heading,
+  .glass-panel .dashboard-section-heading,
+  .glass-panel-strong .dashboard-section-heading,
+  .academic-calendar-panel .dashboard-section-heading,
+  .dashboard-section-bar .dashboard-section-heading {
+    @apply text-slate-950;
+    text-shadow: none;
+  }
+
+  .dashboard-page-header .dashboard-section-accent,
+  .dashboard-surface .dashboard-section-accent,
+  .dashboard-surface-muted .dashboard-section-accent,
+  .glass-panel .dashboard-section-accent,
+  .glass-panel-strong .dashboard-section-accent,
+  .academic-calendar-panel .dashboard-section-accent,
+  .dashboard-section-bar .dashboard-section-accent {
+    @apply bg-[#1A5CA0] shadow-none;
   }
 
   .time-scroll-picker {
@@ -287,11 +360,21 @@
   }
 
   .dashboard-filter-chip {
-    @apply rounded-full border border-white/55 bg-white/55 px-3.5 py-1.5 text-xs font-medium text-slate-700 backdrop-blur-md transition-colors hover:bg-white/70;
+    @apply rounded-full border border-white/70 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur-md transition-colors hover:bg-white;
   }
 
   .dashboard-filter-chip-active {
-    @apply rounded-full bg-[#1A5CA0] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm;
+    @apply rounded-full bg-[#1A5CA0] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm;
+  }
+
+  .dashboard-on-photo {
+    @apply text-white;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+
+  .dashboard-on-photo-muted {
+    @apply text-slate-100;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   }
 
   .dashboard-shell .glass-panel .text-muted-foreground,
@@ -365,14 +448,74 @@
   html.dark .dashboard-shell .dashboard-section-heading,
   html.dark .dashboard-shell .dashboard-section-title {
     color: rgb(255 255 255) !important;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-page-header .dashboard-heading,
+  html.dark .dashboard-shell .dashboard-surface .dashboard-heading,
+  html.dark .dashboard-shell .dashboard-surface-muted .dashboard-heading,
+  html.dark .dashboard-shell .glass-panel .dashboard-heading,
+  html.dark .dashboard-shell .glass-panel-strong .dashboard-heading,
+  html.dark .dashboard-shell .academic-calendar-panel .dashboard-heading,
+  html.dark .dashboard-shell .dashboard-page-header .dashboard-section-heading,
+  html.dark .dashboard-shell .dashboard-surface .dashboard-section-heading,
+  html.dark .dashboard-shell .dashboard-surface-muted .dashboard-section-heading,
+  html.dark .dashboard-shell .glass-panel .dashboard-section-heading,
+  html.dark .dashboard-shell .glass-panel-strong .dashboard-section-heading,
+  html.dark .dashboard-shell .academic-calendar-panel .dashboard-section-heading,
+  html.dark .dashboard-shell .dashboard-page-header .dashboard-section-title,
+  html.dark .dashboard-shell .dashboard-surface .dashboard-section-title,
+  html.dark .dashboard-shell .dashboard-surface-muted .dashboard-section-title {
+    text-shadow: none !important;
   }
 
   html.dark .dashboard-shell .dashboard-subheading {
-    color: rgb(203 213 225) !important;
+    color: rgb(226 232 240) !important;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.35) !important;
   }
 
-  html.dark .dashboard-shell .dashboard-muted {
+  html.dark .dashboard-shell .dashboard-page-header .dashboard-subheading,
+  html.dark .dashboard-shell .dashboard-surface .dashboard-subheading,
+  html.dark .dashboard-shell .dashboard-surface-muted .dashboard-subheading,
+  html.dark .dashboard-shell .glass-panel .dashboard-subheading,
+  html.dark .dashboard-shell .glass-panel-strong .dashboard-subheading,
+  html.dark .dashboard-shell .academic-calendar-panel .dashboard-subheading {
+    text-shadow: none !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-muted,
+  html.dark .dashboard-shell .dashboard-on-photo-muted {
+    color: rgb(226 232 240) !important;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.35) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-page-header .dashboard-muted,
+  html.dark .dashboard-shell .dashboard-surface .dashboard-muted,
+  html.dark .dashboard-shell .dashboard-surface-muted .dashboard-muted,
+  html.dark .dashboard-shell .glass-panel .dashboard-muted,
+  html.dark .dashboard-shell .glass-panel-strong .dashboard-muted,
+  html.dark .dashboard-shell .academic-calendar-panel .dashboard-muted {
     color: rgb(186 198 214) !important;
+    text-shadow: none !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-on-photo {
+    color: rgb(255 255 255) !important;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45) !important;
+  }
+
+  html.dark .dashboard-shell .dashboard-section-accent {
+    background-color: rgb(125 211 252) !important;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.3);
+  }
+
+  html.dark .dashboard-shell .dashboard-page-header .dashboard-section-accent,
+  html.dark .dashboard-shell .dashboard-surface .dashboard-section-accent,
+  html.dark .dashboard-shell .dashboard-surface-muted .dashboard-section-accent,
+  html.dark .dashboard-shell .glass-panel .dashboard-section-accent,
+  html.dark .dashboard-shell .glass-panel-strong .dashboard-section-accent {
+    background-color: #60a5fa !important;
+    box-shadow: none;
   }
 
   html.dark .dashboard-shell .text-slate-900,

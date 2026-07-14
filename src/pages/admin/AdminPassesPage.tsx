@@ -336,7 +336,7 @@ export function AdminPassesPage() {
         />
       </div>
 
-      <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+      <div className="dashboard-on-photo-muted flex items-center justify-between gap-4 text-sm">
         <p>
           Showing {rangeStart}–{rangeEnd} of {total}
         </p>

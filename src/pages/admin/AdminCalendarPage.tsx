@@ -243,7 +243,7 @@ export function AdminCalendarPage() {
                 'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
                 typeFilter === option.id
                   ? 'bg-[#1A5CA0] text-white shadow-sm'
-                  : 'bg-white/70 text-slate-800 hover:bg-white',
+                  : 'border border-white/70 bg-white/90 text-slate-900 shadow-sm hover:bg-white',
               )}
             >
               {option.label}
