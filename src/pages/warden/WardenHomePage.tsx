@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react'
 import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
+import { WardenCalendarPanel } from '@/components/warden/WardenCalendarPanel'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
@@ -176,86 +177,92 @@ export function WardenHomePage() {
         </section>
       )}
 
-      <div>
-        <div className="dashboard-section-bar">
-          <h2 className="dashboard-section-heading text-base">
-            <span className="dashboard-section-accent" aria-hidden />
-            Pending requests
-          </h2>
-          <Link to="/warden/pending" className="dashboard-link text-sm">
-            View all
-          </Link>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5 xl:gap-8">
+        <div className="xl:col-span-3">
+          <div className="dashboard-section-bar">
+            <h2 className="dashboard-section-heading text-base">
+              <span className="dashboard-section-accent" aria-hidden />
+              Pending requests
+            </h2>
+            <Link to="/warden/pending" className="dashboard-link text-sm">
+              View all
+            </Link>
+          </div>
+
+          <div className="dashboard-surface">
+            <DataTable
+              columns={[
+                {
+                  header: 'Student',
+                  accessor: 'id',
+                  render: (row) => (
+                    <div className="flex items-center gap-3">
+                      <StudentAvatar name={getStudentName(row.students)} size="sm" />
+                      <span className="font-medium text-slate-900">
+                        {getStudentName(row.students)}
+                      </span>
+                    </div>
+                  ),
+                },
+                {
+                  header: 'Room',
+                  accessor: 'id',
+                  render: (row) => getStudentRoom(row.students),
+                },
+                {
+                  header: 'Type',
+                  accessor: 'pass_type',
+                  render: (row) => <PassTypeBadge type={row.pass_type} />,
+                },
+                { header: 'Destination', accessor: 'destination' },
+                {
+                  header: 'Duration',
+                  accessor: 'departure_at',
+                  render: (row) => formatPassDuration(row.departure_at, row.return_by),
+                },
+                {
+                  header: 'Submitted',
+                  accessor: 'created_at',
+                  render: (row) => formatRelativeTime(row.created_at),
+                },
+                {
+                  header: 'Actions',
+                  accessor: 'id',
+                  render: (row) => (
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="text-[#DC2626] hover:bg-[#FEF2F2]"
+                        onClick={() => openDrawer(row, 'reject')}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={pendingPreview}
+              emptyMessage="No pending requests right now."
+              getRowKey={(row) => row.id}
+              getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
+              mobileCardRender={(row) => (
+                <WardenPendingMobileCard
+                  pass={row}
+                  onApprove={() => openDrawer(row, 'approve')}
+                  onReject={() => openDrawer(row, 'reject')}
+                />
+              )}
+            />
+          </div>
         </div>
 
-        <div className="dashboard-surface">
-          <DataTable
-            columns={[
-              {
-                header: 'Student',
-                accessor: 'id',
-                render: (row) => (
-                  <div className="flex items-center gap-3">
-                    <StudentAvatar name={getStudentName(row.students)} size="sm" />
-                    <span className="font-medium text-slate-900">
-                      {getStudentName(row.students)}
-                    </span>
-                  </div>
-                ),
-              },
-              {
-                header: 'Room',
-                accessor: 'id',
-                render: (row) => getStudentRoom(row.students),
-              },
-              {
-                header: 'Type',
-                accessor: 'pass_type',
-                render: (row) => <PassTypeBadge type={row.pass_type} />,
-              },
-              { header: 'Destination', accessor: 'destination' },
-              {
-                header: 'Duration',
-                accessor: 'departure_at',
-                render: (row) => formatPassDuration(row.departure_at, row.return_by),
-              },
-              {
-                header: 'Submitted',
-                accessor: 'created_at',
-                render: (row) => formatRelativeTime(row.created_at),
-              },
-              {
-                header: 'Actions',
-                accessor: 'id',
-                render: (row) => (
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
-                      Approve
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="text-[#DC2626] hover:bg-[#FEF2F2]"
-                      onClick={() => openDrawer(row, 'reject')}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
-            data={pendingPreview}
-            emptyMessage="No pending requests right now."
-            getRowKey={(row) => row.id}
-            getRowClassName={(row) => (fadingIds.has(row.id) ? 'opacity-0' : undefined)}
-            mobileCardRender={(row) => (
-              <WardenPendingMobileCard
-                pass={row}
-                onApprove={() => openDrawer(row, 'approve')}
-                onReject={() => openDrawer(row, 'reject')}
-              />
-            )}
-          />
+        <div className="xl:col-span-2">
+          <WardenCalendarPanel />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useCallback, useState } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { DashboardBackground } from '@/components/layout/DashboardBackground'
 import { MobileDrawer } from '@/components/layout/MobileDrawer'
@@ -21,9 +21,24 @@ export function AppShell({
   notificationSlot,
 }: AppShellProps) {
   const { profile, role, signOut } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+
+  const handleSignOut = useCallback(async () => {
+    if (signingOut) return
+    setSigningOut(true)
+    try {
+      await signOut()
+    } catch (err) {
+      console.error('Sign out failed:', err)
+    } finally {
+      navigate('/login', { replace: true })
+      setSigningOut(false)
+    }
+  }, [navigate, signOut, signingOut])
 
   if (!profile || !role) return null
 
@@ -39,7 +54,8 @@ export function AppShell({
         navItems={navItems}
         role={role}
         userName={userName}
-        onSignOut={() => signOut()}
+        onSignOut={handleSignOut}
+        signingOut={signingOut}
         getNavBadgeCount={getNavBadgeCount}
       />
 
@@ -49,7 +65,8 @@ export function AppShell({
         navItems={navItems}
         role={role}
         userName={userName}
-        onSignOut={() => signOut()}
+        onSignOut={handleSignOut}
+        signingOut={signingOut}
         getNavBadgeCount={getNavBadgeCount}
       />
 

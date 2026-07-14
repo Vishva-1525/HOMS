@@ -107,9 +107,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    // Clear local auth state first so protected routes cannot linger after logout.
+    setSession(null)
+    setUser(null)
     setProfile(null)
+
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      // Ensure this browser still drops tokens even if global revoke fails.
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined)
+      throw error
+    }
   }, [])
 
   const changePassword = useCallback(async (newPassword: string) => {

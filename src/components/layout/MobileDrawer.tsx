@@ -14,8 +14,9 @@ interface MobileDrawerProps {
   navItems: NavItem[]
   role: UserRole
   userName: string
-  onSignOut: () => void
+  onSignOut: () => void | Promise<void>
   getNavBadgeCount?: (path: string) => number
+  signingOut?: boolean
 }
 
 export function MobileDrawer({
@@ -26,6 +27,7 @@ export function MobileDrawer({
   userName,
   onSignOut,
   getNavBadgeCount,
+  signingOut = false,
 }: MobileDrawerProps) {
   useEffect(() => {
     if (!open) return
@@ -57,7 +59,7 @@ export function MobileDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-white/80 hover:bg-white/10 hover:text-white"
+            className="rounded-md p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -96,25 +98,31 @@ export function MobileDrawer({
           })}
         </nav>
 
-        <div className="border-t border-white/10 p-4">
+        <div className="space-y-3 border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
             <UserAvatar name={userName} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{userName}</p>
               <p className="truncate text-xs text-white/70">{ROLE_LABELS[role]}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                onClose()
-                onSignOut()
-              }}
-              className="rounded-md p-1.5 text-white/80 hover:bg-white/10 hover:text-white"
-              aria-label="Sign out"
-            >
-              <LogOut className="h-5 w-5" strokeWidth={1.75} />
-            </button>
           </div>
+
+          <button
+            type="button"
+            disabled={signingOut}
+            onClick={() => {
+              onClose()
+              void onSignOut()
+            }}
+            className={cn(
+              'sidebar-logout-btn w-full',
+              signingOut && 'cursor-wait opacity-70',
+            )}
+            aria-label="Log out"
+          >
+            <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.85} />
+            <span>{signingOut ? 'Signing out…' : 'Log out'}</span>
+          </button>
         </div>
       </aside>
     </div>

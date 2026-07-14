@@ -12,7 +12,7 @@ export function DashboardBackground({ children, className, style }: DashboardBac
   return (
     <div
       className={cn(
-        'dashboard-shell relative min-h-[100dvh] bg-cover bg-center bg-no-repeat',
+        'dashboard-shell relative min-h-[100dvh] overflow-x-hidden bg-cover bg-center bg-no-repeat',
         'bg-scroll md:bg-fixed',
         className,
       )}
@@ -21,14 +21,23 @@ export function DashboardBackground({ children, className, style }: DashboardBac
         ...style,
       }}
     >
-      {/* Base wash — keeps cards readable while preserving campus atmosphere */}
+      {/* Layered wash — soft depth so glass panels and tables stay crisp */}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0D3F72]/55 via-slate-900/42 to-[#020617]/58"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0B3664]/62 via-[#0f172a]/48 to-[#020617]/64"
         aria-hidden
       />
-      {/* Soft highlight + depth — Light mode only; dark overrides via dark-dashboard.css */}
+      {/* Ambient highlights */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_20%_-10%,rgba(255,255,255,0.28)_0%,transparent_55%),radial-gradient(ellipse_70%_45%_at_95%_5%,rgba(26,92,160,0.18)_0%,transparent_50%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_50%_at_12%_-8%,rgba(255,255,255,0.22)_0%,transparent_52%),radial-gradient(ellipse_65%_40%_at_92%_8%,rgba(26,92,160,0.22)_0%,transparent_48%),radial-gradient(ellipse_50%_35%_at_70%_100%,rgba(14,116,144,0.08)_0%,transparent_55%)]"
+        aria-hidden
+      />
+      {/* Fine grain for texture without clutter */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.035] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+        }}
         aria-hidden
       />
       <div className="relative z-10">{children}</div>

@@ -12,8 +12,9 @@ interface SidebarProps {
   navItems: NavItem[]
   role: UserRole
   userName: string
-  onSignOut: () => void
+  onSignOut: () => void | Promise<void>
   getNavBadgeCount?: (path: string) => number
+  signingOut?: boolean
 }
 
 export function Sidebar({
@@ -23,6 +24,7 @@ export function Sidebar({
   userName,
   onSignOut,
   getNavBadgeCount,
+  signingOut = false,
 }: SidebarProps) {
   return (
     <aside
@@ -76,7 +78,7 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className={cn('border-t border-white/10 p-3', collapsed && 'px-2')}>
+      <div className={cn('space-y-2 border-t border-white/10 p-3', collapsed && 'px-2')}>
         <div
           className={cn(
             'flex items-center gap-3',
@@ -90,15 +92,23 @@ export function Sidebar({
               <p className="truncate text-xs text-white/70">{ROLE_LABELS[role]}</p>
             </div>
           )}
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="rounded-md p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-5 w-5" strokeWidth={1.75} />
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => void onSignOut()}
+          disabled={signingOut}
+          className={cn(
+            'sidebar-logout-btn w-full',
+            collapsed && 'px-2',
+            signingOut && 'cursor-wait opacity-70',
+          )}
+          aria-label="Log out"
+          title="Log out"
+        >
+          <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.85} />
+          {!collapsed && <span>{signingOut ? 'Signing out…' : 'Log out'}</span>}
+        </button>
       </div>
     </aside>
   )

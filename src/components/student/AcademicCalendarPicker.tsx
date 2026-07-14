@@ -17,6 +17,10 @@ interface AcademicCalendarPickerProps {
   onSelectDate?: (dateKey: string) => void
   loading?: boolean
   compact?: boolean
+  /** browse = inspect any day (warden); picker = outpass selectable days only */
+  mode?: 'picker' | 'browse'
+  title?: string
+  helperText?: string
 }
 
 const LEGEND_TYPES: AcademicDayType[] = [
@@ -56,6 +60,9 @@ export function AcademicCalendarPicker({
   onSelectDate,
   loading,
   compact = false,
+  mode = 'picker',
+  title = 'Academic calendar',
+  helperText,
 }: AcademicCalendarPickerProps) {
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date()
@@ -65,6 +72,7 @@ export function AcademicCalendarPicker({
   const year = viewMonth.getFullYear()
   const month = viewMonth.getMonth()
   const yearOptions = useMemo(() => buildYearOptions(year), [year])
+  const browse = mode === 'browse'
 
   useEffect(() => {
     if (!selectedDateKey) return
@@ -91,13 +99,28 @@ export function AcademicCalendarPicker({
     setViewMonth((prev) => new Date(nextYear, prev.getMonth(), 1))
   }
 
+  const resolvedHelper =
+    helperText ??
+    (browse
+      ? 'Tap a date to inspect holidays and working days.'
+      : onSelectDate
+        ? 'Tap a working day or study holiday to select your date.'
+        : 'Select departure/return dates on working days or study holidays only.')
+
   return (
     <div className={cn(compact ? 'p-0' : 'academic-calendar-panel')}>
       {!compact && (
-        <p className="dashboard-heading text-sm">Academic calendar</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="dashboard-heading text-sm sm:text-[15px]">{title}</p>
+            <p className="dashboard-muted mt-0.5 text-[11px] leading-relaxed sm:text-xs">
+              {MONTH_NAMES[month]} {year}
+            </p>
+          </div>
+        </div>
       )}
 
-      <div className={cn('flex flex-wrap items-center justify-between gap-2', !compact && 'mt-3')}>
+      <div className={cn('flex flex-wrap items-center justify-between gap-2', !compact && 'mt-3.5')}>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -146,7 +169,7 @@ export function AcademicCalendarPicker({
       </div>
 
       {!compact && (
-        <div className="mt-3.5 flex flex-wrap gap-2">
+        <div className="mt-3.5 flex flex-wrap gap-1.5 sm:gap-2">
           {LEGEND_TYPES.map((type) => (
             <span
               key={type}
@@ -165,19 +188,22 @@ export function AcademicCalendarPicker({
         <p className="dashboard-muted mt-4 text-center text-xs">Loading calendar…</p>
       ) : (
         <>
-          <div className="mt-3.5 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+          <div className="mt-4 grid grid-cols-7 gap-1 sm:gap-1.5">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-              <span key={d}>{d}</span>
+              <span key={d} className="academic-calendar-weekday">
+                {d}
+              </span>
             ))}
           </div>
-          <div className="mt-1.5 grid grid-cols-7 gap-1.5">
+          <div className="mt-1.5 grid grid-cols-7 gap-1 sm:gap-1.5">
             {cells.map((dateKey, index) => {
               if (!dateKey) {
                 return <div key={`empty-${index}`} className="aspect-square" />
               }
 
               const dayType = getDayTypeForCell(dateKey, calendarMap)
-              const selectable = isDateSelectableForOutpass(dateKey, calendarMap)
+              const selectable = browse || isDateSelectableForOutpass(dateKey, calendarMap)
+              const canInteract = Boolean(onSelectDate) && (browse || selectable)
               const isSelected = selectedDateKey === dateKey
               const isToday = dateKey === toDateKey(new Date())
               const dayNum = parseDateKey(dateKey).getDate()
@@ -187,7 +213,7 @@ export function AcademicCalendarPicker({
                 <button
                   key={dateKey}
                   type="button"
-                  disabled={!selectable || !onSelectDate}
+                  disabled={!canInteract}
                   title={entry?.label || ACADEMIC_DAY_LABELS[dayType]}
                   aria-current={isToday ? 'date' : undefined}
                   aria-pressed={isSelected}
@@ -197,9 +223,8 @@ export function AcademicCalendarPicker({
                     !isSelected && ACADEMIC_DAY_STYLES[dayType],
                     isSelected && 'academic-calendar-day-selected',
                     isToday && 'academic-calendar-day-today',
-                    !selectable && 'cursor-not-allowed opacity-35 grayscale',
-                    selectable &&
-                      onSelectDate &&
+                    !canInteract && 'cursor-not-allowed opacity-35 grayscale',
+                    canInteract &&
                       !isSelected &&
                       'hover:-translate-y-0.5 hover:shadow-md hover:brightness-[0.97] active:translate-y-0',
                   )}
@@ -209,11 +234,7 @@ export function AcademicCalendarPicker({
               )
             })}
           </div>
-          <p className="dashboard-muted mt-3.5 text-[11px] leading-relaxed">
-            {onSelectDate
-              ? 'Tap a working day or study holiday to select your date.'
-              : 'Select departure/return dates on working days or study holidays only.'}
-          </p>
+          <p className="dashboard-muted mt-3.5 text-[11px] leading-relaxed">{resolvedHelper}</p>
         </>
       )}
     </div>
