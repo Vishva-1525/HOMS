@@ -11,9 +11,7 @@ type CampusStatus = AdminStudentRow['campus_status']
 
 interface CampusStatusRow {
   student_id: string
-  reg_number: string
   full_name: string
-  hostel_block: string
   current_status: CampusStatus
 }
 
@@ -23,16 +21,26 @@ interface StudentQueryRow {
   room_number: string
   hostel_block: string
   department: string
-  year_of_study: number
-  parent_phone: string
-  parent_email: string
+  year_of_study: number | null
+  parent_phone: string | null
+  parent_email: string | null
   is_active: boolean | null
-  profiles: { full_name: string; phone: string } | null
+}
+
+interface ProfileRow {
+  id: string
+  full_name: string | null
+  phone: string | null
 }
 
 function toCampusStatus(value: string | null | undefined): CampusStatus {
   if (value === 'outside' || value === 'overdue' || value === 'inside') return value
   return 'inside'
+}
+
+function normalizeYear(value: number | null | undefined): number {
+  const n = Number(value)
+  return Number.isFinite(n) && n > 0 ? n : 0
 }
 
 export function useAdminStudents() {
@@ -58,8 +66,8 @@ export function useAdminStudents() {
   const fetchFilterOptions = useCallback(async () => {
     const [blocksResult, deptsResult, activeResult, outsideResult, overdueResult] =
       await Promise.all([
-        supabase.from('students').select('hostel_block'),
-        supabase.from('students').select('department'),
+        supabase.from('students').select('hostel_block').eq('is_active', true).limit(2000),
+        supabase.from('students').select('department').eq('is_active', true).limit(2000),
         supabase
           .from('students')
           .select('id', { count: 'exact', head: true })
@@ -96,7 +104,7 @@ export function useAdminStudents() {
       const to = from + PAGE_SIZE - 1
       const q = debouncedSearch.trim()
 
-      // Name search: resolve matching IDs from the campus status view first (bounded).
+      // Name search via campus-status view (has denormalized full_name).
       let nameMatchedIds: string[] | null = null
       if (q && /[a-zA-Z\s]/.test(q)) {
         const { data: nameHits } = await supabase
@@ -107,6 +115,7 @@ export function useAdminStudents() {
         nameMatchedIds = ((nameHits ?? []) as { student_id: string }[]).map((r) => r.student_id)
       }
 
+      // Flat students page — no nested outpass_requests / gate_logs / profiles embed.
       let query = supabase
         .from('students')
         .select(
@@ -119,8 +128,7 @@ export function useAdminStudents() {
           year_of_study,
           parent_phone,
           parent_email,
-          is_active,
-          profiles ( full_name, phone )
+          is_active
         `,
           { count: 'exact' },
         )
@@ -150,47 +158,67 @@ export function useAdminStudents() {
         return
       }
 
-      const pageRows = (data ?? []).map((row) => {
-        const raw = row as StudentQueryRow & {
-          profiles: StudentQueryRow['profiles'] | StudentQueryRow['profiles'][]
-        }
-        const profiles = Array.isArray(raw.profiles) ? (raw.profiles[0] ?? null) : raw.profiles
-        return { ...raw, profiles }
-      }) as StudentQueryRow[]
-      const ids = pageRows.map((r) => r.id)
+      const pageRows = (data ?? []) as StudentQueryRow[]
+      const ids = pageRows.map((r) => r.id).filter(Boolean)
 
       const statusById = new Map<string, CampusStatus>()
-      if (ids.length > 0) {
-        const { data: statusRows, error: statusError } = await supabase
-          .from('student_campus_status')
-          .select('student_id, current_status')
-          .in('student_id', ids)
+      const nameById = new Map<string, string>()
+      const profileById = new Map<string, ProfileRow>()
 
-        if (statusError) {
-          console.warn('student_campus_status soft-failed:', statusError.message)
+      if (ids.length > 0) {
+        const [statusResult, profileResult] = await Promise.all([
+          supabase
+            .from('student_campus_status')
+            .select('student_id, full_name, current_status')
+            .in('student_id', ids),
+          supabase.from('profiles').select('id, full_name, phone').in('id', ids),
+        ])
+
+        if (statusResult.error) {
+          console.warn('student_campus_status soft-failed:', statusResult.error.message)
         } else {
-          for (const row of (statusRows ?? []) as Pick<CampusStatusRow, 'student_id' | 'current_status'>[]) {
+          for (const row of (statusResult.data ?? []) as CampusStatusRow[]) {
             statusById.set(row.student_id, toCampusStatus(row.current_status))
+            if (row.full_name?.trim()) nameById.set(row.student_id, row.full_name.trim())
+          }
+        }
+
+        if (profileResult.error) {
+          console.warn('profiles soft-failed:', profileResult.error.message)
+        } else {
+          for (const row of (profileResult.data ?? []) as ProfileRow[]) {
+            profileById.set(row.id, row)
+            if (row.full_name?.trim() && !nameById.has(row.id)) {
+              nameById.set(row.id, row.full_name.trim())
+            }
           }
         }
       }
 
-      setStudents(
-        pageRows.map((row) => ({
+      const mapped: AdminStudentRow[] = pageRows.map((row) => {
+        const profile = profileById.get(row.id) ?? null
+        const fullName = nameById.get(row.id) ?? profile?.full_name?.trim() ?? ''
+        return {
           id: row.id,
-          reg_number: row.reg_number,
-          room_number: row.room_number,
-          hostel_block: row.hostel_block,
-          department: row.department,
-          year_of_study: row.year_of_study,
-          parent_phone: row.parent_phone,
-          parent_email: row.parent_email,
+          reg_number: row.reg_number ?? '',
+          room_number: row.room_number ?? '',
+          hostel_block: row.hostel_block ?? '',
+          department: row.department ?? '',
+          year_of_study: normalizeYear(row.year_of_study),
+          parent_phone: row.parent_phone ?? '',
+          parent_email: row.parent_email ?? '',
           is_active: row.is_active ?? true,
-          profiles: row.profiles,
+          full_name: fullName,
+          profiles: {
+            full_name: fullName,
+            phone: profile?.phone ?? '',
+          },
           campus_status: statusById.get(row.id) ?? 'inside',
-        })),
-      )
-      setTotalCount(count ?? pageRows.length)
+        }
+      })
+
+      setStudents(mapped)
+      setTotalCount(count ?? mapped.length)
     } catch (err) {
       setError(formatNetworkError(err, 'Failed to load students.'))
       setStudents([])
@@ -271,6 +299,7 @@ export function useAdminStudents() {
     departments,
     summary,
     loading,
+    isLoading: loading,
     error,
     search,
     setSearch,

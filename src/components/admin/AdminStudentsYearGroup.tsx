@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { AdminStudentRowActions } from '@/components/admin/AdminStudentRowActions'
 import { DataTable } from '@/components/ui/DataTable'
-import type { AdminStudentRow } from '@/lib/admin-types'
+import { getAdminStudentName, type AdminStudentRow } from '@/lib/admin-types'
 import { formatBlockLabel } from '@/lib/block-display'
 import { formatStudentYearLabel, STUDENT_YEAR_ORDER } from '@/lib/student-year'
 import { cn } from '@/lib/utils'
@@ -14,16 +14,20 @@ interface AdminStudentsYearGroupProps {
   onRefetch: () => Promise<void>
 }
 
-function CampusBadge({ status }: { status: AdminStudentRow['campus_status'] }) {
+function CampusBadge({ status }: { status?: AdminStudentRow['campus_status'] | null }) {
+  const resolved: AdminStudentRow['campus_status'] =
+    status === 'outside' || status === 'overdue' || status === 'inside' ? status : 'inside'
+
   const styles = {
     inside: 'bg-emerald-100 text-emerald-800',
     outside: 'bg-blue-100 text-blue-800',
     overdue: 'bg-red-100 text-red-800',
   }
   const labels = { inside: 'Inside', outside: 'Outside', overdue: 'Overdue' }
+
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', styles[status])}>
-      {labels[status]}
+    <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', styles[resolved])}>
+      {labels[resolved]}
     </span>
   )
 }
@@ -36,7 +40,10 @@ export function AdminStudentsYearGroup({
   onRefetch,
 }: AdminStudentsYearGroupProps) {
   const sortedStudents = useMemo(
-    () => [...students].sort((a, b) => a.reg_number.localeCompare(b.reg_number)),
+    () =>
+      [...(students ?? [])].sort((a, b) =>
+        (a.reg_number ?? '').localeCompare(b.reg_number ?? '', undefined, { sensitivity: 'base' }),
+      ),
     [students],
   )
 
@@ -46,7 +53,7 @@ export function AdminStudentsYearGroup({
         <div>
           <h2 className="dashboard-section-heading text-lg sm:text-xl">
             <span className="dashboard-section-accent h-6" aria-hidden />
-            {formatStudentYearLabel(year)}
+            {year > 0 ? formatStudentYearLabel(year) : 'Unassigned year'}
           </h2>
           <p className="dashboard-muted mt-1 text-sm">
             {sortedStudents.length} student{sortedStudents.length === 1 ? '' : 's'}
@@ -64,11 +71,9 @@ export function AdminStudentsYearGroup({
           columns={[
             {
               header: 'Name',
-              accessor: 'id',
+              accessor: 'full_name',
               render: (row) => (
-                <span className="font-medium text-slate-900">
-                  {row.profiles?.full_name ?? '—'}
-                </span>
+                <span className="font-medium text-slate-900">{getAdminStudentName(row)}</span>
               ),
             },
             { header: 'Reg No', accessor: 'reg_number' },
@@ -121,15 +126,15 @@ export function AdminStudentsYearGroup({
             <div className="space-y-3 px-4 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-900">{row.profiles?.full_name ?? '—'}</p>
+                  <p className="font-semibold text-slate-900">{getAdminStudentName(row)}</p>
                   <p className="dashboard-muted mt-0.5 text-xs">{row.reg_number}</p>
                 </div>
                 <CampusBadge status={row.campus_status} />
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                <span>Room {row.room_number}</span>
+                <span>Room {row.room_number || '—'}</span>
                 <span>{formatBlockLabel(row.hostel_block)}</span>
-                <span className="col-span-2">{row.department}</span>
+                <span className="col-span-2">{row.department || '—'}</span>
               </div>
               <AdminStudentRowActions
                 student={row}
@@ -147,14 +152,17 @@ export function AdminStudentsYearGroup({
   )
 }
 
-export function groupStudentsByYear(students: AdminStudentRow[]): { year: number; students: AdminStudentRow[] }[] {
+export function groupStudentsByYear(
+  students: AdminStudentRow[] | null | undefined,
+): { year: number; students: AdminStudentRow[] }[] {
   const map = new Map<number, AdminStudentRow[]>()
 
-  for (const student of students) {
-    const year = student.year_of_study
-    const bucket = map.get(year) ?? []
+  for (const student of students ?? []) {
+    const year = Number(student.year_of_study)
+    const bucketKey = Number.isFinite(year) && year > 0 ? year : 0
+    const bucket = map.get(bucketKey) ?? []
     bucket.push(student)
-    map.set(year, bucket)
+    map.set(bucketKey, bucket)
   }
 
   const orderedYears = [

@@ -29,8 +29,10 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="dashboard-page-header">
-        <h1 className="dashboard-heading text-xl md:text-2xl">Admin Dashboard</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm">System overview and live activity</p>
+        <h1 className="dashboard-heading text-2xl md:text-3xl">Admin Dashboard</h1>
+        <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
+          System overview and live activity
+        </p>
       </div>
 
       {error && (
@@ -64,6 +66,12 @@ export function AdminDashboard() {
             icon={AlertTriangle}
             iconTone="red"
             iconPulse={stats.overdue_returns > 0}
+            valueClassName={stats.overdue_returns > 0 ? 'text-[#DC2626]' : undefined}
+            className={
+              stats.overdue_returns > 0
+                ? 'border-[#FECACA]/80 bg-gradient-to-br from-[#FEF2F2]/90 to-white'
+                : undefined
+            }
           />
           <StatCard
             label="Pending warden approval"
@@ -71,6 +79,7 @@ export function AdminDashboard() {
             icon={Clock}
             iconTone="amber"
             iconPulse={stats.pending_approval > 0}
+            valueClassName={stats.pending_approval > 0 ? 'text-[#D97706]' : undefined}
           />
           <StatCard
             label="Total passes this month"
@@ -86,11 +95,12 @@ export function AdminDashboard() {
       {!violationsLoading && violations.length > 0 && (
         <section className="dashboard-surface-muted space-y-4 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="dashboard-section-heading text-sm sm:text-base">
+            <h2 className="dashboard-section-heading">
               <span className="dashboard-section-accent" aria-hidden />
               Pass limit warnings
             </h2>
-            <span className="rounded-full bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-semibold text-[#991B1B]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-semibold text-[#991B1B]">
+              <AlertTriangle className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               {violations.length} student{violations.length === 1 ? '' : 's'}
             </span>
           </div>

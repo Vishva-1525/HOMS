@@ -112,15 +112,15 @@ export function AcademicCalendarPicker({
       {!compact && (
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="dashboard-heading text-sm sm:text-[15px]">{title}</p>
-            <p className="dashboard-muted mt-0.5 text-[11px] leading-relaxed sm:text-xs">
+            <p className="dashboard-heading text-base sm:text-lg">{title}</p>
+            <p className="dashboard-muted mt-1 text-xs font-medium leading-relaxed sm:text-sm">
               {MONTH_NAMES[month]} {year}
             </p>
           </div>
         </div>
       )}
 
-      <div className={cn('flex flex-wrap items-center justify-between gap-2', !compact && 'mt-3.5')}>
+      <div className={cn('flex flex-wrap items-center justify-between gap-2', !compact && 'mt-4')}>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -135,7 +135,7 @@ export function AcademicCalendarPicker({
             value={month}
             onChange={(e) => setMonthIndex(Number(e.target.value))}
             aria-label="Select month"
-            className="academic-calendar-select min-w-[7.5rem]"
+            className="academic-calendar-select min-w-[8rem] text-[13px]"
           >
             {MONTH_NAMES.map((name, index) => (
               <option key={name} value={index}>
@@ -148,7 +148,7 @@ export function AcademicCalendarPicker({
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             aria-label="Select year"
-            className="academic-calendar-select min-w-[5.25rem]"
+            className="academic-calendar-select min-w-[5.5rem] text-[13px]"
           >
             {yearOptions.map((y) => (
               <option key={y} value={y}>
@@ -169,18 +169,22 @@ export function AcademicCalendarPicker({
       </div>
 
       {!compact && (
-        <div className="mt-3.5 flex flex-wrap gap-1.5 sm:gap-2">
+        <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
           {LEGEND_TYPES.map((type) => (
             <span
               key={type}
               className={cn(
-                'rounded-full border px-2.5 py-1 text-[10px] font-semibold tracking-wide',
+                'rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide sm:text-[11px]',
                 ACADEMIC_DAY_STYLES[type],
               )}
             >
               {ACADEMIC_DAY_LABELS[type]}
             </span>
           ))}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1A5CA0]/35 bg-[#EBF3FF] px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#0D3F72] sm:text-[11px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#1A5CA0]" aria-hidden />
+            Today
+          </span>
         </div>
       )}
 
@@ -195,7 +199,7 @@ export function AcademicCalendarPicker({
               </span>
             ))}
           </div>
-          <div className="mt-1.5 grid grid-cols-7 gap-1 sm:gap-1.5">
+          <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-1.5">
             {cells.map((dateKey, index) => {
               if (!dateKey) {
                 return <div key={`empty-${index}`} className="aspect-square" />
@@ -226,7 +230,7 @@ export function AcademicCalendarPicker({
                     !canInteract && 'cursor-not-allowed opacity-35 grayscale',
                     canInteract &&
                       !isSelected &&
-                      'hover:-translate-y-0.5 hover:shadow-md hover:brightness-[0.97] active:translate-y-0',
+                      'hover:-translate-y-0.5 hover:shadow-md hover:brightness-[0.98] active:translate-y-0 active:scale-[0.97]',
                   )}
                 >
                   {dayNum}
@@ -234,7 +238,7 @@ export function AcademicCalendarPicker({
               )
             })}
           </div>
-          <p className="dashboard-muted mt-3.5 text-[11px] leading-relaxed">{resolvedHelper}</p>
+          <p className="dashboard-muted mt-4 text-[11px] leading-relaxed sm:text-xs">{resolvedHelper}</p>
         </>
       )}
     </div>

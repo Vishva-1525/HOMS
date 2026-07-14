@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PASS_TYPE_LABELS } from '@/lib/outpass'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
-import type { AdminStudentRow } from '@/lib/admin-types'
+import { getAdminStudentName, type AdminStudentRow } from '@/lib/admin-types'
 import type { GateLog, OutpassRequest } from '@/lib/types'
 import { formatStudentYearLabel } from '@/lib/student-year'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -46,7 +46,7 @@ export function AdminStudentDrawer({
         : { label: 'Inside', className: 'bg-emerald-100 text-emerald-800' }
 
   function startEdit() {
-    setFullName(student!.profiles?.full_name ?? '')
+    setFullName(getAdminStudentName(student!))
     setPhone(student!.profiles?.phone ?? '')
     setRoom(student!.room_number)
     setBlock(student!.hostel_block)
@@ -115,7 +115,7 @@ export function AdminStudentDrawer({
             </div>
           ) : (
             <dl className="space-y-2 text-sm">
-              <Row label="Name" value={student.profiles?.full_name ?? '—'} />
+              <Row label="Name" value={getAdminStudentName(student)} />
               <Row label="Reg no" value={student.reg_number} />
               <Row label="Room" value={`${student.room_number} · ${student.hostel_block}`} />
               <Row label="Department" value={student.department} />

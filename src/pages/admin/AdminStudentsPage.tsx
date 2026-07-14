@@ -27,7 +27,8 @@ const BulkStudentUploadModal = lazy(() =>
 export function AdminStudentsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const {
-    students,
+    students: studentsFromHook,
+    data,
     totalCount,
     page,
     pageSize,
@@ -51,6 +52,12 @@ export function AdminStudentsPage() {
     getStudentPasses,
     refetch,
   } = useAdminStudents()
+
+  // Unwrap paginated hook payload safely (supports both `students` and `data`).
+  const students = useMemo(
+    () => (Array.isArray(studentsFromHook) ? studentsFromHook : Array.isArray(data) ? data : []),
+    [studentsFromHook, data],
+  )
 
   const [selected, setSelected] = useState<AdminStudentRow | null>(null)
   const [drawerPasses, setDrawerPasses] = useState<OutpassRequest[]>([])
@@ -87,8 +94,8 @@ export function AdminStudentsPage() {
           setDrawerGateLogs([])
           return
         }
-        const { data } = await supabase.from('gate_logs').select('*').in('outpass_id', ids)
-        if (!cancelled) setDrawerGateLogs((data ?? []) as GateLog[])
+        const { data: logs } = await supabase.from('gate_logs').select('*').in('outpass_id', ids)
+        if (!cancelled) setDrawerGateLogs((logs ?? []) as GateLog[])
       } catch {
         if (!cancelled) {
           setDrawerPasses([])
@@ -109,10 +116,13 @@ export function AdminStudentsPage() {
   async function handleImportSuccess(result: BulkImportResult) {
     const imported = result.importedCount ?? 0
     const updated = result.updatedCount ?? 0
+    const succeeded = imported + updated
     const failed = result.errorCount ?? result.errors?.length ?? 0
-    const parts = [`Imported ${imported} new`, `updated ${updated}`]
-    if (failed > 0) parts.push(`${failed} failed`)
-    setImportBanner(`${parts.join(' · ')}.`)
+    setImportBanner(
+      `Successfully imported ${succeeded} students.${failed > 0 ? ` ${failed} failed.` : ''}${
+        updated > 0 ? ` (${imported} new, ${updated} updated)` : ''
+      }`,
+    )
     await refetch()
   }
 
@@ -128,8 +138,8 @@ export function AdminStudentsPage() {
     <div className="space-y-6 sm:space-y-8">
       <div className="dashboard-page-header flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="dashboard-heading text-xl md:text-2xl">Students</h1>
-          <p className="dashboard-subheading mt-1.5 text-sm">
+          <h1 className="dashboard-heading text-2xl md:text-3xl">Students</h1>
+          <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
             {summary.active} students · {summary.outside} currently out · {summary.overdue} overdue
           </p>
         </div>
@@ -168,7 +178,7 @@ export function AdminStudentsPage() {
       )}
 
       <div className="dashboard-surface-muted space-y-4 p-4 sm:p-5">
-        <h2 className="dashboard-heading text-sm font-semibold">Search &amp; filters</h2>
+        <h2 className="dashboard-heading text-base font-bold">Search &amp; filters</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Input
             placeholder="Search name or reg no…"
@@ -182,7 +192,7 @@ export function AdminStudentsPage() {
             className="h-10 rounded-xl border border-white/60 bg-white/70 px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
           >
             <option value="all">All departments</option>
-            {departments.map((d) => (
+            {(departments ?? []).map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
@@ -214,7 +224,7 @@ export function AdminStudentsPage() {
             >
               All blocks
             </DashboardFilterChip>
-            {blocks.map((block) => (
+            {(blocks ?? []).map((block) => (
               <DashboardFilterChip
                 key={block}
                 active={blockFilter === block}
@@ -228,7 +238,15 @@ export function AdminStudentsPage() {
         </div>
       </div>
 
-      {yearGroups.length === 0 ? (
+      {loading && students.length > 0 && (
+        <p className="text-xs font-medium text-slate-500">Refreshing students…</p>
+      )}
+
+      {!students || students.length === 0 ? (
+        <div className="dashboard-surface px-6 py-12 text-center text-sm text-slate-600">
+          {error ? 'Unable to load students.' : 'No students found.'}
+        </div>
+      ) : yearGroups.length === 0 ? (
         <div className="dashboard-surface px-6 py-12 text-center text-sm text-slate-600">
           No students match your filters.
         </div>
@@ -250,6 +268,7 @@ export function AdminStudentsPage() {
       <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
         <p>
           Showing {rangeStart}–{rangeEnd} of {totalCount}
+          {totalPages > 1 ? ` · Page ${page} of ${totalPages}` : ''}
         </p>
         <div className="flex gap-2">
           <Button
@@ -257,7 +276,7 @@ export function AdminStudentsPage() {
             variant="secondary"
             size="sm"
             disabled={page <= 1 || loading}
-            onClick={() => setPage(page - 1)}
+            onClick={() => setPage(Math.max(1, page - 1))}
           >
             Previous
           </Button>
@@ -265,8 +284,8 @@ export function AdminStudentsPage() {
             type="button"
             variant="secondary"
             size="sm"
-            disabled={page >= totalPages || loading}
-            onClick={() => setPage(page + 1)}
+            disabled={page >= totalPages || loading || totalCount === 0}
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
           >
             Next
           </Button>

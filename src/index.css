@@ -135,15 +135,15 @@
   }
 
   .dashboard-heading {
-    @apply font-semibold tracking-tight text-slate-950;
+    @apply font-bold tracking-tight text-slate-950;
   }
 
   .dashboard-subheading {
-    @apply text-slate-800;
+    @apply font-medium leading-relaxed text-slate-700;
   }
 
   .dashboard-muted {
-    @apply text-slate-700;
+    @apply text-slate-600;
   }
 
   .dashboard-surface {
@@ -155,40 +155,40 @@
   }
 
   .academic-calendar-panel {
-    @apply rounded-2xl border border-white/80 bg-gradient-to-b from-white/95 to-white/88 p-4 shadow-[0_12px_40px_-14px_rgba(15,23,42,0.28)] backdrop-blur-xl sm:p-5;
+    @apply rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white via-white to-slate-50/90 p-4 shadow-[0_12px_40px_-14px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-5;
   }
 
   .academic-calendar-nav-btn {
-    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-[#1A5CA0]/35 hover:bg-white hover:text-[#0D3F72] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] active:translate-y-0;
+    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-[#1A5CA0]/40 hover:bg-[#EBF3FF] hover:text-[#0D3F72] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] active:translate-y-0;
   }
 
   .academic-calendar-select {
-    @apply h-9 rounded-xl border border-slate-200/80 bg-white/95 px-2.5 text-xs font-semibold text-slate-900 shadow-sm transition-all duration-200 hover:border-[#1A5CA0]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0];
+    @apply h-9 rounded-xl border border-slate-200/90 bg-white px-2.5 text-xs font-bold text-slate-900 shadow-sm transition-all duration-200 hover:border-[#1A5CA0]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0];
   }
 
   .academic-calendar-day {
-    @apply relative flex aspect-square items-center justify-center rounded-xl border text-[12px] font-semibold tabular-nums transition-all duration-200 ease-out;
+    @apply relative flex aspect-square items-center justify-center rounded-xl border text-[13px] font-bold tabular-nums transition-all duration-200 ease-out sm:text-sm;
   }
 
   .academic-calendar-day-today {
-    @apply ring-1 ring-[#1A5CA0]/45;
+    @apply font-extrabold ring-2 ring-[#1A5CA0]/55 ring-offset-1 ring-offset-white;
   }
 
   .academic-calendar-day-today::after {
     content: '';
     position: absolute;
-    bottom: 4px;
+    bottom: 3px;
     left: 50%;
     width: 5px;
     height: 5px;
     border-radius: 9999px;
     background-color: #1a5ca0;
-    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.7);
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85);
     transform: translateX(-50%);
   }
 
   .academic-calendar-day-selected {
-    @apply border-transparent bg-[#1A5CA0] text-white shadow-md shadow-[#1A5CA0]/40 ring-2 ring-[#1A5CA0]/45 ring-offset-2 ring-offset-white/90;
+    @apply border-transparent bg-[#1A5CA0] font-extrabold text-white shadow-lg shadow-[#1A5CA0]/35 ring-2 ring-[#1A5CA0]/30 ring-offset-2 ring-offset-white;
   }
 
   .academic-calendar-day-selected.academic-calendar-day-today::after {
@@ -197,7 +197,7 @@
   }
 
   .academic-calendar-weekday {
-    @apply text-center text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px];
+    @apply text-center text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 sm:text-[11px];
   }
 
   .sidebar-logout-btn {
@@ -213,15 +213,15 @@
   }
 
   .dashboard-section-title {
-    @apply px-1 text-sm font-semibold tracking-tight text-slate-900 sm:text-base;
+    @apply px-1 text-sm font-bold tracking-tight text-slate-950 sm:text-base;
   }
 
   .dashboard-section-heading {
-    @apply flex items-center gap-3 px-1 text-base font-semibold tracking-tight text-slate-900 sm:text-lg;
+    @apply flex items-center gap-3 px-1 text-base font-bold tracking-tight text-slate-950 sm:text-lg;
   }
 
   .dashboard-section-accent {
-    @apply h-5 w-1 shrink-0 rounded-full bg-[#1A5CA0];
+    @apply h-5 w-1.5 shrink-0 rounded-full bg-[#1A5CA0];
   }
 
   .time-scroll-picker {
@@ -271,7 +271,7 @@
   }
 
   .dashboard-table-head {
-    @apply border-b border-slate-200/90 bg-slate-100/95 text-left text-xs font-semibold uppercase tracking-wide text-slate-800;
+    @apply border-b border-slate-200/90 bg-slate-100/95 text-left text-xs font-bold uppercase tracking-wider text-slate-900;
   }
 
   .dashboard-table-row {
@@ -446,6 +446,10 @@
     box-shadow:
       0 0 0 2px rgb(96 165 250 / 0.35),
       0 8px 16px -6px rgb(26 92 160 / 0.55) !important;
+  }
+
+  html.dark .dashboard-shell .academic-calendar-day-today {
+    ring-offset-color: rgb(15 23 42);
   }
 
   html.dark .dashboard-shell .academic-calendar-day-today::after {

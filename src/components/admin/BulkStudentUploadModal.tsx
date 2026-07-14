@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { FileSpreadsheet, Upload, AlertTriangle } from 'lucide-react'
 import { Modal, ModalFooter } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,47 @@ import {
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
+const CHUNK_SIZE = 100
+
 interface BulkStudentUploadModalProps {
   open: boolean
   onClose: () => void
   onSuccess: (result: BulkImportResult) => void
+}
+
+interface ChunkFailState {
+  chunkIndex: number
+  message: string
+}
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size))
+  }
+  return chunks
+}
+
+function emptyTotals(): BulkImportResult {
+  return {
+    success: true,
+    importedCount: 0,
+    updatedCount: 0,
+    errorCount: 0,
+    errors: [],
+    newAccounts: [],
+  }
+}
+
+function mergeChunkResult(acc: BulkImportResult, chunk: BulkImportResult): BulkImportResult {
+  return {
+    success: acc.success && chunk.success !== false,
+    importedCount: (acc.importedCount ?? 0) + (chunk.importedCount ?? 0),
+    updatedCount: (acc.updatedCount ?? 0) + (chunk.updatedCount ?? 0),
+    errorCount: (acc.errorCount ?? 0) + (chunk.errorCount ?? chunk.errors?.length ?? 0),
+    errors: [...(acc.errors ?? []), ...(chunk.errors ?? [])],
+    newAccounts: [...(acc.newAccounts ?? []), ...(chunk.newAccounts ?? [])],
+  }
 }
 
 export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudentUploadModalProps) {
@@ -28,13 +65,43 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const [processedCount, setProcessedCount] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+  const [currentChunk, setCurrentChunk] = useState(0)
+  const [totalChunks, setTotalChunks] = useState(0)
+  const [chunkFail, setChunkFail] = useState<ChunkFailState | null>(null)
+
+  /** Holds in-progress aggregates across pause/retry. */
+  const runRef = useRef<{
+    chunks: ParsedStudentImportRow[][]
+    nextIndex: number
+    selectedMode: StudentImportMode
+    totals: BulkImportResult
+    totalRows: number
+  } | null>(null)
+
+  const progressPct = useMemo(() => {
+    if (totalCount <= 0) return 0
+    return Math.min(100, Math.round((processedCount / totalCount) * 100))
+  }, [processedCount, totalCount])
+
+  const resetProgress = useCallback(() => {
+    setProcessedCount(0)
+    setTotalCount(0)
+    setCurrentChunk(0)
+    setTotalChunks(0)
+    setChunkFail(null)
+    runRef.current = null
+  }, [])
+
   const resetFileState = useCallback(() => {
     setFileName(null)
     setRows([])
     setParseErrors([])
     setSubmitError(null)
+    resetProgress()
     if (inputRef.current) inputRef.current.value = ''
-  }, [])
+  }, [resetProgress])
 
   const handleClose = useCallback(() => {
     if (submitting) return
@@ -45,6 +112,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
 
   async function handleFile(file: File | null | undefined) {
     setSubmitError(null)
+    resetProgress()
     if (!file) {
       resetFileState()
       return
@@ -73,37 +141,129 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
     URL.revokeObjectURL(url)
   }
 
-  async function handleSubmit() {
-    if (rows.length === 0 || parseErrors.length > 0) return
+  async function invokeChunk(
+    chunk: ParsedStudentImportRow[],
+    mode: StudentImportMode,
+  ): Promise<BulkImportResult> {
+    const { data, error } = await supabase.functions.invoke('bulk-import-students', {
+      body: {
+        importMode: mode,
+        students: chunk,
+      },
+    })
+
+    if (error) {
+      throw new Error(error.message || 'Import request failed')
+    }
+
+    const result = (data ?? {}) as BulkImportResult
+    if (result.success === false && result.error) {
+      throw new Error(result.error)
+    }
+    return result
+  }
+
+  async function processFrom(startIndex: number) {
+    const run = runRef.current
+    if (!run) return
+
     setSubmitting(true)
     setSubmitError(null)
+    setChunkFail(null)
 
     try {
-      const { data, error } = await supabase.functions.invoke('bulk-import-students', {
-        body: {
-          importMode,
-          students: rows,
-        },
-      })
+      for (let i = startIndex; i < run.chunks.length; i += 1) {
+        run.nextIndex = i
+        setCurrentChunk(i + 1)
 
-      if (error) {
-        throw new Error(error.message || 'Import request failed')
+        // Replace soft-delete ONLY on the first chunk; later chunks must append.
+        const chunkMode: StudentImportMode =
+          run.selectedMode === 'replace' && i === 0 ? 'replace' : 'append'
+
+        try {
+          const result = await invokeChunk(run.chunks[i], chunkMode)
+          run.totals = mergeChunkResult(run.totals, result)
+          const advance = run.chunks[i].length
+          setProcessedCount((prev) => Math.min(run.totalRows, prev + advance))
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Chunk import failed'
+          setChunkFail({ chunkIndex: i, message })
+          setSubmitError(
+            `Chunk ${i + 1} of ${run.chunks.length} failed: ${message}. Choose Retry, Skip, or Cancel.`,
+          )
+          setSubmitting(false)
+          return
+        }
       }
 
-      const result = data as BulkImportResult
-      if (!result?.success) {
-        throw new Error(result?.error || 'Import failed')
+      const finalResult: BulkImportResult = {
+        ...run.totals,
+        success: true,
+        importMode: run.selectedMode,
+        errorCount: run.totals.errors?.length ?? 0,
       }
 
       resetFileState()
       setImportMode('append')
-      onSuccess(result)
+      onSuccess(finalResult)
       onClose()
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Import failed')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleSubmit() {
+    if (rows.length === 0 || parseErrors.length > 0) return
+
+    const chunks = chunkArray(rows, CHUNK_SIZE)
+    runRef.current = {
+      chunks,
+      nextIndex: 0,
+      selectedMode: importMode,
+      totals: emptyTotals(),
+      totalRows: rows.length,
+    }
+
+    setTotalCount(rows.length)
+    setProcessedCount(0)
+    setTotalChunks(chunks.length)
+    setCurrentChunk(0)
+    setChunkFail(null)
+    setSubmitError(null)
+
+    await processFrom(0)
+  }
+
+  async function handleRetryChunk() {
+    if (!runRef.current || chunkFail == null) return
+    await processFrom(chunkFail.chunkIndex)
+  }
+
+  async function handleSkipChunk() {
+    if (!runRef.current || chunkFail == null) return
+    const run = runRef.current
+    const failed = run.chunks[chunkFail.chunkIndex] ?? []
+    run.totals = mergeChunkResult(run.totals, {
+      success: false,
+      importedCount: 0,
+      updatedCount: 0,
+      errorCount: failed.length,
+      errors: failed.map((row) => ({
+        email: row.email,
+        reg_number: row.reg_number,
+        message: `Skipped after chunk failure: ${chunkFail.message}`,
+      })),
+    })
+    setProcessedCount((prev) => Math.min(run.totalRows, prev + failed.length))
+    await processFrom(chunkFail.chunkIndex + 1)
+  }
+
+  function handleCancelImport() {
+    resetProgress()
+    setSubmitting(false)
+    setSubmitError('Import cancelled.')
   }
 
   return (
@@ -113,20 +273,34 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
       onClose={handleClose}
       className="max-w-xl bg-white"
       footer={
-        <ModalFooter
-          onCancel={handleClose}
-          onConfirm={() => void handleSubmit()}
-          confirmLabel={
-            submitting
-              ? 'Importing…'
-              : importMode === 'replace'
-                ? 'Archive & import'
-                : 'Import students'
-          }
-          confirmVariant={importMode === 'replace' ? 'destructive' : 'default'}
-          loading={submitting}
-          confirmDisabled={rows.length === 0 || parseErrors.length > 0 || submitting}
-        />
+        chunkFail ? (
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={handleCancelImport} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => void handleSkipChunk()} disabled={submitting}>
+              Skip chunk
+            </Button>
+            <Button type="button" variant="primary" onClick={() => void handleRetryChunk()} loading={submitting}>
+              Retry chunk
+            </Button>
+          </div>
+        ) : (
+          <ModalFooter
+            onCancel={handleClose}
+            onConfirm={() => void handleSubmit()}
+            confirmLabel={
+              submitting
+                ? 'Importing…'
+                : importMode === 'replace'
+                  ? 'Archive & import'
+                  : 'Import students'
+            }
+            confirmVariant={importMode === 'replace' ? 'destructive' : 'default'}
+            loading={submitting}
+            confirmDisabled={rows.length === 0 || parseErrors.length > 0 || submitting}
+          />
+        )
       }
     >
       <div className="space-y-5">
@@ -147,7 +321,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
                 className="mt-1 accent-[#1A5CA0]"
                 checked={importMode === 'append'}
                 onChange={() => setImportMode('append')}
-                disabled={submitting}
+                disabled={submitting || Boolean(chunkFail)}
               />
               <span>
                 <span className="block text-sm font-semibold text-slate-900">Append &amp; Update</span>
@@ -172,7 +346,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
                 className="mt-1 accent-amber-600"
                 checked={importMode === 'replace'}
                 onChange={() => setImportMode('replace')}
-                disabled={submitting}
+                disabled={submitting || Boolean(chunkFail)}
               />
               <span>
                 <span className="block text-sm font-semibold text-slate-900">New Academic Year</span>
@@ -182,8 +356,8 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
                 {importMode === 'replace' && (
                   <span className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-800">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    This deactivates every existing student before importing. Historical passes are kept,
-                    but inactive students cannot sign in for new requests.
+                    Soft-delete runs once on the first batch only. Later batches append so prior chunks
+                    stay active.
                   </span>
                 )}
               </span>
@@ -194,7 +368,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">CSV file</p>
-            <Button type="button" variant="link" size="sm" onClick={downloadTemplate}>
+            <Button type="button" variant="link" size="sm" onClick={downloadTemplate} disabled={submitting}>
               Download template
             </Button>
           </div>
@@ -203,21 +377,25 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
+              if (submitting) return
               if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click()
             }}
-            onClick={() => inputRef.current?.click()}
+            onClick={() => {
+              if (!submitting) inputRef.current?.click()
+            }}
             onDragOver={(e) => {
               e.preventDefault()
-              setDragOver(true)
+              if (!submitting) setDragOver(true)
             }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => {
               e.preventDefault()
               setDragOver(false)
-              void handleFile(e.dataTransfer.files?.[0])
+              if (!submitting) void handleFile(e.dataTransfer.files?.[0])
             }}
             className={cn(
               'flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors',
+              submitting && 'pointer-events-none opacity-60',
               dragOver
                 ? 'border-[#1A5CA0] bg-[#EBF3FF]'
                 : 'border-slate-300 bg-slate-50 hover:border-[#1A5CA0]/60 hover:bg-[#EBF3FF]/40',
@@ -232,6 +410,9 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
             <p className="mt-1 text-xs text-slate-600">
               Headers: Email, Reg Number, Full Name, Phone, Room, Block, Department, Year
             </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Large files are uploaded in batches of {CHUNK_SIZE} to avoid timeouts.
+            </p>
             <input
               ref={inputRef}
               type="file"
@@ -243,10 +424,45 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
           </div>
         </div>
 
-        {rows.length > 0 && parseErrors.length === 0 && (
+        {rows.length > 0 && parseErrors.length === 0 && !submitting && !chunkFail && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
             Ready to import <span className="font-semibold">{rows.length}</span> student
-            {rows.length === 1 ? '' : 's'}.
+            {rows.length === 1 ? '' : 's'}
+            {rows.length > CHUNK_SIZE
+              ? ` in ${Math.ceil(rows.length / CHUNK_SIZE)} batches of up to ${CHUNK_SIZE}.`
+              : '.'}
+          </div>
+        )}
+
+        {(submitting || chunkFail || processedCount > 0) && totalCount > 0 && (
+          <div className="space-y-2 rounded-xl border border-[#1A5CA0]/20 bg-[#EBF3FF]/60 p-4">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <p className="font-semibold text-[#0D3F72]">
+                Importing students: {processedCount} / {totalCount}
+              </p>
+              <p className="tabular-nums text-xs font-medium text-slate-600">
+                {progressPct}%
+                {totalChunks > 0 ? ` · batch ${Math.min(currentChunk, totalChunks)}/${totalChunks}` : ''}
+              </p>
+            </div>
+            <div
+              className="h-2.5 w-full overflow-hidden rounded-full bg-white/80 ring-1 ring-[#1A5CA0]/15"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={totalCount}
+              aria-valuenow={processedCount}
+              aria-label="Import progress"
+            >
+              <div
+                className="h-full rounded-full bg-[#1A5CA0] transition-[width] duration-300 ease-out"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            {submitting && !chunkFail && (
+              <p className="text-[11px] text-slate-600">
+                Please keep this window open until the run finishes.
+              </p>
+            )}
           </div>
         )}
 
@@ -268,12 +484,6 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
           <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
             {submitError}
           </div>
-        )}
-
-        {submitting && (
-          <p className="text-center text-xs font-medium text-[#1A5CA0]">
-            Importing in batches — this may take a minute for large files…
-          </p>
         )}
       </div>
     </Modal>

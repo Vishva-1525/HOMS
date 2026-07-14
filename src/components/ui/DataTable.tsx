@@ -105,7 +105,7 @@ export function DataTable<T extends object>({
                   key={String(column.accessor)}
                   style={column.width ? { width: column.width, minWidth: column.width } : undefined}
                   className={cn(
-                    'px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700',
+                    'px-4 py-3 text-[length:var(--svce-text-small)] font-bold uppercase tracking-wider text-slate-900',
                     column.headerClassName,
                   )}
                 >

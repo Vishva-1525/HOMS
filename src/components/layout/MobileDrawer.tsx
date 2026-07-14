@@ -79,15 +79,15 @@ export function MobileDrawer({
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-white transition-colors',
+                    'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-white transition-colors',
                     isActive
                       ? 'border-l-[3px] border-[#E87722] bg-[#1A5CA0] pl-[9px]'
-                      : 'border-l-[3px] border-transparent hover:bg-[#1A5CA0]/60',
+                      : 'border-l-[3px] border-transparent text-white/90 hover:bg-[#1A5CA0]/60 hover:text-white',
                   )
                 }
               >
-                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-                <span className="flex-1">{item.label}</span>
+                <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
+                <span className="flex-1 tracking-tight">{item.label}</span>
                 {badge > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#DC2626] px-1.5 text-[10px] font-bold text-white">
                     {badge > 99 ? '99+' : badge}

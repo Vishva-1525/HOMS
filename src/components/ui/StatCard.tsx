@@ -87,11 +87,14 @@ export function StatCard({
             className={cn(
               'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
               iconStyles.bg,
+              iconPulse &&
+                (iconTone === 'red'
+                  ? 'ring-2 ring-[#DC2626]/45 ring-offset-2 ring-offset-white'
+                  : iconTone === 'amber'
+                    ? 'ring-2 ring-[#D97706]/40 ring-offset-2 ring-offset-white'
+                    : 'ring-2 ring-[#1A5CA0]/35 ring-offset-2 ring-offset-white'),
             )}
           >
-            {iconPulse && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#DC2626] opacity-40" />
-            )}
             <Icon className={cn('relative h-5 w-5', iconStyles.icon)} strokeWidth={1.75} />
           </div>
         )}

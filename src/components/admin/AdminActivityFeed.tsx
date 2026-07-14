@@ -12,11 +12,11 @@ export function AdminActivityFeed({ onStudentClick }: AdminActivityFeedProps) {
   return (
     <div className="dashboard-surface overflow-hidden">
       <div className="border-b border-slate-200/80 px-4 py-4 sm:px-5">
-        <h2 className="dashboard-section-heading text-sm sm:text-base">
+        <h2 className="dashboard-section-heading">
           <span className="dashboard-section-accent" aria-hidden />
           Live activity
         </h2>
-        <p className="dashboard-muted mt-1 text-xs">Last 30 events across the system</p>
+        <p className="dashboard-muted mt-1 text-xs sm:text-sm">Last 30 events across the system</p>
       </div>
 
       {loading ? (
@@ -28,12 +28,18 @@ export function AdminActivityFeed({ onStudentClick }: AdminActivityFeedProps) {
       ) : (
         <ul className="max-h-[480px] divide-y divide-slate-200/60 overflow-y-auto">
           {feedItems.map((item) => (
-            <li key={item.id} className="flex gap-3 px-4 py-3.5 sm:px-5">
-              <span className="relative mt-1.5 flex h-2.5 w-2.5 shrink-0">
+            <li
+              key={item.id}
+              className={cn(
+                'flex gap-3 px-4 py-3.5 sm:px-5',
+                item.pulse && 'bg-[#FEF2F2]/70',
+              )}
+            >
+              <span className="relative mt-1.5 flex h-2.5 w-2.5 shrink-0 items-center justify-center">
                 {item.pulse && (
                   <span
-                    className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-                    style={{ backgroundColor: item.dotColor }}
+                    className="absolute -inset-1 rounded-full border-2"
+                    style={{ borderColor: item.dotColor }}
                   />
                 )}
                 <span
@@ -43,7 +49,14 @@ export function AdminActivityFeed({ onStudentClick }: AdminActivityFeedProps) {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm text-slate-800">{item.description}</p>
+                  <p
+                    className={cn(
+                      'text-sm text-slate-800',
+                      item.pulse && 'font-semibold text-[#7F1D1D]',
+                    )}
+                  >
+                    {item.description}
+                  </p>
                   <time className="shrink-0 text-xs text-slate-500">{item.relativeTime}</time>
                 </div>
                 <button

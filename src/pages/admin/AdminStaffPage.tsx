@@ -32,8 +32,10 @@ export function AdminStaffPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="dashboard-page-header mb-0">
-          <h1 className="dashboard-heading text-xl md:text-2xl">Staff</h1>
-          <p className="dashboard-subheading mt-1.5 text-sm">Manage wardens and security guards</p>
+          <h1 className="dashboard-heading text-2xl md:text-3xl">Staff</h1>
+          <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
+            Manage wardens and security guards
+          </p>
         </div>
         <Button type="button" onClick={() => setDrawerOpen(true)}>
           {tab === 'warden' ? 'Add warden' : 'Add security guard'}

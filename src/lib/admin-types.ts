@@ -50,8 +50,23 @@ export interface AdminStudentRow {
   parent_phone: string
   parent_email: string
   is_active: boolean
+  /** Preferred display name; kept in sync with profiles.full_name when available. */
+  full_name: string
   profiles: { full_name: string; phone: string } | null
   campus_status: 'inside' | 'outside' | 'overdue'
+}
+
+/** Safe display name for table/drawer rows after the campus-status pagination refactor. */
+export function getAdminStudentName(student: {
+  full_name?: string | null
+  profiles?: { full_name?: string | null } | null
+  reg_number?: string | null
+}): string {
+  const fromProfile = student.profiles?.full_name?.trim()
+  if (fromProfile) return fromProfile
+  const fromRow = student.full_name?.trim()
+  if (fromRow) return fromRow
+  return student.reg_number?.trim() || '—'
 }
 
 export interface AdminPassRow {

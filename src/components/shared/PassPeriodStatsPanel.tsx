@@ -67,6 +67,12 @@ export function PassPeriodStatsPanel({
             icon={AlertTriangle}
             iconTone="red"
             iconPulse={stats.overdue > 0}
+            valueClassName={stats.overdue > 0 ? 'text-[#DC2626]' : undefined}
+            className={
+              stats.overdue > 0
+                ? 'border-[#FECACA]/80 bg-gradient-to-br from-[#FEF2F2]/90 to-white'
+                : undefined
+            }
           />
         </div>
       )}

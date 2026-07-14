@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { buildCalendarMap } from '@/lib/academic-calendar'
 import type { AcademicCalendarDay, AcademicDayType } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
 export function useAdminCalendar() {
-  const [days, setDays] = useState<AcademicCalendarDay[]>([])
+  const [allDays, setAllDays] = useState<AcademicCalendarDay[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [typeFilter, setTypeFilter] = useState<AcademicDayType | 'all'>('all')
@@ -12,30 +13,32 @@ export function useAdminCalendar() {
     setLoading(true)
     setError(null)
 
-    let query = supabase
+    const { data, error: fetchError } = await supabase
       .from('academic_calendar')
       .select('calendar_date, day_type, label')
       .order('calendar_date', { ascending: true })
 
-    if (typeFilter !== 'all') {
-      query = query.eq('day_type', typeFilter)
-    }
-
-    const { data, error: fetchError } = await query
-
     if (fetchError) {
       setError(fetchError.message)
-      setDays([])
+      setAllDays([])
     } else {
-      setDays((data ?? []) as AcademicCalendarDay[])
+      setAllDays((data ?? []) as AcademicCalendarDay[])
     }
 
     setLoading(false)
-  }, [typeFilter])
+  }, [])
 
   useEffect(() => {
-    fetchDays()
+    void fetchDays()
   }, [fetchDays])
+
+  const days = useMemo(
+    () =>
+      typeFilter === 'all' ? allDays : allDays.filter((day) => day.day_type === typeFilter),
+    [allDays, typeFilter],
+  )
+
+  const calendarMap = useMemo(() => buildCalendarMap(allDays), [allDays])
 
   async function upsertDay(day: AcademicCalendarDay) {
     const { error: upsertError } = await supabase.from('academic_calendar').upsert({
@@ -60,6 +63,8 @@ export function useAdminCalendar() {
 
   return {
     days,
+    allDays,
+    calendarMap,
     loading,
     error,
     typeFilter,

@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type StatusBadgeStatus =
@@ -31,7 +32,8 @@ const STATUS_STYLES: Record<StatusBadgeStatus, string> = {
   pending: 'bg-[#FFF8E1] text-[#92400E]',
   approved: 'bg-[var(--svce-green-tint)] text-[#166534]',
   rejected: 'bg-[var(--svce-danger-tint)] text-[#991B1B]',
-  overdue: 'bg-[var(--svce-danger-tint)] text-[#7F1D1D]',
+  overdue:
+    'border border-[#FECACA] bg-[#FEF2F2] font-semibold text-[#991B1B] shadow-[inset_0_0_0_1px_rgba(252,165,165,0.35)]',
   expired: 'bg-[#FFEDD5] text-[#9A3412]',
   return_completed: 'bg-[var(--svce-blue-tint)] text-[#1E40AF]',
   completed: 'bg-[var(--svce-blue-tint)] text-[#1E40AF]',
@@ -48,10 +50,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
       )}
     >
       {status === 'overdue' && (
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--svce-danger)] opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--svce-danger)]" />
-        </span>
+        <AlertTriangle className="h-3 w-3 shrink-0 text-[#DC2626]" strokeWidth={2.5} aria-hidden />
       )}
       {label ?? STATUS_LABELS[status]}
     </span>
