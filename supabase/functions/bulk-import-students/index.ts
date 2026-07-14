@@ -87,14 +87,6 @@ async function findAuthUserIdByEmail(
 ): Promise<string | null> {
   const normalized = email.trim().toLowerCase()
 
-  const { data: byParent } = await admin
-    .from('students')
-    .select('id')
-    .ilike('parent_email', normalized)
-    .limit(1)
-    .maybeSingle()
-  if (byParent?.id) return byParent.id as string
-
   try {
     const url = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -118,7 +110,7 @@ async function findAuthUserIdByEmail(
       }
     }
   } catch {
-    // fall through
+    // fall through to pagination
   }
 
   let page = 1
@@ -293,6 +285,8 @@ Deno.serve(async (req) => {
     const newAccounts: NewAccount[] = []
     const mappedStudents: StudentUpsertRow[] = []
     const preexistingRegNumbers = new Set<string>()
+    const emailsInBatch = new Map<string, string>() // email -> reg_number
+    const idsInBatch = new Map<string, string>() // user id -> reg_number
 
     // ── 2. Sequential Auth + profile resolution (never Promise.all) ──
     for (const raw of students) {
@@ -314,6 +308,16 @@ Deno.serve(async (req) => {
         continue
       }
 
+      const priorRegForEmail = emailsInBatch.get(email)
+      if (priorRegForEmail && priorRegForEmail !== regNumber) {
+        errors.push({
+          email,
+          reg_number: regNumber,
+          message: `Duplicate email in this batch (already used by ${priorRegForEmail})`,
+        })
+        continue
+      }
+
       try {
         const { data: existingStudent } = await admin
           .from('students')
@@ -322,9 +326,9 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         let userId: string
+        let isPreexisting = Boolean(existingStudent?.id)
 
         if (existingStudent?.id) {
-          preexistingRegNumbers.add(regNumber)
           userId = existingStudent.id as string
 
           const { error: profileError } = await admin
@@ -346,6 +350,24 @@ Deno.serve(async (req) => {
             phone: raw.phone,
           })
           userId = ensured.userId
+
+          // Auth user may already own a different students row (shared/reused email).
+          const { data: studentById } = await admin
+            .from('students')
+            .select('reg_number')
+            .eq('id', userId)
+            .maybeSingle()
+
+          if (studentById?.reg_number) {
+            if (studentById.reg_number === regNumber) {
+              isPreexisting = true
+            } else {
+              throw new Error(
+                `Email already linked to register number ${studentById.reg_number}`,
+              )
+            }
+          }
+
           if (ensured.created && ensured.password) {
             newAccounts.push({
               email,
@@ -355,6 +377,20 @@ Deno.serve(async (req) => {
           }
         }
 
+        const priorRegForId = idsInBatch.get(userId)
+        if (priorRegForId && priorRegForId !== regNumber) {
+          errors.push({
+            email,
+            reg_number: regNumber,
+            message: `Auth account already mapped to ${priorRegForId} in this batch`,
+          })
+          continue
+        }
+
+        if (isPreexisting) preexistingRegNumbers.add(regNumber)
+        emailsInBatch.set(email, regNumber)
+        idsInBatch.set(userId, regNumber)
+
         mappedStudents.push({
           id: userId,
           reg_number: regNumber,
@@ -362,8 +398,9 @@ Deno.serve(async (req) => {
           hostel_block: String(raw.hostel_block ?? '').trim(),
           department: String(raw.department ?? '').trim(),
           year_of_study: normalizeYear(raw.year_of_study),
-          parent_phone: String(raw.phone ?? '').trim(),
-          parent_email: email,
+          // Keep parent contact blank unless separately collected — never store student email here.
+          parent_phone: '',
+          parent_email: '',
           is_active: true,
         })
       } catch (err) {
@@ -387,45 +424,82 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ── 3. Sort by unique key before bulk upsert (prevents row-lock deadlocks) ──
+    // ── 3. Sort for stable locking order ──
     mappedStudents.sort((a, b) => a.reg_number.localeCompare(b.reg_number))
 
-    // ── 4. Single awaited bulk upsert (no concurrent / chunked upserts) ──
-    const { error: upsertError } = await admin
-      .from('students')
-      .upsert(mappedStudents, { onConflict: 'reg_number' })
+    const toUpdate = mappedStudents.filter((row) => preexistingRegNumbers.has(row.reg_number))
+    const toInsert = mappedStudents.filter((row) => !preexistingRegNumbers.has(row.reg_number))
 
-    if (upsertError) {
-      return jsonResponse({
-        success: false,
-        importMode,
-        importedCount: 0,
-        updatedCount: 0,
-        errorCount: errors.length + 1,
-        errors: [
-          ...errors,
-          { message: `Bulk upsert failed: ${upsertError.message}` },
-        ],
-        newAccounts,
-        error: `Bulk upsert failed: ${upsertError.message}`,
-      })
+    // ── 4. Updates never touch primary key (avoids students_pkey collisions) ──
+    for (const row of toUpdate) {
+      const { error: updateError } = await admin
+        .from('students')
+        .update({
+          room_number: row.room_number,
+          hostel_block: row.hostel_block,
+          department: row.department,
+          year_of_study: row.year_of_study,
+          is_active: true,
+        })
+        .eq('reg_number', row.reg_number)
+
+      if (updateError) {
+        errors.push({
+          reg_number: row.reg_number,
+          message: `Update failed: ${updateError.message}`,
+        })
+      }
     }
 
+    // ── 5. Inserts only for brand-new register numbers ──
+    if (toInsert.length > 0) {
+      const { error: insertError } = await admin.from('students').insert(toInsert)
+
+      if (insertError) {
+        // Fall back to per-row inserts so one collision does not fail the whole chunk.
+        if (toInsert.length === 1) {
+          errors.push({
+            reg_number: toInsert[0].reg_number,
+            message: `Insert failed: ${insertError.message}`,
+          })
+        } else {
+          for (const row of toInsert) {
+            const { error: rowInsertError } = await admin.from('students').insert(row)
+            if (rowInsertError) {
+              errors.push({
+                reg_number: row.reg_number,
+                message: `Insert failed: ${rowInsertError.message}`,
+              })
+            }
+          }
+        }
+      }
+    }
+
+    const failedRegs = new Set(
+      errors.map((e) => e.reg_number).filter((v): v is string => Boolean(v)),
+    )
     let importedCount = 0
     let updatedCount = 0
     for (const row of mappedStudents) {
+      if (failedRegs.has(row.reg_number)) continue
       if (preexistingRegNumbers.has(row.reg_number)) updatedCount += 1
       else importedCount += 1
     }
 
+    const hardFailure = importedCount + updatedCount === 0 && mappedStudents.length > 0
+
     return jsonResponse({
-      success: true,
+      success: !hardFailure,
       importMode,
       importedCount,
       updatedCount,
       errorCount: errors.length,
       errors,
       newAccounts,
+      error: hardFailure
+        ? (errors[0]?.message ?? 'No students were imported in this batch')
+        : undefined,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error'
