@@ -203,23 +203,42 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return jsonResponse({ success: false, error: 'Unauthorized' }, 401)
+      return jsonResponse({ success: false, error: 'Unauthorized: missing Authorization header' })
+    }
+
+    const jwt = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!jwt) {
+      return jsonResponse({ success: false, error: 'Unauthorized: empty bearer token' })
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    })
-
-    const { data: userData, error: userError } = await userClient.auth.getUser()
-    if (userError || !userData.user) {
-      return jsonResponse({ success: false, error: 'Unauthorized' }, 401)
+    if (!supabaseUrl || !serviceKey || !anonKey) {
+      return jsonResponse({
+        success: false,
+        error: 'Server misconfigured: missing Supabase environment keys',
+      })
     }
 
-    const admin = createClient(supabaseUrl, serviceKey)
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    // Must pass the JWT explicitly — getUser() without args requires a local session.
+    const { data: userData, error: userError } = await userClient.auth.getUser(jwt)
+    if (userError || !userData.user) {
+      return jsonResponse({
+        success: false,
+        error: `Unauthorized: ${userError?.message ?? 'invalid or expired session'}`,
+      })
+    }
+
+    const admin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
 
     const { data: profile } = await admin
       .from('profiles')
@@ -228,7 +247,7 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (profile?.role !== 'admin') {
-      return jsonResponse({ success: false, error: 'Forbidden' }, 403)
+      return jsonResponse({ success: false, error: 'Forbidden: admin role required' })
     }
 
     const body = await req.json() as {

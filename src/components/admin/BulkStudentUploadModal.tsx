@@ -161,6 +161,14 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
     chunk: ParsedStudentImportRow[],
     mode: StudentImportMode,
   ): Promise<BulkImportResult> {
+    // Keep the JWT fresh for multi-batch imports.
+    const { error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) {
+      throw new Error(
+        `Session expired — sign out and sign back in as admin, then retry. (${refreshError.message})`,
+      )
+    }
+
     const { data, error } = await supabase.functions.invoke('bulk-import-students', {
       body: {
         importMode: mode,
