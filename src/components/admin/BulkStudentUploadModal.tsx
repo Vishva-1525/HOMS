@@ -11,9 +11,10 @@ import {
   type BulkImportResult,
 } from '@/lib/bulk-student-import'
 import { supabase } from '@/lib/supabase'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import { cn } from '@/lib/utils'
 
-const CHUNK_SIZE = 100
+const CHUNK_SIZE = 25
 
 interface BulkStudentUploadModalProps {
   open: boolean
@@ -168,7 +169,34 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
     })
 
     if (error) {
-      throw new Error(error.message || 'Import request failed')
+      let detail = error.message || 'Import request failed'
+
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const body = (await error.context.json()) as {
+            error?: string
+            errors?: Array<{ message?: string }>
+          }
+          if (body?.error) {
+            detail = body.error
+          } else if (body?.errors?.length) {
+            detail = body.errors
+              .map((e) => e.message)
+              .filter(Boolean)
+              .slice(0, 3)
+              .join('; ')
+          }
+        } catch {
+          // Keep the generic FunctionsHttpError message.
+        }
+      }
+
+      // Gateway / wall-clock timeouts often hide the real cause.
+      if (/non-2xx|failed to (send|fetch)|timeout|timed out|546|504|542/i.test(detail)) {
+        detail = `${detail}. The batch may have timed out — retry this chunk (smaller batches of ${CHUNK_SIZE} are used).`
+      }
+
+      throw new Error(detail)
     }
 
     const result = (data ?? {}) as BulkImportResult

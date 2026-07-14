@@ -240,11 +240,14 @@ Deno.serve(async (req) => {
     const students = Array.isArray(body.students) ? body.students : []
 
     if (students.length === 0) {
-      return jsonResponse({ success: false, error: 'No students provided' }, 400)
+      return jsonResponse({ success: false, error: 'No students provided' })
     }
 
-    if (students.length > 2000) {
-      return jsonResponse({ success: false, error: 'Maximum 2000 students per import' }, 400)
+    if (students.length > 50) {
+      return jsonResponse({
+        success: false,
+        error: 'Maximum 50 students per request. Use smaller batches from the admin app.',
+      })
     }
 
     // ── 1. Soft-delete must fully complete before any Auth / upsert work ──
@@ -258,7 +261,7 @@ Deno.serve(async (req) => {
         return jsonResponse({
           success: false,
           error: `Failed to archive existing students: ${archiveError.message}`,
-        }, 500)
+        })
       }
 
       // Explicit barrier: soft-delete transaction resolved before continuing.
@@ -385,7 +388,8 @@ Deno.serve(async (req) => {
           { message: `Bulk upsert failed: ${upsertError.message}` },
         ],
         newAccounts,
-      }, 500)
+        error: `Bulk upsert failed: ${upsertError.message}`,
+      })
     }
 
     let importedCount = 0
@@ -406,6 +410,7 @@ Deno.serve(async (req) => {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server error'
-    return jsonResponse({ success: false, error: message }, 500)
+    // Return 200 so supabase-js exposes the body (non-2xx hides the message).
+    return jsonResponse({ success: false, error: message })
   }
 })
