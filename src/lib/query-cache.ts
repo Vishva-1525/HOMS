@@ -1,4 +1,4 @@
-/** Tiny in-memory TTL cache for shared RPC / lookup results across hooks. */
+/** Tiny in-memory TTL cache for shared RPC / lookup / page results across hooks. */
 
 interface CacheEntry<T> {
   value: T
@@ -31,6 +31,16 @@ export async function cachedQuery<T>(
 
   inflight.set(key, run)
   return run
+}
+
+/** Return cached value even if expired (for stale-while-revalidate UI). */
+export function peekCachedQuery<T>(key: string): T | undefined {
+  const hit = store.get(key) as CacheEntry<T> | undefined
+  return hit?.value
+}
+
+export function setCachedQuery<T>(key: string, value: T, ttlMs: number) {
+  store.set(key, { value, expiresAt: Date.now() + ttlMs })
 }
 
 export function invalidateCachedQuery(keyPrefix: string) {

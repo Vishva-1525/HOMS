@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { DashboardBackground } from '@/components/layout/DashboardBackground'
 import { MobileDrawer } from '@/components/layout/MobileDrawer'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { SuspenseOutlet } from '@/components/layout/SuspenseOutlet'
 import { TopBar } from '@/components/layout/TopBar'
 import { getBreadcrumbLabel, getMobileNavForRole, getNavForRole } from '@/components/layout/nav'
 import { useAuth } from '@/contexts/AuthProvider'
@@ -88,7 +89,9 @@ export function AppShell({
 
         <main className="flex-1 px-3 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-4 md:px-6 md:py-6 md:pb-6">
           <div className="mx-auto max-w-[1280px]">
-            <Outlet />
+            <SuspenseOutlet>
+              <Outlet />
+            </SuspenseOutlet>
           </div>
         </main>
       </div>

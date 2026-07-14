@@ -145,7 +145,7 @@ export function AdminPassesPage() {
     await refetch()
   }
 
-  if (loading) {
+  if (loading && rows.length === 0) {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading passes…" />

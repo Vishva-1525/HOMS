@@ -2,10 +2,18 @@ import { useCallback, useEffect, useState } from 'react'
 import type { AdminStudentRow } from '@/lib/admin-types'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { formatNetworkError } from '@/lib/network-error'
+import {
+  cachedQuery,
+  invalidateCachedQuery,
+  peekCachedQuery,
+  setCachedQuery,
+} from '@/lib/query-cache'
 import { supabase } from '@/lib/supabase'
 import type { OutpassRequest } from '@/lib/types'
 
 const PAGE_SIZE = 25
+const FILTER_TTL_MS = 60_000
+const PAGE_TTL_MS = 30_000
 
 type CampusStatus = AdminStudentRow['campus_status']
 
@@ -33,6 +41,17 @@ interface ProfileRow {
   phone: string | null
 }
 
+interface FilterOptionsPayload {
+  blocks: string[]
+  departments: string[]
+  summary: { active: number; outside: number; overdue: number }
+}
+
+interface PagePayload {
+  students: AdminStudentRow[]
+  totalCount: number
+}
+
 function toCampusStatus(value: string | null | undefined): CampusStatus {
   if (value === 'outside' || value === 'overdue' || value === 'inside') return value
   return 'inside'
@@ -41,6 +60,60 @@ function toCampusStatus(value: string | null | undefined): CampusStatus {
 function normalizeYear(value: number | null | undefined): number {
   const n = Number(value)
   return Number.isFinite(n) && n > 0 ? n : 0
+}
+
+function pageCacheKey(
+  page: number,
+  search: string,
+  block: string,
+  department: string,
+  year: number | 'all',
+) {
+  return `admin-students:page:${page}:${search}:${block}:${department}:${year}`
+}
+
+async function loadFilterOptions(): Promise<FilterOptionsPayload> {
+  const { data, error } = await supabase.rpc('get_student_filter_options')
+  if (!error && data && typeof data === 'object') {
+    const row = data as Record<string, unknown>
+    return {
+      blocks: Array.isArray(row.blocks) ? (row.blocks as string[]) : [],
+      departments: Array.isArray(row.departments) ? (row.departments as string[]) : [],
+      summary: {
+        active: Number(row.active_count) || 0,
+        outside: Number(row.outside_count) || 0,
+        overdue: Number(row.overdue_count) || 0,
+      },
+    }
+  }
+
+  // Fallback if RPC not deployed yet — still bounded.
+  const [blocksResult, deptsResult, activeResult, outsideResult, overdueResult] =
+    await Promise.all([
+      supabase.from('students').select('hostel_block').eq('is_active', true).limit(500),
+      supabase.from('students').select('department').eq('is_active', true).limit(500),
+      supabase.from('students').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      supabase
+        .from('student_campus_status')
+        .select('student_id', { count: 'exact', head: true })
+        .eq('current_status', 'outside'),
+      supabase
+        .from('student_campus_status')
+        .select('student_id', { count: 'exact', head: true })
+        .eq('current_status', 'overdue'),
+    ])
+
+  return {
+    blocks: [...new Set((blocksResult.data ?? []).map((r) => r.hostel_block).filter(Boolean))].sort(),
+    departments: [
+      ...new Set((deptsResult.data ?? []).map((r) => r.department).filter(Boolean)),
+    ].sort(),
+    summary: {
+      active: activeResult.count ?? 0,
+      outside: outsideResult.count ?? 0,
+      overdue: overdueResult.count ?? 0,
+    },
+  }
 }
 
 export function useAdminStudents() {
@@ -64,47 +137,41 @@ export function useAdminStudents() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
 
   const fetchFilterOptions = useCallback(async () => {
-    const [blocksResult, deptsResult, activeResult, outsideResult, overdueResult] =
-      await Promise.all([
-        supabase.from('students').select('hostel_block').eq('is_active', true).limit(2000),
-        supabase.from('students').select('department').eq('is_active', true).limit(2000),
-        supabase
-          .from('students')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_active', true),
-        supabase
-          .from('student_campus_status')
-          .select('student_id', { count: 'exact', head: true })
-          .eq('current_status', 'outside'),
-        supabase
-          .from('student_campus_status')
-          .select('student_id', { count: 'exact', head: true })
-          .eq('current_status', 'overdue'),
-      ])
-
-    setBlocks(
-      [...new Set((blocksResult.data ?? []).map((r) => r.hostel_block).filter(Boolean))].sort(),
-    )
-    setDepartments(
-      [...new Set((deptsResult.data ?? []).map((r) => r.department).filter(Boolean))].sort(),
-    )
-    setSummary({
-      active: activeResult.count ?? 0,
-      outside: outsideResult.count ?? 0,
-      overdue: overdueResult.count ?? 0,
-    })
+    const payload = await cachedQuery('admin-students:filters', FILTER_TTL_MS, loadFilterOptions)
+    setBlocks(payload.blocks)
+    setDepartments(payload.departments)
+    setSummary(payload.summary)
   }, [])
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (opts?: { force?: boolean }) => {
+    const cacheKey = pageCacheKey(
+      page,
+      debouncedSearch.trim(),
+      blockFilter,
+      departmentFilter,
+      yearFilter,
+    )
+
+    if (!opts?.force) {
+      const stale = peekCachedQuery<PagePayload>(cacheKey)
+      if (stale) {
+        setStudents(stale.students)
+        setTotalCount(stale.totalCount)
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
+    } else {
+      setLoading(true)
+    }
+
     setError(null)
-    setLoading(true)
 
     try {
       const from = (page - 1) * PAGE_SIZE
       const to = from + PAGE_SIZE - 1
       const q = debouncedSearch.trim()
 
-      // Name search via campus-status view (has denormalized full_name).
       let nameMatchedIds: string[] | null = null
       if (q && /[a-zA-Z\s]/.test(q)) {
         const { data: nameHits } = await supabase
@@ -115,7 +182,6 @@ export function useAdminStudents() {
         nameMatchedIds = ((nameHits ?? []) as { student_id: string }[]).map((r) => r.student_id)
       }
 
-      // Flat students page — no nested outpass_requests / gate_logs / profiles embed.
       let query = supabase
         .from('students')
         .select(
@@ -153,8 +219,10 @@ export function useAdminStudents() {
 
       if (fetchError) {
         setError(formatNetworkError(fetchError.message))
-        setStudents([])
-        setTotalCount(0)
+        if (!peekCachedQuery(cacheKey)) {
+          setStudents([])
+          setTotalCount(0)
+        }
         return
       }
 
@@ -174,18 +242,14 @@ export function useAdminStudents() {
           supabase.from('profiles').select('id, full_name, phone').in('id', ids),
         ])
 
-        if (statusResult.error) {
-          console.warn('student_campus_status soft-failed:', statusResult.error.message)
-        } else {
+        if (!statusResult.error) {
           for (const row of (statusResult.data ?? []) as CampusStatusRow[]) {
             statusById.set(row.student_id, toCampusStatus(row.current_status))
             if (row.full_name?.trim()) nameById.set(row.student_id, row.full_name.trim())
           }
         }
 
-        if (profileResult.error) {
-          console.warn('profiles soft-failed:', profileResult.error.message)
-        } else {
+        if (!profileResult.error) {
           for (const row of (profileResult.data ?? []) as ProfileRow[]) {
             profileById.set(row.id, row)
             if (row.full_name?.trim() && !nameById.has(row.id)) {
@@ -217,12 +281,19 @@ export function useAdminStudents() {
         }
       })
 
+      const payload: PagePayload = {
+        students: mapped,
+        totalCount: count ?? mapped.length,
+      }
+      setCachedQuery(cacheKey, payload, PAGE_TTL_MS)
       setStudents(mapped)
-      setTotalCount(count ?? mapped.length)
+      setTotalCount(payload.totalCount)
     } catch (err) {
       setError(formatNetworkError(err, 'Failed to load students.'))
-      setStudents([])
-      setTotalCount(0)
+      if (!peekCachedQuery(cacheKey)) {
+        setStudents([])
+        setTotalCount(0)
+      }
     } finally {
       setLoading(false)
     }
@@ -246,7 +317,8 @@ export function useAdminStudents() {
       .update({ is_active: false })
       .eq('id', studentId)
     if (updateError) throw new Error(updateError.message)
-    await Promise.all([fetchData(), fetchFilterOptions()])
+    invalidateCachedQuery('admin-students:')
+    await Promise.all([fetchData({ force: true }), fetchFilterOptions()])
   }
 
   async function updateStudent(
@@ -270,14 +342,16 @@ export function useAdminStudents() {
         .eq('id', studentId)
       if (updateError) throw new Error(updateError.message)
     }
-    await Promise.all([fetchData(), fetchFilterOptions()])
+    invalidateCachedQuery('admin-students:')
+    await Promise.all([fetchData({ force: true }), fetchFilterOptions()])
   }
 
-  /** Bounded: only this student's recent passes for the detail drawer. */
   const getStudentPasses = useCallback(async (studentId: string): Promise<OutpassRequest[]> => {
     const { data, error: fetchError } = await supabase
       .from('outpass_requests')
-      .select('*')
+      .select(
+        'id, student_id, pass_type, destination, reason, departure_at, return_by, status, created_at, is_overdue, approved_by, warden_remark, admin_override_note',
+      )
       .eq('student_id', studentId)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -314,7 +388,8 @@ export function useAdminStudents() {
     getStudentPasses,
     allStudents: students,
     refetch: async () => {
-      await Promise.all([fetchData(), fetchFilterOptions()])
+      invalidateCachedQuery('admin-students:')
+      await Promise.all([fetchData({ force: true }), fetchFilterOptions()])
     },
   }
 }

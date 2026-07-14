@@ -4,12 +4,18 @@ import type { PassClassificationFilter } from '@/components/shared/PassListFilte
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { formatNetworkError } from '@/lib/network-error'
 import { debounce } from '@/lib/debounce'
+import {
+  invalidateCachedQuery,
+  peekCachedQuery,
+  setCachedQuery,
+} from '@/lib/query-cache'
 import { supabase } from '@/lib/supabase'
 import type { GateLog, OutpassRequest, OutpassStatus, PassType } from '@/lib/types'
 import { getEntryTime, getExitTime } from '@/lib/warden'
 
 const PAGE_SIZE = 25
-const REALTIME_DEBOUNCE_MS = 500
+const REALTIME_DEBOUNCE_MS = 800
+const PAGE_TTL_MS = 20_000
 
 type PassWithStudent = OutpassRequest & {
   students: {
@@ -19,6 +25,33 @@ type PassWithStudent = OutpassRequest & {
     profiles: { full_name: string } | null
   } | null
 }
+
+interface PagePayload {
+  rows: AdminPassRow[]
+  totalCount: number
+}
+
+const PASS_COLUMNS = `
+  id,
+  student_id,
+  pass_type,
+  destination,
+  reason,
+  departure_at,
+  return_by,
+  status,
+  created_at,
+  is_overdue,
+  approved_by,
+  warden_remark,
+  admin_override_note,
+  students (
+    reg_number,
+    room_number,
+    hostel_block,
+    profiles ( full_name )
+  )
+`
 
 function mapPassRow(p: PassWithStudent, pageLogs: GateLog[]): AdminPassRow {
   const gate_logs = pageLogs.filter((log) => log.outpass_id === p.id)
@@ -35,7 +68,6 @@ function mapPassRow(p: PassWithStudent, pageLogs: GateLog[]): AdminPassRow {
   }
 }
 
-/** Apply UI status chips as PostgREST column filters (approximate where gate-dependent). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyStatusFilter(query: any, statusFilter: PassClassificationFilter) {
   switch (statusFilter) {
@@ -64,6 +96,18 @@ function applyStatusFilter(query: any, statusFilter: PassClassificationFilter) {
   }
 }
 
+function pageCacheKey(
+  page: number,
+  name: string,
+  reg: string,
+  status: string,
+  type: string,
+  from: string,
+  to: string,
+) {
+  return `admin-passes:page:${page}:${name}:${reg}:${status}:${type}:${from}:${to}`
+}
+
 export function useAdminPasses() {
   const [rows, setRows] = useState<AdminPassRow[]>([])
   const [totalCount, setTotalCount] = useState(0)
@@ -82,11 +126,33 @@ export function useAdminPasses() {
 
   const pageSize = PAGE_SIZE
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-  const fetchDataRef = useRef<() => Promise<void>>(async () => {})
+  const fetchDataRef = useRef<(force?: boolean) => Promise<void>>(async () => {})
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (force = false) => {
+    const cacheKey = pageCacheKey(
+      page,
+      debouncedName.trim(),
+      debouncedReg.trim(),
+      statusFilter,
+      typeFilter,
+      dateFrom,
+      dateTo,
+    )
+
+    if (!force) {
+      const stale = peekCachedQuery<PagePayload>(cacheKey)
+      if (stale) {
+        setRows(stale.rows)
+        setTotalCount(stale.totalCount)
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
+    } else {
+      setLoading(true)
+    }
+
     setError(null)
-    setLoading(true)
 
     try {
       const from = (page - 1) * PAGE_SIZE
@@ -94,7 +160,6 @@ export function useAdminPasses() {
       const nameQ = debouncedName.trim()
       const regQ = debouncedReg.trim()
 
-      // Resolve student IDs for name/reg filters without downloading all passes.
       let studentIdFilter: string[] | null = null
       if (nameQ || regQ) {
         let studentQuery = supabase.from('students').select('id, profiles!inner(full_name)')
@@ -103,33 +168,23 @@ export function useAdminPasses() {
         const { data: studentHits, error: studentError } = await studentQuery.limit(500)
         if (studentError) {
           setError(formatNetworkError(studentError.message))
-          setRows([])
-          setTotalCount(0)
+          if (!peekCachedQuery(cacheKey)) {
+            setRows([])
+            setTotalCount(0)
+          }
           return
         }
         studentIdFilter = (studentHits ?? []).map((s) => s.id as string)
         if (studentIdFilter.length === 0) {
           setRows([])
           setTotalCount(0)
+          setCachedQuery(cacheKey, { rows: [], totalCount: 0 }, PAGE_TTL_MS)
           return
         }
       }
 
       let query = applyStatusFilter(
-        supabase
-          .from('outpass_requests')
-          .select(
-            `
-          *,
-          students (
-            reg_number,
-            room_number,
-            hostel_block,
-            profiles ( full_name )
-          )
-        `,
-            { count: 'exact' },
-          ),
+        supabase.from('outpass_requests').select(PASS_COLUMNS, { count: 'exact' }),
         statusFilter,
       )
         .order('created_at', { ascending: false })
@@ -148,20 +203,21 @@ export function useAdminPasses() {
 
       if (passError) {
         setError(formatNetworkError(passError.message))
-        setRows([])
-        setTotalCount(0)
+        if (!peekCachedQuery(cacheKey)) {
+          setRows([])
+          setTotalCount(0)
+        }
         return
       }
 
       const passPage = (data ?? []) as PassWithStudent[]
       const passIds = passPage.map((p) => p.id)
 
-      // Page-scoped only (≤ PAGE_SIZE) — never an unbounded gate_logs dump.
       let pageLogs: GateLog[] = []
       if (passIds.length > 0) {
         const { data: logs, error: logsError } = await supabase
           .from('gate_logs')
-          .select('*')
+          .select('id, outpass_id, event_type, scanned_at, scanned_by')
           .in('outpass_id', passIds)
         if (logsError) {
           console.warn('gate_logs page lookup soft-failed:', logsError.message)
@@ -171,12 +227,16 @@ export function useAdminPasses() {
       }
 
       const mapped = passPage.map((p) => mapPassRow(p, pageLogs))
+      const payload: PagePayload = { rows: mapped, totalCount: count ?? mapped.length }
+      setCachedQuery(cacheKey, payload, PAGE_TTL_MS)
       setRows(mapped)
-      setTotalCount(count ?? mapped.length)
+      setTotalCount(payload.totalCount)
     } catch (err) {
       setError(formatNetworkError(err, 'Failed to load passes.'))
-      setRows([])
-      setTotalCount(0)
+      if (!peekCachedQuery(cacheKey)) {
+        setRows([])
+        setTotalCount(0)
+      }
     } finally {
       setLoading(false)
     }
@@ -192,24 +252,34 @@ export function useAdminPasses() {
     void fetchData()
   }, [fetchData])
 
+  // Defer realtime until after first paint so WebSocket setup does not contend with initial fetch.
   useEffect(() => {
-    const scheduleRefresh = debounce(() => {
-      // Only re-fetch the current page — never an unbounded full-table dump.
-      void fetchDataRef.current()
-    }, REALTIME_DEBOUNCE_MS)
+    let cancelled = false
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    let cancelRefresh: (() => void) | undefined
 
-    const channel = supabase
-      .channel('admin-passes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'outpass_requests' },
-        () => scheduleRefresh(),
-      )
-      .subscribe()
+    const timer = window.setTimeout(() => {
+      if (cancelled) return
+      const scheduleRefresh = debounce(() => {
+        void fetchDataRef.current(true)
+      }, REALTIME_DEBOUNCE_MS)
+      cancelRefresh = () => scheduleRefresh.cancel()
+
+      channel = supabase
+        .channel('admin-passes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'outpass_requests' },
+          () => scheduleRefresh(),
+        )
+        .subscribe()
+    }, 1500)
 
     return () => {
-      scheduleRefresh.cancel()
-      void supabase.removeChannel(channel)
+      cancelled = true
+      window.clearTimeout(timer)
+      cancelRefresh?.()
+      if (channel) void supabase.removeChannel(channel)
     }
   }, [])
 
@@ -223,7 +293,8 @@ export function useAdminPasses() {
       .eq('id', passId)
 
     if (updateError) throw new Error(updateError.message)
-    await fetchData()
+    invalidateCachedQuery('admin-passes:')
+    await fetchData(true)
   }
 
   return {
@@ -250,6 +321,9 @@ export function useAdminPasses() {
     dateTo,
     setDateTo,
     overridePassStatus,
-    refetch: fetchData,
+    refetch: async () => {
+      invalidateCachedQuery('admin-passes:')
+      await fetchData(true)
+    },
   }
 }

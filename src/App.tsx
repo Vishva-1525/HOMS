@@ -6,8 +6,9 @@ import { StudentDataProvider } from '@/contexts/StudentDataContext'
 import { WardenDataProvider } from '@/contexts/WardenDataContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleRedirect } from '@/components/auth/RoleRedirect'
-import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
+import { RoutePrefetch } from '@/components/auth/RoutePrefetch'
 import { SafeRouteFallback } from '@/components/auth/SafeRouteFallback'
+import { PageLoadFallback } from '@/components/layout/SuspenseOutlet'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import { PwaBootstrap } from '@/components/pwa/PwaBootstrap'
 import { Login } from '@/pages/Login'
@@ -97,7 +98,7 @@ const ComponentGalleryPage = lazyPage(
 )
 
 function RouteFallback({ label }: { label: string }) {
-  return <AuthLoadingScreen label={label} />
+  return <PageLoadFallback label={label} />
 }
 
 export default function App() {
@@ -107,6 +108,7 @@ export default function App() {
         <ThemeProvider>
           <PwaBootstrap />
           <InstallPrompt />
+          <RoutePrefetch />
           <Suspense fallback={<RouteFallback label="Loading…" />}>
             <Routes>
               <Route path="/dev/ui" element={<ComponentGalleryPage />} />
