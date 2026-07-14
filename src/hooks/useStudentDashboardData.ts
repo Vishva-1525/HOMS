@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
+import { formatNetworkError } from '@/lib/network-error'
 import { isPassActive } from '@/lib/outpass'
 import { getCurrentSemesterRange, isWithinSemester } from '@/lib/semester'
 import { fetchStudentRecord } from '@/lib/student-data'
@@ -26,9 +27,10 @@ interface DashboardData {
   stats: SemesterStats
   loading: boolean
   error: string | null
+  refetch: () => Promise<void>
 }
 
-function computeStats(passes: OutpassRequest[]): SemesterStats {
+export function computeSemesterStats(passes: OutpassRequest[]): SemesterStats {
   return {
     total: passes.length,
     approved: passes.filter((p) => p.status === 'approved' || p.status === 'extended').length,
@@ -37,7 +39,7 @@ function computeStats(passes: OutpassRequest[]): SemesterStats {
   }
 }
 
-function findCheckedOutPass(
+export function findCheckedOutPass(
   passes: OutpassRequest[],
   gateLogs: GateLog[],
 ): ActiveCheckedOutPass | null {
@@ -69,55 +71,66 @@ export function useStudentDashboardData(): DashboardData {
 
     setError(null)
 
-    const [studentResult, passesResult] = await Promise.all([
-      fetchStudentRecord(user.id),
-      supabase
-        .from('outpass_requests')
-        .select('*')
-        .eq('student_id', user.id)
-        .order('created_at', { ascending: false }),
-    ])
+    try {
+      const [studentResult, passesResult] = await Promise.all([
+        fetchStudentRecord(user.id),
+        supabase
+          .from('outpass_requests')
+          .select('*')
+          .eq('student_id', user.id)
+          .order('created_at', { ascending: false }),
+      ])
 
-    if (studentResult.error) {
-      setError(studentResult.error)
-      setLoading(false)
-      return
-    }
-
-    if (passesResult.error) {
-      setError(passesResult.error.message)
-      setLoading(false)
-      return
-    }
-
-    const allPasses = (passesResult.data ?? []) as OutpassRequest[]
-    setStudent(studentResult.student)
-    setPasses(allPasses)
-
-    const activePassIds = allPasses.filter(isPassActive).map((p) => p.id)
-
-    if (activePassIds.length > 0) {
-      const { data: logs, error: logsError } = await supabase
-        .from('gate_logs')
-        .select('*')
-        .in('outpass_id', activePassIds)
-        .order('scanned_at', { ascending: false })
-
-      if (logsError) {
-        setError(logsError.message)
-      } else {
-        setGateLogs((logs ?? []) as GateLog[])
+      if (studentResult.error) {
+        setError(formatNetworkError(studentResult.error))
+        setLoading(false)
+        return
       }
-    } else {
-      setGateLogs([])
-    }
 
-    setLoading(false)
+      if (passesResult.error) {
+        setError(formatNetworkError(passesResult.error.message))
+        setLoading(false)
+        return
+      }
+
+      const allPasses = (passesResult.data ?? []) as OutpassRequest[]
+      setStudent(studentResult.student)
+      setPasses(allPasses)
+
+      const activePassIds = allPasses.filter(isPassActive).map((p) => p.id)
+
+      if (activePassIds.length > 0) {
+        const { data: logs, error: logsError } = await supabase
+          .from('gate_logs')
+          .select('*')
+          .in('outpass_id', activePassIds)
+          .order('scanned_at', { ascending: false })
+
+        if (logsError) {
+          // Soft-fail — dashboard still usable without gate status
+          console.warn('gate_logs fetch soft-failed:', logsError.message)
+          setGateLogs([])
+        } else {
+          setGateLogs((logs ?? []) as GateLog[])
+        }
+      } else {
+        setGateLogs([])
+      }
+    } catch (err) {
+      setError(formatNetworkError(err, 'Failed to load dashboard.'))
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    void fetchData()
+  }, [user, fetchData])
 
   useEffect(() => {
     if (!user) return
@@ -133,7 +146,7 @@ export function useStudentDashboardData(): DashboardData {
           filter: `student_id=eq.${user.id}`,
         },
         () => {
-          fetchData()
+          void fetchData()
         },
       )
       .on(
@@ -144,13 +157,13 @@ export function useStudentDashboardData(): DashboardData {
           table: 'gate_logs',
         },
         () => {
-          fetchData()
+          void fetchData()
         },
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      void supabase.removeChannel(channel)
     }
   }, [user, fetchData])
 
@@ -163,7 +176,7 @@ export function useStudentDashboardData(): DashboardData {
 
   const activePass = useMemo(() => passes.find(isPassActive) ?? null, [passes])
 
-  const stats = useMemo(() => computeStats(semesterPasses), [semesterPasses])
+  const stats = useMemo(() => computeSemesterStats(semesterPasses), [semesterPasses])
 
   const activeCheckedOutPass = useMemo(
     () => findCheckedOutPass(passes, gateLogs),
@@ -179,6 +192,7 @@ export function useStudentDashboardData(): DashboardData {
     stats,
     loading,
     error,
+    refetch: fetchData,
   }
 }
 

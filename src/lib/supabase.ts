@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { createResilientFetch } from '@/lib/resilient-fetch'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -9,11 +10,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+/** 2 retries, short backoff — resilient without making normal loads feel slow. */
+const resilientFetch = createResilientFetch(2, 250)
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     storage: localStorage,
+  },
+  global: {
+    fetch: resilientFetch,
   },
 })

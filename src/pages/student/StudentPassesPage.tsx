@@ -3,19 +3,28 @@ import { PassDetailSheet } from '@/components/student/PassDetailSheet'
 import { PassFilterChips } from '@/components/student/PassFilterChips'
 import { PassListCard } from '@/components/student/PassListCard'
 import { PassQrSheet } from '@/components/student/PassQrSheet'
+import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/spinner'
-import { useStudentPasses } from '@/hooks/useStudentPasses'
-import { useStudentPassQuotas } from '@/hooks/useStudentPassQuotas'
+import { useStudentDataContext } from '@/contexts/StudentDataContext'
 import { filterPasses, isQrEligibleStatus, type PassFilter } from '@/lib/pass-filters'
 import type { OutpassRequest } from '@/lib/types'
 
 export function StudentPassesPage() {
-  const { passes, gateLogs, extensions, student, loading, error, refetch } = useStudentPasses()
-  const { quotas } = useStudentPassQuotas()
+  const {
+    passes,
+    gateLogs,
+    extensions,
+    student,
+    quotas,
+    loading,
+    error,
+    refetch,
+  } = useStudentDataContext()
   const [filter, setFilter] = useState<PassFilter>('all')
   const [selectedPass, setSelectedPass] = useState<OutpassRequest | null>(null)
   const [qrPass, setQrPass] = useState<OutpassRequest | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
   const approvedPasses = useMemo(
     () => passes.filter((pass) => pass.status === 'approved' || pass.status === 'extended'),
@@ -33,6 +42,15 @@ export function StudentPassesPage() {
     if (updated) setSelectedPass(updated)
   }, [passes, selectedPass])
 
+  async function handleRetry() {
+    setRetrying(true)
+    try {
+      await refetch()
+    } finally {
+      setRetrying(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="dashboard-loading-panel">
@@ -41,11 +59,14 @@ export function StudentPassesPage() {
     )
   }
 
-  if (error) {
+  if (error && passes.length === 0) {
     return (
-      <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]">
-        {error}
-      </div>
+      <DashboardErrorPanel
+        error={error}
+        onRetry={handleRetry}
+        retrying={retrying}
+        title="Couldn’t load your passes"
+      />
     )
   }
 
@@ -88,7 +109,9 @@ export function StudentPassesPage() {
         quotas={quotas}
         approvedPasses={approvedPasses}
         onClose={() => setSelectedPass(null)}
-        onUpdated={refetch}
+        onUpdated={() => {
+          void refetch()
+        }}
       />
 
       {qrPass && (

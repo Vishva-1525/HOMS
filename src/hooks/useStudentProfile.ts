@@ -14,14 +14,19 @@ export function useStudentProfile() {
     if (!user) return
 
     setError(null)
-    const { student: record, error: fetchError } = await fetchStudentRecord(user.id)
+    try {
+      const { student: record, error: fetchError } = await fetchStudentRecord(user.id)
 
-    if (fetchError) {
-      setError(fetchError)
-    } else {
-      setStudent(record)
+      if (fetchError) {
+        setError(fetchError)
+      } else {
+        setStudent(record)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load profile.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [user])
 
   useEffect(() => {

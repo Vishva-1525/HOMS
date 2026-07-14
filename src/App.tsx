@@ -7,6 +7,7 @@ import { RoleRedirect } from '@/components/auth/RoleRedirect'
 import { AppShell } from '@/components/layout/AppShell'
 import { SecurityShell } from '@/components/layout/SecurityShell'
 import { WardenShell } from '@/components/layout/WardenShell'
+import { StudentDataProvider } from '@/contexts/StudentDataContext'
 import { WardenDataProvider } from '@/contexts/WardenDataContext'
 import { Login } from '@/pages/Login'
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
@@ -61,7 +62,13 @@ export default function App() {
           <Route path="/" element={<RoleRedirect />} />
 
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-            <Route element={<StudentShell />}>
+            <Route
+              element={
+                <StudentDataProvider>
+                  <StudentShell />
+                </StudentDataProvider>
+              }
+            >
               <Route path="/student/dashboard" element={<StudentHomePage />} />
               <Route path="/student/new-request" element={<StudentNewRequestPage />} />
               <Route path="/student/passes" element={<StudentPassesPage />} />

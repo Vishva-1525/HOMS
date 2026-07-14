@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
+import { useStudentDataContext } from '@/contexts/StudentDataContext'
 import { PassTypeSelector } from '@/components/student/PassTypeSelector'
 import { DateTimePicker } from '@/components/ui/DateTimePicker'
 import { SpecialPassFields } from '@/components/student/SpecialPassFields'
@@ -25,6 +26,7 @@ import { uploadSpecialPassDocument } from '@/lib/upload-special-pass-document'
 export function StudentNewRequestPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { refetch: refetchStudentData } = useStudentDataContext()
   const [form, setForm] = useState<NewRequestFormValues>(INITIAL_NEW_REQUEST_FORM)
   const [errors, setErrors] = useState<NewRequestFormErrors>({})
   const [submitting, setSubmitting] = useState(false)
@@ -117,6 +119,7 @@ export function StudentNewRequestPage() {
     }
 
     setForm(INITIAL_NEW_REQUEST_FORM)
+    void refetchStudentData()
     setShowSuccess(true)
   }
 

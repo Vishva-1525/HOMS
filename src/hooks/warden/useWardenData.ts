@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { debounce } from '@/lib/debounce'
+import { formatNetworkError } from '@/lib/network-error'
 import { isApprovedToday, isOverdueReturn, isStudentCurrentlyOut } from '@/lib/warden'
 import { supabase } from '@/lib/supabase'
 import type {
@@ -23,9 +25,12 @@ interface WardenData {
   pendingCount: number
   pendingExtensionsCount: number
   loading: boolean
+  refreshing: boolean
   error: string | null
   refetch: () => Promise<void>
 }
+
+const REALTIME_DEBOUNCE_MS = 600
 
 function computeStats(passes: OutpassRequest[], gateLogs: GateLog[]): WardenStats {
   return {
@@ -40,91 +45,118 @@ export function useWardenData(): WardenData {
   const [passes, setPasses] = useState<OutpassWithStudent[]>([])
   const [gateLogs, setGateLogs] = useState<GateLog[]>([])
   const [extensions, setExtensions] = useState<ExtensionRequest[]>([])
-  const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const hasLoadedRef = useRef(false)
+  const inFlightRef = useRef<Promise<void> | null>(null)
+
   const fetchData = useCallback(async () => {
-    setError(null)
-
-    const [passesResult, extensionsResult] = await Promise.all([
-      supabase
-        .from('outpass_requests')
-        .select(`
-          *,
-          students (
-            reg_number,
-            room_number,
-            hostel_block,
-            profiles ( full_name )
-          )
-        `)
-        .order('created_at', { ascending: false }),
-      supabase.from('extension_requests').select('*').order('created_at', { ascending: false }),
-    ])
-
-    if (passesResult.error) {
-      setError(passesResult.error.message)
-      setLoading(false)
+    if (inFlightRef.current) {
+      await inFlightRef.current
       return
     }
 
-    if (extensionsResult.error) {
-      setError(extensionsResult.error.message)
-      setLoading(false)
-      return
-    }
+    const run = (async () => {
+      setError(null)
+      if (hasLoadedRef.current) setRefreshing(true)
 
-    const allPasses = (passesResult.data ?? []) as OutpassWithStudent[]
-    setPasses(allPasses)
-    setExtensions((extensionsResult.data ?? []) as ExtensionRequest[])
+      try {
+        const [passesResult, extensionsResult] = await Promise.all([
+          supabase
+            .from('outpass_requests')
+            .select(`
+              *,
+              students (
+                reg_number,
+                room_number,
+                hostel_block,
+                profiles ( full_name )
+              )
+            `)
+            .order('created_at', { ascending: false }),
+          supabase.from('extension_requests').select('*').order('created_at', { ascending: false }),
+        ])
 
-    const passIds = allPasses.map((p) => p.id)
+        if (passesResult.error) {
+          setError(formatNetworkError(passesResult.error.message))
+          return
+        }
 
-    if (passIds.length > 0) {
-      const { data: logs, error: logsError } = await supabase
-        .from('gate_logs')
-        .select('*')
-        .in('outpass_id', passIds)
+        if (extensionsResult.error) {
+          setError(formatNetworkError(extensionsResult.error.message))
+          return
+        }
 
-      if (logsError) {
-        setError(logsError.message)
-      } else {
-        setGateLogs((logs ?? []) as GateLog[])
+        const allPasses = (passesResult.data ?? []) as OutpassWithStudent[]
+        setPasses(allPasses)
+        setExtensions((extensionsResult.data ?? []) as ExtensionRequest[])
+
+        const passIds = allPasses.map((p) => p.id)
+
+        if (passIds.length > 0) {
+          const { data: logs, error: logsError } = await supabase
+            .from('gate_logs')
+            .select('*')
+            .in('outpass_id', passIds)
+
+          if (logsError) {
+            console.warn('warden gate_logs soft-failed:', logsError.message)
+          } else {
+            setGateLogs((logs ?? []) as GateLog[])
+          }
+        } else {
+          setGateLogs([])
+        }
+      } catch (err) {
+        setError(formatNetworkError(err, 'Failed to load warden data.'))
+      } finally {
+        hasLoadedRef.current = true
+        setHasLoaded(true)
+        setRefreshing(false)
       }
-    } else {
-      setGateLogs([])
-    }
+    })()
 
-    setLoading(false)
+    inFlightRef.current = run
+    try {
+      await run
+    } finally {
+      inFlightRef.current = null
+    }
   }, [])
 
   useEffect(() => {
-    setLoading(true)
-    fetchData()
+    void fetchData()
   }, [fetchData])
 
   useEffect(() => {
+    const scheduleRefresh = debounce(() => {
+      void fetchData()
+    }, REALTIME_DEBOUNCE_MS)
+
     const channel = supabase
       .channel('warden-dashboard')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'outpass_requests' },
-        () => fetchData(),
+        () => scheduleRefresh(),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'gate_logs' },
-        () => fetchData(),
+        () => scheduleRefresh(),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'extension_requests' },
-        () => fetchData(),
+        () => scheduleRefresh(),
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      scheduleRefresh.cancel()
+      void supabase.removeChannel(channel)
     }
   }, [fetchData])
 
@@ -143,7 +175,8 @@ export function useWardenData(): WardenData {
     stats,
     pendingCount,
     pendingExtensionsCount,
-    loading,
+    loading: !hasLoaded,
+    refreshing,
     error,
     refetch: fetchData,
   }

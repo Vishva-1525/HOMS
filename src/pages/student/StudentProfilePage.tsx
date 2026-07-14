@@ -4,9 +4,11 @@ import { PasswordInput } from '@/components/auth/PasswordInput'
 import { PasswordStrengthBar } from '@/components/auth/PasswordStrengthBar'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { Button } from '@/components/ui/button'
+import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
-import { useStudentProfile } from '@/hooks/useStudentProfile'
+import { useAuth } from '@/contexts/AuthProvider'
+import { useStudentDataContext } from '@/contexts/StudentDataContext'
 import { formatBlockLabel } from '@/lib/block-display'
 import { getPasswordStrength } from '@/lib/password-strength'
 
@@ -33,13 +35,15 @@ function ProfileInfoRow({
 }
 
 export function StudentProfilePage() {
-  const { student, profile, email, loading, error, changePassword } = useStudentProfile()
+  const { user, profile, changePassword } = useAuth()
+  const { student, loading, error, refetch } = useStudentDataContext()
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   async function handlePasswordSubmit(event: FormEvent) {
     event.preventDefault()
@@ -79,15 +83,26 @@ export function StudentProfilePage() {
     )
   }
 
-  if (error) {
+  if (error && !student && !profile) {
     return (
-      <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]">
-        {error}
-      </div>
+      <DashboardErrorPanel
+        error={error}
+        retrying={retrying}
+        title="Couldn’t load your profile"
+        onRetry={async () => {
+          setRetrying(true)
+          try {
+            await refetch()
+          } finally {
+            setRetrying(false)
+          }
+        }}
+      />
     )
   }
 
   const displayName = profile?.full_name ?? 'Student'
+  const email = user?.email ?? null
 
   return (
     <div className="mx-auto max-w-lg space-y-6">

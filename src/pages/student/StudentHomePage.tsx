@@ -6,21 +6,34 @@ import { StudentDashboardHero } from '@/components/student/StudentDashboardHero'
 import { StudentDashboardStats } from '@/components/student/StudentDashboardStats'
 import { StudentPassQuotaStats } from '@/components/student/StudentPassQuotaStats'
 import { StudentRecentRequestsTable } from '@/components/student/StudentRecentRequestsTable'
+import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
-import { useStudentDashboardData } from '@/hooks/useStudentDashboardData'
-import { useStudentPassQuotas } from '@/hooks/useStudentPassQuotas'
-import { useStudentPasses } from '@/hooks/useStudentPasses'
+import { useStudentDataContext } from '@/contexts/StudentDataContext'
+import {
+  computeSemesterStats,
+  findCheckedOutPass,
+} from '@/hooks/useStudentDashboardData'
+import { isPassActive } from '@/lib/outpass'
 import { canRequestExtension } from '@/lib/pass-filters'
+import { isWithinSemester } from '@/lib/semester'
 import type { OutpassRequest } from '@/lib/types'
 
 export function StudentHomePage() {
   const { profile } = useAuth()
-  const dashboard = useStudentDashboardData()
-  const { quotas, loading: quotasLoading } = useStudentPassQuotas()
-  const { passes, extensions, gateLogs, refetch } = useStudentPasses()
+  const {
+    passes,
+    extensions,
+    gateLogs,
+    student,
+    quotas,
+    loading,
+    error,
+    refetch,
+  } = useStudentDataContext()
   const [selectedPass, setSelectedPass] = useState<OutpassRequest | null>(null)
   const [detailInitialAction, setDetailInitialAction] = useState<'extension' | undefined>()
+  const [retrying, setRetrying] = useState(false)
 
   const firstName = profile?.full_name?.split(/\s+/)[0] ?? 'Student'
 
@@ -29,23 +42,47 @@ export function StudentHomePage() {
     [passes],
   )
 
+  const semesterPasses = useMemo(
+    () => passes.filter((p) => isWithinSemester(p.created_at)),
+    [passes],
+  )
+
+  const recentPasses = useMemo(() => passes.slice(0, 5), [passes])
+  const activePass = useMemo(() => passes.find(isPassActive) ?? null, [passes])
+  const stats = useMemo(() => computeSemesterStats(semesterPasses), [semesterPasses])
+  const activeCheckedOutPass = useMemo(
+    () => findCheckedOutPass(passes, gateLogs),
+    [passes, gateLogs],
+  )
+
   const extensionEligiblePass = useMemo(() => {
-    const active = dashboard.activePass ?? dashboard.activeCheckedOutPass
+    const active = activePass ?? activeCheckedOutPass
     if (!active || !canRequestExtension(active, gateLogs)) return null
     const hasPending = extensions.some(
       (e) => e.outpass_id === active.id && e.status === 'pending',
     )
     return hasPending ? null : active
-  }, [dashboard.activePass, dashboard.activeCheckedOutPass, gateLogs, extensions])
+  }, [activePass, activeCheckedOutPass, gateLogs, extensions])
 
   useEffect(() => {
     if (!selectedPass) return
-    const updated = dashboard.recentPasses.find((p) => p.id === selectedPass.id)
-      ?? dashboard.semesterPasses.find((p) => p.id === selectedPass.id)
+    const updated =
+      recentPasses.find((p) => p.id === selectedPass.id)
+      ?? semesterPasses.find((p) => p.id === selectedPass.id)
+      ?? passes.find((p) => p.id === selectedPass.id)
     if (updated) setSelectedPass(updated)
-  }, [dashboard.recentPasses, dashboard.semesterPasses, selectedPass])
+  }, [recentPasses, semesterPasses, passes, selectedPass])
 
-  if (dashboard.loading) {
+  async function handleRetry() {
+    setRetrying(true)
+    try {
+      await refetch()
+    } finally {
+      setRetrying(false)
+    }
+  }
+
+  if (loading) {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading dashboard…" />
@@ -53,18 +90,34 @@ export function StudentHomePage() {
     )
   }
 
-  if (dashboard.error) {
+  if (error && passes.length === 0) {
     return (
-      <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]">
-        {dashboard.error}
-      </div>
+      <DashboardErrorPanel
+        error={error}
+        onRetry={handleRetry}
+        retrying={retrying}
+        title="Couldn’t load your dashboard"
+      />
     )
   }
 
-  const missingStudentRecord = !dashboard.student
+  const missingStudentRecord = !student
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {error && passes.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>Connection issue — showing last loaded data.</span>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="font-semibold text-[#1A5CA0] hover:underline"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
+
       {missingStudentRecord && (
         <div className="rounded-xl border border-[#FDE68A] bg-[#FFF8E1] px-4 py-3 text-sm text-[#92400E]">
           Your hostel student profile is not set up yet. You can still view passes, but contact the
@@ -74,14 +127,14 @@ export function StudentHomePage() {
 
       <StudentDashboardHero
         firstName={firstName}
-        student={dashboard.student}
-        checkedOutPass={dashboard.activeCheckedOutPass}
+        student={student}
+        checkedOutPass={activeCheckedOutPass}
       />
 
-      {dashboard.activePass && (
+      {activePass && (
         <ActivePassBanner
-          pass={dashboard.activePass}
-          student={dashboard.student}
+          pass={activePass}
+          student={student}
           quotas={quotas}
           approvedPasses={approvedPasses}
         />
@@ -102,13 +155,7 @@ export function StudentHomePage() {
           <span className="dashboard-section-accent" aria-hidden />
           Pass usage
         </h2>
-        {quotasLoading ? (
-          <div className="dashboard-loading-panel min-h-[120px]">
-            <Spinner label="Loading pass usage…" />
-          </div>
-        ) : (
-          <StudentPassQuotaStats quotas={quotas} />
-        )}
+        <StudentPassQuotaStats quotas={quotas} />
       </section>
 
       <section className="dashboard-section">
@@ -117,16 +164,16 @@ export function StudentHomePage() {
           This semester
         </h2>
         <StudentDashboardStats
-          total={dashboard.stats.total}
-          approved={dashboard.stats.approved}
-          pending={dashboard.stats.pending}
-          rejected={dashboard.stats.rejected}
+          total={stats.total}
+          approved={stats.approved}
+          pending={stats.pending}
+          rejected={stats.rejected}
         />
       </section>
 
       <section className="dashboard-section">
         <StudentRecentRequestsTable
-          passes={dashboard.recentPasses}
+          passes={recentPasses}
           gateLogs={gateLogs}
           onSelectPass={setSelectedPass}
         />
@@ -134,7 +181,7 @@ export function StudentHomePage() {
 
       <PassDetailSheet
         pass={selectedPass}
-        student={dashboard.student}
+        student={student}
         extensions={extensions}
         gateLogs={gateLogs}
         quotas={quotas}
@@ -144,7 +191,9 @@ export function StudentHomePage() {
           setSelectedPass(null)
           setDetailInitialAction(undefined)
         }}
-        onUpdated={refetch}
+        onUpdated={() => {
+          void refetch()
+        }}
       />
     </div>
   )

@@ -33,18 +33,23 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
 
-  if (error) {
-    console.error('Failed to fetch profile:', error.message)
+    if (error) {
+      console.error('Failed to fetch profile:', error.message)
+      return null
+    }
+
+    return data as Profile | null
+  } catch (err) {
+    console.error('Failed to fetch profile:', err)
     return null
   }
-
-  return data as Profile | null
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -66,39 +71,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    async function initAuth() {
-      const { data: { session: initialSession } } = await supabase.auth.getSession()
-
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!mounted) return
 
-      setSession(initialSession)
-      setUser(initialSession?.user ?? null)
+      setSession(nextSession)
+      setUser(nextSession?.user ?? null)
 
-      if (initialSession?.user) {
-        const userProfile = await fetchProfile(initialSession.user.id)
+      if (nextSession?.user) {
+        const userProfile = await fetchProfile(nextSession.user.id)
         if (mounted) setProfile(userProfile)
+      } else {
+        setProfile(null)
       }
 
       if (mounted) setLoading(false)
-    }
-
-    initAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, nextSession) => {
-        setSession(nextSession)
-        setUser(nextSession?.user ?? null)
-
-        if (nextSession?.user) {
-          const userProfile = await fetchProfile(nextSession.user.id)
-          if (mounted) setProfile(userProfile)
-        } else {
-          setProfile(null)
-        }
-
-        if (mounted) setLoading(false)
-      },
-    )
+    })
 
     return () => {
       mounted = false
