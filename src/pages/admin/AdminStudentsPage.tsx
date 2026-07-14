@@ -154,7 +154,7 @@ export function AdminStudentsPage() {
           }}
         >
           <Upload className="h-4 w-4" />
-          Import CSV
+          Import students
         </Button>
       </div>
 

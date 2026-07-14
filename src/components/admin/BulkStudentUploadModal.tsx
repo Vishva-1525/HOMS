@@ -4,7 +4,8 @@ import { Modal, ModalFooter } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import {
   getCsvTemplate,
-  parseStudentCsv,
+  getXlsxTemplateBlob,
+  parseStudentImportFile,
   type ParsedStudentImportRow,
   type StudentImportMode,
   type BulkImportResult,
@@ -118,25 +119,35 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
       return
     }
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setParseErrors(['Please upload a .csv file.'])
+    if (!/\.(csv|xlsx)$/i.test(file.name)) {
+      setParseErrors(['Please upload a .csv or .xlsx file.'])
       setFileName(file.name)
       setRows([])
       return
     }
 
     setFileName(file.name)
-    const { rows: parsed, errors } = await parseStudentCsv(file)
+    const { rows: parsed, errors } = await parseStudentImportFile(file)
     setRows(parsed)
     setParseErrors(errors)
   }
 
-  function downloadTemplate() {
+  function downloadCsvTemplate() {
     const blob = new Blob([getCsvTemplate()], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = 'homs-students-import-template.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function downloadXlsxTemplate() {
+    const blob = getXlsxTemplateBlob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'homs-students-import-template.xlsx'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -269,7 +280,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
   return (
     <Modal
       open={open}
-      title="Import students from CSV"
+      title="Import students"
       onClose={handleClose}
       className="max-w-xl bg-white"
       footer={
@@ -366,11 +377,31 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-slate-900">CSV file</p>
-            <Button type="button" variant="link" size="sm" onClick={downloadTemplate} disabled={submitting}>
-              Download template
-            </Button>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-900">CSV or Excel file</p>
+            <div className="flex flex-wrap items-center gap-1">
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                onClick={downloadCsvTemplate}
+                disabled={submitting}
+              >
+                CSV template
+              </Button>
+              <span className="text-slate-300" aria-hidden>
+                ·
+              </span>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                onClick={downloadXlsxTemplate}
+                disabled={submitting}
+              >
+                Excel template
+              </Button>
+            </div>
           </div>
 
           <div
@@ -405,18 +436,18 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
               {fileName ? <FileSpreadsheet className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
             </div>
             <p className="mt-3 text-sm font-medium text-slate-900">
-              {fileName ?? 'Drag & drop CSV here, or click to browse'}
+              {fileName ?? 'Drag & drop CSV or Excel (.xlsx) here, or click to browse'}
             </p>
             <p className="mt-1 text-xs text-slate-600">
               Headers: Email, Reg Number, Full Name, Phone, Room, Block, Department, Year
             </p>
             <p className="mt-1 text-[11px] text-slate-500">
-              Large files are uploaded in batches of {CHUNK_SIZE} to avoid timeouts.
+              Accepts .csv and .xlsx · Large files upload in batches of {CHUNK_SIZE}.
             </p>
             <input
               ref={inputRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="hidden"
               disabled={submitting}
               onChange={(e) => void handleFile(e.target.files?.[0])}
