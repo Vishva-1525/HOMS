@@ -439,7 +439,8 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
               {fileName ?? 'Drag & drop CSV or Excel (.xlsx) here, or click to browse'}
             </p>
             <p className="mt-1 text-xs text-slate-600">
-              Headers: Email, Reg Number, Full Name, Phone, Room, Block, Department, Year
+              Required: Email, Reg Number, Full Name, Phone, Year · Optional: Room, Block,
+              Department
             </p>
             <p className="mt-1 text-[11px] text-slate-500">
               Accepts .csv and .xlsx · Large files upload in batches of {CHUNK_SIZE}.

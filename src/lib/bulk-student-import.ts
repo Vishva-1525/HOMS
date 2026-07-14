@@ -35,39 +35,58 @@ const REQUIRED_HEADERS = [
   'reg_number',
   'full_name',
   'phone',
-  'room',
-  'block',
-  'department',
   'year',
 ] as const
+
+/** Optional columns — accepted when present, default to empty when absent. */
+const OPTIONAL_HEADER_HINT = 'Optional: Room, Block, Department'
 
 /** Map flexible spreadsheet headers → canonical field names. */
 const HEADER_ALIASES: Record<string, keyof ParsedStudentImportRow | 'room' | 'block' | 'year'> = {
   email: 'email',
   'e-mail': 'email',
   'student email': 'email',
+  'email student': 'email',
+  'email id': 'email',
+  'student mail': 'email',
+  'college email': 'email',
   'reg number': 'reg_number',
   reg_number: 'reg_number',
   regnumber: 'reg_number',
   'register number': 'reg_number',
   'registration number': 'reg_number',
+  'reg no': 'reg_number',
+  'regno': 'reg_number',
   'full name': 'full_name',
   full_name: 'full_name',
   name: 'full_name',
+  'student name': 'full_name',
   phone: 'phone',
   mobile: 'phone',
   'phone number': 'phone',
+  'phone number student': 'phone',
+  'student phone': 'phone',
+  'student phone number': 'phone',
+  'mobile number': 'phone',
+  'mobile no': 'phone',
+  'contact number': 'phone',
   room: 'room',
   'room number': 'room',
   room_number: 'room',
+  'room no': 'room',
   block: 'block',
   'hostel block': 'block',
   hostel_block: 'block',
+  hostel: 'block',
   department: 'department',
   dept: 'department',
+  branch: 'department',
+  'dept name': 'department',
   year: 'year',
   'year of study': 'year',
   year_of_study: 'year',
+  'study year': 'year',
+  'current year': 'year',
 }
 
 const TEMPLATE_HEADERS = [
@@ -126,7 +145,7 @@ function mapRecordsToStudents(
     return {
       rows: [],
       errors: [
-        `Missing required columns: ${missing.join(', ')}. Expected: Email, Reg Number, Full Name, Phone, Room, Block, Department, Year.`,
+        `Missing required columns: ${missing.join(', ')}. Expected at least: Email, Reg Number, Full Name, Phone, Year. ${OPTIONAL_HEADER_HINT}.`,
       ],
     }
   }
