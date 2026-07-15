@@ -20,6 +20,16 @@ export function buildDatetimeLocal(dateKey: string, hours: number, minutes: numb
   return `${dateKey}T${pad(hours)}:${pad(minutes)}`
 }
 
+export function toDatetimeLocalValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+/** datetime-local floor for "now" so past slots cannot be selected. */
+export function toDatetimeLocalNow(): string {
+  return toDatetimeLocalValue(new Date())
+}
+
 export function formatTimeLabel(hours: number, minutes: number): string {
   const period = hours >= 12 ? 'PM' : 'AM'
   const h12 = hours % 12 || 12

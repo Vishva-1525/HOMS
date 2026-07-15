@@ -14,12 +14,14 @@ import { Label } from '@/components/ui/label'
 import { useAcademicCalendar } from '@/hooks/useAcademicCalendar'
 import {
   INITIAL_NEW_REQUEST_FORM,
+  getPassTypeDurationHint,
   getReturnDatetimeBounds,
   isNewRequestFormDirty,
   validateNewRequestForm,
   type NewRequestFormErrors,
   type NewRequestFormValues,
 } from '@/lib/outpass-request-validation'
+import { toDatetimeLocalNow } from '@/lib/datetime-local'
 import { supabase } from '@/lib/supabase'
 import { uploadSpecialPassDocument } from '@/lib/upload-special-pass-document'
 
@@ -32,12 +34,14 @@ export function StudentNewRequestPage() {
   const [submitting, setSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
-  const { days, calendarMap, loading: calendarLoading } = useAcademicCalendar()
+  const { calendarMap, loading: calendarLoading } = useAcademicCalendar()
 
+  const departureMin = useMemo(() => toDatetimeLocalNow(), [])
   const returnBounds = useMemo(
     () => getReturnDatetimeBounds(form.passType, form.departureAt),
     [form.passType, form.departureAt],
   )
+  const durationHint = getPassTypeDurationHint(form.passType)
 
   function updateField<K extends keyof NewRequestFormValues>(
     key: K,
@@ -49,6 +53,19 @@ export function StudentNewRequestPage() {
         next.specialPurpose = null
         next.specialRemarks = ''
         next.documentFile = null
+      }
+      if (key === 'passType' || key === 'departureAt') {
+        const bounds = getReturnDatetimeBounds(
+          key === 'passType' ? (value as NewRequestFormValues['passType']) : next.passType,
+          key === 'departureAt' ? (value as string) : next.departureAt,
+        )
+        if (
+          next.returnBy &&
+          ((bounds.min && next.returnBy < bounds.min) ||
+            (bounds.max && next.returnBy > bounds.max))
+        ) {
+          next.returnBy = ''
+        }
       }
       if (Object.keys(errors).length > 0) {
         setErrors(validateNewRequestForm(next, calendarMap))
@@ -216,9 +233,9 @@ export function StudentNewRequestPage() {
           label="Departure date & time"
           value={form.departureAt}
           onChange={(value) => updateField('departureAt', value)}
+          min={departureMin}
           disabled={submitting}
           error={errors.departureAt}
-          calendarDays={days}
           calendarMap={calendarMap}
           calendarLoading={calendarLoading}
         />
@@ -228,11 +245,17 @@ export function StudentNewRequestPage() {
           label="Expected return date & time"
           value={form.returnBy}
           onChange={(value) => updateField('returnBy', value)}
-          min={returnBounds.min}
+          min={returnBounds.min ?? (form.departureAt || undefined)}
           max={returnBounds.max}
-          disabled={submitting || !form.passType}
+          disabled={submitting || !form.passType || !form.departureAt}
           error={errors.returnBy}
-          calendarDays={days}
+          hint={
+            !form.passType
+              ? 'Select a pass type first.'
+              : !form.departureAt
+                ? 'Select departure first.'
+                : (durationHint ?? undefined)
+          }
           calendarMap={calendarMap}
           calendarLoading={calendarLoading}
         />

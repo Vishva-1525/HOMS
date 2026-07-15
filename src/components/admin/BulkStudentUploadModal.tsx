@@ -20,6 +20,11 @@ interface BulkStudentUploadModalProps {
   open: boolean
   onClose: () => void
   onSuccess: (result: BulkImportResult) => void
+  /** When false, hides New Academic Year / replace mode (wardens). Default true. */
+  allowReplace?: boolean
+  /** Applied to every imported row (warden block assignment). */
+  forcedHostelBlock?: string | null
+  title?: string
 }
 
 interface ChunkFailState {
@@ -57,7 +62,14 @@ function mergeChunkResult(acc: BulkImportResult, chunk: BulkImportResult): BulkI
   }
 }
 
-export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudentUploadModalProps) {
+export function BulkStudentUploadModal({
+  open,
+  onClose,
+  onSuccess,
+  allowReplace = true,
+  forcedHostelBlock = null,
+  title = 'Import students',
+}: BulkStudentUploadModalProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [importMode, setImportMode] = useState<StudentImportMode>('append')
   const [fileName, setFileName] = useState<string | null>(null)
@@ -132,7 +144,14 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
 
     setFileName(file.name)
     const { rows: parsed, errors, warnings } = await parseStudentImportFile(file)
-    setRows(parsed)
+    const block = forcedHostelBlock?.trim()
+    const withBlock = block
+      ? parsed.map((row) => ({
+          ...row,
+          hostel_block: row.hostel_block.trim() || block,
+        }))
+      : parsed
+    setRows(withBlock)
     setParseErrors(errors)
     setParseWarnings(warnings)
   }
@@ -173,6 +192,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
       body: {
         importMode: mode,
         students: chunk,
+        forcedHostelBlock: forcedHostelBlock?.trim() || undefined,
       },
     })
 
@@ -268,11 +288,14 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
   async function handleSubmit() {
     if (rows.length === 0 || parseErrors.length > 0) return
 
+    const selectedMode: StudentImportMode =
+      allowReplace && importMode === 'replace' ? 'replace' : 'append'
+
     const chunks = chunkArray(rows, CHUNK_SIZE)
     runRef.current = {
       chunks,
       nextIndex: 0,
-      selectedMode: importMode,
+      selectedMode,
       totals: emptyTotals(),
       totalRows: rows.length,
     }
@@ -320,7 +343,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
   return (
     <Modal
       open={open}
-      title="Import students"
+      title={title}
       onClose={handleClose}
       className="max-w-xl bg-white"
       footer={
@@ -343,11 +366,11 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
             confirmLabel={
               submitting
                 ? 'Importing…'
-                : importMode === 'replace'
+                : allowReplace && importMode === 'replace'
                   ? 'Archive & import'
                   : 'Import students'
             }
-            confirmVariant={importMode === 'replace' ? 'destructive' : 'default'}
+            confirmVariant={allowReplace && importMode === 'replace' ? 'destructive' : 'default'}
             loading={submitting}
             confirmDisabled={rows.length === 0 || parseErrors.length > 0 || submitting}
           />
@@ -355,6 +378,7 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
       }
     >
       <div className="space-y-5">
+        {allowReplace ? (
         <div>
           <p className="text-sm font-semibold text-slate-900">Import mode</p>
           <div className="mt-2 space-y-2">
@@ -415,6 +439,17 @@ export function BulkStudentUploadModal({ open, onClose, onSuccess }: BulkStudent
             </label>
           </div>
         </div>
+        ) : (
+          <div className="rounded-xl border border-[#1A5CA0]/20 bg-[#EBF3FF]/70 px-3 py-2.5 text-sm text-[#0D3F72]">
+            <p className="font-semibold">Append &amp; update</p>
+            <p className="mt-0.5 text-xs text-[#0D3F72]/90">
+              New students are added and existing register numbers are updated.
+              {forcedHostelBlock?.trim()
+                ? ` Imported students will be assigned to block “${forcedHostelBlock.trim()}”.`
+                : ''}
+            </p>
+          </div>
+        )}
 
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

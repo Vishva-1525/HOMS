@@ -7,6 +7,7 @@ import {
   IconDoorExit,
   IconLogout,
   IconSettings,
+  IconUsers,
 } from '@tabler/icons-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button'
 const NAV_ITEMS = [
   { to: '/warden/dashboard', label: 'Dashboard', icon: IconDashboard, end: true },
   { to: '/warden/pending', label: 'Pending Requests', icon: IconClockPause, badge: 'pending' as const },
+  { to: '/warden/students', label: 'Students', icon: IconUsers },
   { to: '/warden/out', label: 'Students Out', icon: IconDoorExit },
   { to: '/warden/reports', label: 'Reports', icon: IconChartBar },
   { to: '/warden/extensions', label: 'Extension Requests', icon: IconClockPause, badge: 'extensions' as const },

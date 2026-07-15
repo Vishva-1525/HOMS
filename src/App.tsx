@@ -59,6 +59,10 @@ const PendingRequestsPage = lazyPage(
 )
 const StudentsOutPage = lazyPage(() => import('@/pages/warden/StudentsOutPage'), 'StudentsOutPage')
 const WardenHomePage = lazyPage(() => import('@/pages/warden/WardenHomePage'), 'WardenHomePage')
+const WardenStudentsPage = lazyPage(
+  () => import('@/pages/warden/WardenStudentsPage'),
+  'WardenStudentsPage',
+)
 const ReportsPage = lazyPage(() => import('@/pages/warden/ReportsPage'), 'ReportsPage')
 const SecurityScanPage = lazyPage(
   () => import('@/pages/security/SecurityScanPage'),
@@ -143,6 +147,7 @@ export default function App() {
                 >
                   <Route path="/warden/dashboard" element={<WardenHomePage />} />
                   <Route path="/warden/pending" element={<PendingRequestsPage />} />
+                  <Route path="/warden/students" element={<WardenStudentsPage />} />
                   <Route path="/warden/out" element={<StudentsOutPage />} />
                   <Route path="/warden/extensions" element={<ExtensionRequestsPage />} />
                   <Route path="/warden/reports" element={<ReportsPage />} />

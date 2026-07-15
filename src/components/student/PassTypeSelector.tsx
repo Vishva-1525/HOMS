@@ -11,7 +11,7 @@ const PASS_OPTIONS: {
 }[] = [
   {
     type: 'outpass',
-    description: 'Day trip — return same day',
+    description: 'Day trip — same day, within 8 hours',
     icon: Sun,
   },
   {
@@ -26,7 +26,7 @@ const PASS_OPTIONS: {
   },
   {
     type: 'special_pass',
-    description: 'Internship, events, industrial visit',
+    description: 'Internship / events — up to 7 days',
     icon: Briefcase,
   },
 ]

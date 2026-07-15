@@ -24,6 +24,7 @@ export function RoutePrefetch() {
       warm(() => import('@/components/layout/WardenShell'))
       warm(() => import('@/pages/warden/WardenHomePage'))
       warm(() => import('@/pages/warden/PendingRequestsPage'))
+      warm(() => import('@/pages/warden/WardenStudentsPage'))
     } else if (role === 'student') {
       warm(() => import('@/components/layout/StudentShell'))
       warm(() => import('@/pages/student/StudentHomePage'))

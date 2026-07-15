@@ -238,17 +238,50 @@ Deno.serve(async (req) => {
       .eq('id', userData.user.id)
       .maybeSingle()
 
-    if (profile?.role !== 'admin') {
-      return jsonResponse({ success: false, error: 'Forbidden: admin role required' })
+    const role = profile?.role as string | undefined
+    if (role !== 'admin' && role !== 'warden') {
+      return jsonResponse({ success: false, error: 'Forbidden: admin or warden role required' })
     }
 
     const body = await req.json() as {
       importMode?: ImportMode
       students?: StudentImportRow[]
+      /** Optional: force hostel_block for every imported row (used by wardens). */
+      forcedHostelBlock?: string
     }
 
-    const importMode = body.importMode === 'replace' ? 'replace' : 'append'
-    const students = Array.isArray(body.students) ? body.students : []
+    let importMode: ImportMode = body.importMode === 'replace' ? 'replace' : 'append'
+    if (importMode === 'replace' && role !== 'admin') {
+      return jsonResponse({
+        success: false,
+        error: 'Only admins can use New Academic Year (replace) import mode.',
+      })
+    }
+
+    let students = Array.isArray(body.students) ? body.students : []
+    const forcedBlock = String(body.forcedHostelBlock ?? '').trim()
+
+    if (role === 'warden') {
+      const { data: assignment } = await admin
+        .from('staff_assignments')
+        .select('assignment_value')
+        .eq('profile_id', userData.user.id)
+        .eq('assignment_type', 'block')
+        .maybeSingle()
+
+      const wardenBlock = String(assignment?.assignment_value ?? forcedBlock).trim()
+      if (wardenBlock) {
+        students = students.map((row) => ({
+          ...row,
+          hostel_block: wardenBlock,
+        }))
+      }
+    } else if (forcedBlock) {
+      students = students.map((row) => ({
+        ...row,
+        hostel_block: row.hostel_block?.trim() || forcedBlock,
+      }))
+    }
 
     if (students.length === 0) {
       return jsonResponse({ success: false, error: 'No students provided' })
@@ -257,7 +290,7 @@ Deno.serve(async (req) => {
     if (students.length > 50) {
       return jsonResponse({
         success: false,
-        error: 'Maximum 50 students per request. Use smaller batches from the admin app.',
+        error: 'Maximum 50 students per request. Use smaller batches from the app.',
       })
     }
 

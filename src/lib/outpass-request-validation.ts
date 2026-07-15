@@ -21,8 +21,11 @@ export type NewRequestFormErrors = Partial<Record<keyof NewRequestFormValues | '
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
-const NIGHT_PASS_MAX_HOURS = 78
-const SPECIAL_PASS_MAX_DAYS = 7
+export const OUTPASS_MAX_HOURS = 8
+export const NIGHT_PASS_MAX_HOURS = 78
+export const SPECIAL_PASS_MAX_DAYS = 7
+export const STAYPASS_MIN_DAYS = 1
+export const STAYPASS_MAX_DAYS = 2
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -36,14 +39,28 @@ function calendarDaysBetween(departure: Date, returnDate: Date): number {
 function validateCalendarDate(
   dateIso: string,
   calendarMap: Map<string, AcademicCalendarDay> | undefined,
-  field: 'departureAt' | 'returnBy',
 ): string | null {
   if (!calendarMap || calendarMap.size === 0) return null
   const dateKey = toDateKey(new Date(dateIso))
   if (!isDateSelectableForOutpass(dateKey, calendarMap)) {
     return getDateRestrictionMessage(dateKey, calendarMap) ?? 'This date is not available.'
   }
-  return field === 'departureAt' ? null : null
+  return null
+}
+
+export function getPassTypeDurationHint(passType: PassType | null): string | null {
+  switch (passType) {
+    case 'outpass':
+      return `Outpass: return the same day, within ${OUTPASS_MAX_HOURS} hours of departure.`
+    case 'staypass':
+      return 'Staypass: return 1–2 days after departure.'
+    case 'night_pass':
+      return `Night Pass: return within ${NIGHT_PASS_MAX_HOURS} hours of departure.`
+    case 'special_pass':
+      return `Special Pass: return within ${SPECIAL_PASS_MAX_DAYS} days of departure.`
+    default:
+      return null
+  }
 }
 
 export function validateNewRequestForm(
@@ -110,10 +127,10 @@ export function validateNewRequestForm(
     errors.returnBy = 'Return must be after departure.'
   }
 
-  const departureRestriction = validateCalendarDate(values.departureAt, calendarMap, 'departureAt')
+  const departureRestriction = validateCalendarDate(values.departureAt, calendarMap)
   if (departureRestriction) errors.departureAt = departureRestriction
 
-  const returnRestriction = validateCalendarDate(values.returnBy, calendarMap, 'returnBy')
+  const returnRestriction = validateCalendarDate(values.returnBy, calendarMap)
   if (returnRestriction) errors.returnBy = returnRestriction
 
   if (errors.departureAt || errors.returnBy || !values.passType) {
@@ -121,28 +138,30 @@ export function validateNewRequestForm(
   }
 
   const daysApart = calendarDaysBetween(departure, returnDate)
+  const hoursApart = (returnDate.getTime() - departure.getTime()) / HOUR_MS
 
   switch (values.passType) {
     case 'outpass':
       if (daysApart !== 0) {
         errors.returnBy = 'Outpass: return must be on the same day as departure.'
+      } else if (hoursApart > OUTPASS_MAX_HOURS) {
+        errors.returnBy = `Outpass: return must be within ${OUTPASS_MAX_HOURS} hours of departure.`
       }
       break
     case 'staypass':
-      if (daysApart < 1 || daysApart > 2) {
+      if (daysApart < STAYPASS_MIN_DAYS || daysApart > STAYPASS_MAX_DAYS) {
         errors.returnBy = 'Staypass: return must be 1–2 days after departure.'
       }
       break
     case 'night_pass': {
-      const hoursApart = (returnDate.getTime() - departure.getTime()) / HOUR_MS
       if (hoursApart > NIGHT_PASS_MAX_HOURS) {
-        errors.returnBy = 'Night Pass: return must be within 78 hours of departure.'
+        errors.returnBy = `Night Pass: return must be within ${NIGHT_PASS_MAX_HOURS} hours of departure.`
       }
       break
     }
     case 'special_pass': {
       if (daysApart < 0 || daysApart > SPECIAL_PASS_MAX_DAYS) {
-        errors.returnBy = 'Special Pass: return must be within 7 days of departure.'
+        errors.returnBy = `Special Pass: return must be within ${SPECIAL_PASS_MAX_DAYS} days of departure.`
       }
       break
     }
@@ -195,13 +214,19 @@ export function getReturnDatetimeBounds(
     case 'outpass': {
       const endOfDay = new Date(departure)
       endOfDay.setHours(23, 59, 0, 0)
-      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(endOfDay) }
+      const eightHours = new Date(departure.getTime() + OUTPASS_MAX_HOURS * HOUR_MS)
+      const max = eightHours.getTime() < endOfDay.getTime() ? eightHours : endOfDay
+      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
     }
     case 'staypass': {
+      const nextDay = new Date(departure)
+      nextDay.setDate(nextDay.getDate() + STAYPASS_MIN_DAYS)
+      nextDay.setHours(0, 0, 0, 0)
+      const stayMin = nextDay.getTime() > min.getTime() ? nextDay : min
       const max = new Date(departure)
-      max.setDate(max.getDate() + 2)
+      max.setDate(max.getDate() + STAYPASS_MAX_DAYS)
       max.setHours(23, 59, 0, 0)
-      return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
+      return { min: toDatetimeLocalValue(stayMin), max: toDatetimeLocalValue(max) }
     }
     case 'night_pass': {
       const max = new Date(departure.getTime() + NIGHT_PASS_MAX_HOURS * HOUR_MS)

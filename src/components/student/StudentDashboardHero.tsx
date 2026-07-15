@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { StudentGreetingCard } from '@/components/student/StudentGreetingCard'
-import { SVCE_EMBLEM_URL } from '@/lib/branding'
 import { getSemesterLabel } from '@/hooks/useStudentDashboardData'
 import type { ActiveCheckedOutPass } from '@/hooks/useStudentDashboardData'
 import type { Student } from '@/lib/types'
@@ -32,16 +31,6 @@ export function StudentDashboardHero({
     >
       <div className="absolute inset-0 bg-gradient-to-br from-[#0A335C] via-[#1A5CA0] to-[#0D3F72]" />
       <div
-        className="absolute inset-0 opacity-[0.12]"
-        style={{
-          backgroundImage: `url('${SVCE_EMBLEM_URL}')`,
-          backgroundPosition: 'right 1.5rem center',
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'clamp(5rem, 18vw, 8rem)',
-        }}
-        aria-hidden
-      />
-      <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.16)_0%,transparent_50%)]"
         aria-hidden
       />
@@ -66,7 +55,7 @@ export function StudentDashboardHero({
         </div>
         <Link
           to="/student/new-request"
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 self-start rounded-xl bg-white px-4 text-sm font-semibold text-[#0D3F72] shadow-md transition-all duration-200 hover:bg-[#EBF3FF] hover:shadow-lg active:scale-[0.98]"
+          className="relative z-10 inline-flex h-10 shrink-0 items-center justify-center gap-1.5 self-start rounded-xl bg-white px-4 text-sm font-semibold text-[#0D3F72] shadow-md transition-all duration-200 hover:bg-[#EBF3FF] hover:shadow-lg active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           New request
