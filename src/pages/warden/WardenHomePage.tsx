@@ -177,8 +177,8 @@ export function WardenHomePage() {
         </section>
       )}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5 xl:gap-8">
-        <div className="xl:col-span-3">
+      <div className="space-y-6">
+        <div>
           <div className="dashboard-section-bar">
             <h2 className="dashboard-section-heading text-base">
               <span className="dashboard-section-accent" aria-hidden />
@@ -261,9 +261,7 @@ export function WardenHomePage() {
           </div>
         </div>
 
-        <div className="xl:col-span-2">
-          <WardenCalendarPanel />
-        </div>
+        <WardenCalendarPanel />
       </div>
 
       <WardenReviewDrawer
