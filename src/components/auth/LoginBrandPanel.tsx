@@ -22,7 +22,7 @@ export function LoginBrandPanel({ className }: LoginBrandPanelProps) {
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0D3F72]/20 via-transparent to-[#0D3F72]/40" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35" />
 
       <div className="relative z-10 flex flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
