@@ -22,36 +22,38 @@ export function LoginBrandPanel({ className }: LoginBrandPanelProps) {
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35" />
-
       <div className="relative z-10 flex flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
           <SvceEmblem size="xl" withRing className="shadow-xl shadow-black/25" />
 
           <div className="mt-10 max-w-md space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
               SVCE Hostel
             </p>
-            <h1 className="text-2xl font-semibold leading-snug text-white sm:text-[30px]">
+            <h1 className="text-2xl font-semibold leading-snug text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[30px]">
               {SVCE_APP_NAME}
             </h1>
-            <p className="text-sm leading-relaxed text-white/80">{SVCE_COLLEGE_NAME}</p>
+            <p className="text-sm leading-relaxed text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]">
+              {SVCE_COLLEGE_NAME}
+            </p>
           </div>
         </div>
 
         <ul className="mt-12 space-y-4 lg:mt-14">
           {FEATURES.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-center gap-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black/25 ring-1 ring-white/40 backdrop-blur-[2px]">
                 <Icon className="h-4 w-4 text-[#E87722]" strokeWidth={1.75} />
               </span>
-              <span className="text-sm text-white/90">{text}</span>
+              <span className="text-sm text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
+                {text}
+              </span>
             </li>
           ))}
         </ul>
       </div>
 
-      <p className="relative z-10 mt-12 text-center text-xs text-white/55 lg:text-left">
+      <p className="relative z-10 mt-12 text-center text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] lg:text-left">
         Autonomous Institution · Affiliated to Anna University
       </p>
     </div>

@@ -34,30 +34,6 @@ export function AuthBackground({ children, className }: AuthBackgroundProps) {
         aria-hidden
       />
 
-      {/* Soft neutral scrim only — keeps form legible without a blue cast */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
-          isDark ? 'opacity-0' : 'opacity-100',
-        )}
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, rgba(15,23,42,0.35) 0%, rgba(15,23,42,0.15) 46%, rgba(15,23,42,0.25) 100%)',
-        }}
-        aria-hidden
-      />
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
-          isDark ? 'opacity-100' : 'opacity-0',
-        )}
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, rgba(2,6,23,0.4) 0%, rgba(2,6,23,0.2) 46%, rgba(2,6,23,0.35) 100%)',
-        }}
-        aria-hidden
-      />
-
       <div className="relative z-10 flex min-h-[100dvh] flex-col">{children}</div>
     </div>
   )
