@@ -177,8 +177,9 @@ export function WardenHomePage() {
         </section>
       )}
 
-      <div className="space-y-6">
-        <div>
+      {/* Vertical stack only — calendar always under pending requests */}
+      <section className="flex w-full flex-col gap-6">
+        <div className="w-full min-w-0">
           <div className="dashboard-section-bar">
             <h2 className="dashboard-section-heading text-base">
               <span className="dashboard-section-accent" aria-hidden />
@@ -261,8 +262,10 @@ export function WardenHomePage() {
           </div>
         </div>
 
-        <WardenCalendarPanel />
-      </div>
+        <div className="w-full min-w-0">
+          <WardenCalendarPanel />
+        </div>
+      </section>
 
       <WardenReviewDrawer
         open={drawerMode !== null}
