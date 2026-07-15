@@ -34,6 +34,7 @@ export function StudentNewRequestPage() {
   const [submitting, setSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+  const [showPassRequiredDialog, setShowPassRequiredDialog] = useState(false)
   const { calendarMap, loading: calendarLoading } = useAcademicCalendar()
 
   const departureMin = useMemo(() => toDatetimeLocalNow(), [])
@@ -228,37 +229,58 @@ export function StudentNewRequestPage() {
           </div>
         ) : null}
 
-        <DateTimePicker
-          id="departure-at"
-          label="Departure date & time"
-          value={form.departureAt}
-          onChange={(value) => updateField('departureAt', value)}
-          min={departureMin}
-          disabled={submitting}
-          error={errors.departureAt}
-          calendarMap={calendarMap}
-          calendarLoading={calendarLoading}
-        />
+        <div className="relative">
+          <DateTimePicker
+            id="departure-at"
+            label="Departure date & time"
+            value={form.departureAt}
+            onChange={(value) => updateField('departureAt', value)}
+            min={departureMin}
+            disabled={submitting || !form.passType}
+            error={errors.departureAt}
+            hint={!form.passType ? 'Select a pass type first.' : undefined}
+            calendarMap={calendarMap}
+            calendarLoading={calendarLoading}
+          />
+          {!form.passType && !submitting && (
+            <button
+              type="button"
+              className="absolute inset-0 z-10 cursor-pointer rounded-xl bg-transparent"
+              aria-label="Select a pass type before choosing departure"
+              onClick={() => setShowPassRequiredDialog(true)}
+            />
+          )}
+        </div>
 
-        <DateTimePicker
-          id="return-by"
-          label="Expected return date & time"
-          value={form.returnBy}
-          onChange={(value) => updateField('returnBy', value)}
-          min={returnBounds.min ?? (form.departureAt || undefined)}
-          max={returnBounds.max}
-          disabled={submitting || !form.passType || !form.departureAt}
-          error={errors.returnBy}
-          hint={
-            !form.passType
-              ? 'Select a pass type first.'
-              : !form.departureAt
-                ? 'Select departure first.'
-                : (durationHint ?? undefined)
-          }
-          calendarMap={calendarMap}
-          calendarLoading={calendarLoading}
-        />
+        <div className="relative">
+          <DateTimePicker
+            id="return-by"
+            label="Expected return date & time"
+            value={form.returnBy}
+            onChange={(value) => updateField('returnBy', value)}
+            min={returnBounds.min ?? (form.departureAt || undefined)}
+            max={returnBounds.max}
+            disabled={submitting || !form.passType || !form.departureAt}
+            error={errors.returnBy}
+            hint={
+              !form.passType
+                ? 'Select a pass type first.'
+                : !form.departureAt
+                  ? 'Select departure first.'
+                  : (durationHint ?? undefined)
+            }
+            calendarMap={calendarMap}
+            calendarLoading={calendarLoading}
+          />
+          {!form.passType && !submitting && (
+            <button
+              type="button"
+              className="absolute inset-0 z-10 cursor-pointer rounded-xl bg-transparent"
+              aria-label="Select a pass type before choosing return"
+              onClick={() => setShowPassRequiredDialog(true)}
+            />
+          )}
+        </div>
 
         {errors.submit && <p className="text-sm text-[#DC2626]">{errors.submit}</p>}
 
@@ -281,6 +303,16 @@ export function StudentNewRequestPage() {
           navigate('/student/dashboard')
         }}
         onCancel={() => setShowDiscardDialog(false)}
+      />
+
+      <ConfirmModal
+        open={showPassRequiredDialog}
+        title="Choose a pass type"
+        description="Please select a pass type first, then you can choose the date and time."
+        confirmLabel="OK"
+        cancelLabel="Close"
+        onConfirm={() => setShowPassRequiredDialog(false)}
+        onCancel={() => setShowPassRequiredDialog(false)}
       />
     </>
   )
