@@ -16,46 +16,42 @@ interface LoginBrandPanelProps {
 
 export function LoginBrandPanel({ className }: LoginBrandPanelProps) {
   return (
-    <div
+    <section
       className={cn(
-        'relative flex flex-col justify-between overflow-hidden px-8 py-12 sm:px-10 sm:py-14 lg:px-14 lg:py-16',
+        'login-glass-card flex h-full min-h-0 w-full flex-col justify-between p-7 sm:p-9',
         className,
       )}
     >
-      <div className="relative z-10 flex flex-1 flex-col justify-center">
-        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-          <SvceEmblem size="xl" withRing className="shadow-xl shadow-black/25" />
+      <div className="flex flex-1 flex-col justify-center">
+        <div className="flex flex-col items-start text-left">
+          <SvceEmblem size="xl" withRing className="shadow-lg shadow-black/10" />
 
-          <div className="mt-10 max-w-md space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
+          <div className="mt-8 max-w-md space-y-2.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               SVCE Hostel
             </p>
-            <h1 className="text-2xl font-semibold leading-snug text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[30px]">
+            <h1 className="text-2xl font-semibold leading-snug text-slate-900 sm:text-[1.75rem]">
               {SVCE_APP_NAME}
             </h1>
-            <p className="text-sm leading-relaxed text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]">
-              {SVCE_COLLEGE_NAME}
-            </p>
+            <p className="text-sm leading-relaxed text-slate-600">{SVCE_COLLEGE_NAME}</p>
           </div>
         </div>
 
-        <ul className="mt-12 space-y-4 lg:mt-14">
+        <ul className="mt-10 space-y-3.5">
           {FEATURES.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-center gap-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/90 ring-1 ring-black/10 shadow-sm">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/70 ring-1 ring-white/80 shadow-sm backdrop-blur-sm">
                 <Icon className="h-4 w-4 text-[#E87722]" strokeWidth={1.75} />
               </span>
-              <span className="text-sm text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
-                {text}
-              </span>
+              <span className="text-sm font-medium text-slate-800">{text}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      <p className="relative z-10 mt-12 text-center text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] lg:text-left">
+      <p className="mt-8 text-xs text-slate-500">
         Autonomous Institution · Affiliated to Anna University
       </p>
-    </div>
+    </section>
   )
 }

@@ -47,29 +47,27 @@ export function Login() {
 
   return (
     <AuthBackground>
-      <div className="flex min-h-[100dvh] flex-col lg:flex-row">
-        <LoginBrandPanel className="hidden min-h-[100dvh] lg:flex lg:w-[46%] xl:w-1/2" />
+      <div className="flex min-h-[100dvh] items-stretch justify-center px-4 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-12">
+        <div className="grid w-full max-w-6xl grid-cols-1 items-stretch gap-5 lg:grid-cols-2 lg:gap-8">
+          <LoginBrandPanel className="hidden lg:flex" />
 
-        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
-          <div className="glass-panel-strong w-full max-w-[440px] p-7 sm:p-9">
+          <section className="login-glass-card flex w-full flex-col justify-center p-7 sm:p-9">
             <div className="mb-8 flex flex-col items-center text-center lg:items-start lg:text-left">
-              <div className="flex flex-col items-center lg:items-start">
-                <SvceEmblem size="lg" withRing className="lg:hidden" />
-                <div className="mt-6 space-y-1 lg:mt-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    {SVCE_APP_SHORT}
-                  </p>
-                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-                    Welcome back
-                  </h1>
-                  <p className="text-sm text-slate-600">Sign in to continue to your dashboard</p>
-                </div>
+              <SvceEmblem size="lg" withRing className="lg:hidden" />
+              <div className="mt-5 space-y-1 lg:mt-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  {SVCE_APP_SHORT}
+                </p>
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Welcome back
+                </h1>
+                <p className="text-sm text-slate-600">Sign in to continue to your dashboard</p>
               </div>
             </div>
 
             {error && (
               <div
-                className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                className="mb-5 rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-800 backdrop-blur-sm"
                 role="alert"
               >
                 {error}
@@ -119,7 +117,7 @@ export function Login() {
             <p className="mt-6 text-center text-xs leading-relaxed text-slate-500 lg:text-left">
               Having trouble? Contact your hostel warden office.
             </p>
-          </div>
+          </section>
         </div>
       </div>
     </AuthBackground>
