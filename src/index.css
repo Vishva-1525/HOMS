@@ -119,11 +119,11 @@
   }
 
   .glass-panel {
-    @apply rounded-2xl border border-white/80 bg-white/95 text-slate-900 shadow-[0_10px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-[box-shadow,transform] duration-200;
+    @apply rounded-2xl border border-white/75 bg-white/88 text-slate-900 shadow-[0_10px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-[box-shadow,transform] duration-200;
   }
 
   .glass-panel-strong {
-    @apply rounded-2xl border border-white/85 bg-white/98 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.32)] backdrop-blur-2xl;
+    @apply rounded-2xl border border-white/80 bg-white/92 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.32)] backdrop-blur-2xl;
   }
 
   /* Login split cards — true glass over campus photo */
@@ -152,11 +152,11 @@
   }
 
   .glass-nav {
-    @apply border-white/75 bg-white/95 text-slate-900 shadow-lg shadow-slate-900/10 backdrop-blur-2xl;
+    @apply border-white/70 bg-white/88 text-slate-900 shadow-lg shadow-slate-900/10 backdrop-blur-2xl;
   }
 
   .dashboard-page-header {
-    @apply mb-6 rounded-2xl border border-white/85 bg-white/98 p-5 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.28)] backdrop-blur-2xl sm:p-6;
+    @apply mb-6 rounded-2xl border border-white/80 bg-white/90 p-5 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.28)] backdrop-blur-2xl sm:p-6;
   }
 
   .dashboard-heading {
@@ -175,11 +175,11 @@
   }
 
   .dashboard-surface {
-    @apply overflow-hidden rounded-2xl border border-white/85 bg-white/98 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.28)] backdrop-blur-2xl;
+    @apply overflow-hidden rounded-2xl border border-white/80 bg-white/90 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.28)] backdrop-blur-2xl;
   }
 
   .dashboard-surface-muted {
-    @apply overflow-hidden rounded-2xl border border-white/80 bg-white/95 text-slate-900 shadow-[0_10px_36px_-12px_rgba(15,23,42,0.24)] backdrop-blur-xl;
+    @apply overflow-hidden rounded-2xl border border-white/75 bg-white/85 text-slate-900 shadow-[0_10px_36px_-12px_rgba(15,23,42,0.24)] backdrop-blur-xl;
   }
 
   /* On white/glass panels: invert back to dark text for readability */
@@ -223,7 +223,7 @@
   }
 
   .academic-calendar-panel {
-    @apply rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white via-white to-slate-50/90 p-4 shadow-[0_12px_40px_-14px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-5;
+    @apply rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white/90 via-white/88 to-slate-50/80 p-4 shadow-[0_12px_40px_-14px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-5;
   }
 
   .academic-calendar-nav-btn {
@@ -439,15 +439,15 @@
   html.dark .dashboard-shell .dashboard-loading-panel,
   html.dark .dashboard-shell .security-scan-card,
   html.dark .dashboard-shell .academic-calendar-panel {
-    border-color: rgb(148 163 184 / 0.16) !important;
+    border-color: rgb(148 163 184 / 0.2) !important;
     background:
-      linear-gradient(165deg, rgb(30 41 59 / 0.95) 0%, rgb(15 23 42 / 0.98) 100%) !important;
+      linear-gradient(165deg, rgb(30 41 59 / 0.78) 0%, rgb(15 23 42 / 0.84) 100%) !important;
     color: rgb(248 250 252) !important;
     box-shadow:
-      0 0 0 1px rgb(255 255 255 / 0.04) inset,
-      0 12px 28px -8px rgb(0 0 0 / 0.55),
-      0 4px 10px -4px rgb(0 0 0 / 0.4) !important;
-    --tw-shadow-color: rgb(0 0 0 / 0.4);
+      0 0 0 1px rgb(255 255 255 / 0.05) inset,
+      0 12px 28px -8px rgb(0 0 0 / 0.5),
+      0 4px 10px -4px rgb(0 0 0 / 0.35) !important;
+    --tw-shadow-color: rgb(0 0 0 / 0.35);
   }
 
   html.dark .dashboard-shell .glass-panel-strong,
@@ -455,12 +455,12 @@
   html.dark .dashboard-shell .dashboard-surface,
   html.dark .dashboard-shell .dashboard-loading-panel {
     background:
-      linear-gradient(165deg, rgb(36 48 72 / 0.97) 0%, rgb(15 23 42 / 0.99) 100%) !important;
+      linear-gradient(165deg, rgb(36 48 72 / 0.82) 0%, rgb(15 23 42 / 0.88) 100%) !important;
   }
 
   html.dark .dashboard-shell .dashboard-surface-muted {
     background:
-      linear-gradient(165deg, rgb(30 41 59 / 0.88) 0%, rgb(15 23 42 / 0.92) 100%) !important;
+      linear-gradient(165deg, rgb(30 41 59 / 0.72) 0%, rgb(15 23 42 / 0.78) 100%) !important;
   }
 
   html.dark .dashboard-shell .dashboard-section-bar {
