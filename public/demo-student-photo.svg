@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="400" viewBox="0 0 320 400" role="img" aria-label="Demo student photo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EBF3FF"/>
+      <stop offset="100%" stop-color="#D6E6F7"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A5CA0"/>
+      <stop offset="100%" stop-color="#0D3F72"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="400" fill="url(#bg)"/>
+  <ellipse cx="160" cy="360" rx="120" ry="70" fill="url(#shirt)"/>
+  <circle cx="160" cy="155" r="78" fill="#F5D0AE"/>
+  <ellipse cx="160" cy="95" rx="82" ry="48" fill="#3F2A1D"/>
+  <path d="M78 155c8-55 40-90 82-90s74 35 82 90" fill="#3F2A1D"/>
+  <circle cx="132" cy="150" r="8" fill="#2A1B12"/>
+  <circle cx="188" cy="150" r="8" fill="#2A1B12"/>
+  <path d="M145 178c8 10 22 10 30 0" fill="none" stroke="#C9896A" stroke-width="4" stroke-linecap="round"/>
+  <rect x="24" y="24" width="272" height="352" rx="16" fill="none" stroke="#1A5CA0" stroke-opacity="0.25" stroke-width="3"/>
+  <text x="160" y="376" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#0D3F72" opacity="0.55">DEMO PHOTO</text>
+</svg>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Clock, MapPin, LogIn, LogOut, User } from 'lucide-react'
+import { Camera, Clock, MapPin, LogIn, LogOut, User } from 'lucide-react'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -10,6 +10,9 @@ import type { ScanValidationResult } from '@/lib/security-actions'
 import { hasExitLog } from '@/lib/security-actions'
 import { getStudentName } from '@/lib/warden'
 import { cn } from '@/lib/utils'
+
+/** Demo-only placeholder so security can show a student photo after scan. */
+const DEMO_STUDENT_PHOTO_URL = `${import.meta.env.BASE_URL}demo-student-photo.svg`
 
 interface ScanResultPanelProps {
   result: ScanValidationResult | null
@@ -131,7 +134,11 @@ export function ScanResultPanel({
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6 sm:px-5">
           {pass && (
             <div className="flex w-full max-w-md items-center gap-3 rounded-xl border border-slate-200/80 bg-white/80 p-4">
-              <StudentAvatar name={getStudentName(pass.students)} size="lg" />
+              <StudentAvatar
+                name={getStudentName(pass.students)}
+                photoUrl={DEMO_STUDENT_PHOTO_URL}
+                size="lg"
+              />
               <div className="min-w-0">
                 <p className="truncate font-semibold text-slate-900">
                   {getStudentName(pass.students)}
@@ -187,16 +194,29 @@ export function ScanResultPanel({
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
-        <div className="security-identity-card flex items-center gap-4">
-          <StudentAvatar name={displayName} size="xl" />
-          <div className="min-w-0 flex-1">
+        <div className="security-identity-card flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="mx-auto w-full max-w-[180px] shrink-0 sm:mx-0">
+            <div className="overflow-hidden rounded-2xl border-2 border-white/90 bg-slate-100 shadow-md ring-2 ring-[#1A5CA0]/20">
+              <img
+                src={DEMO_STUDENT_PHOTO_URL}
+                alt={`Photo of ${displayName}`}
+                className="aspect-[4/5] w-full object-cover"
+              />
+            </div>
+            <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              <Camera className="h-3 w-3" aria-hidden />
+              Student photo · demo
+            </p>
+          </div>
+
+          <div className="min-w-0 flex-1 text-center sm:text-left">
             <p className="truncate text-xl font-bold leading-tight text-slate-900 sm:text-2xl">
               {displayName}
             </p>
             <p className="mt-1 font-mono text-base font-semibold tabular-nums text-[#1A5CA0] sm:text-lg">
               {admissionNo}
             </p>
-            <div className="mt-2">
+            <div className="mt-2 flex justify-center sm:justify-start">
               <StatusBadge status={displayStatus} label={statusLabel} />
             </div>
           </div>
