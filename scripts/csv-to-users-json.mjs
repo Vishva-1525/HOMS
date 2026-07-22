@@ -34,6 +34,18 @@ function pickField(row, ...keys) {
   return ''
 }
 
+/** SVCE spreadsheets often use 2025EC0239.svce.ac.in — fix to 2025EC0239@svce.ac.in */
+function normalizeEmail(raw) {
+  let email = String(raw).trim().toLowerCase()
+  if (!email) return ''
+
+  if (!email.includes('@')) {
+    email = email.replace(/\.svce\.ac\.in$/i, '@svce.ac.in')
+  }
+
+  return email
+}
+
 const inputPath = resolve(projectRoot, process.argv[2] ?? 'students.csv')
 
 if (!existsSync(inputPath)) {
@@ -61,11 +73,16 @@ const skipped = []
 
 for (let i = 0; i < parsed.data.length; i++) {
   const row = parsed.data[i]
-  const email = pickField(row, 'email', 'e_mail', 'student_email')
+  const email = normalizeEmail(pickField(row, 'email', 'e_mail', 'student_email'))
   const password = pickField(row, 'password', 'pass', 'pwd')
 
   if (!email || !password) {
     skipped.push({ row: i + 2, email: email || '(blank)', reason: 'missing email or password' })
+    continue
+  }
+
+  if (!email.includes('@')) {
+    skipped.push({ row: i + 2, email, reason: 'invalid email after normalization' })
     continue
   }
 
