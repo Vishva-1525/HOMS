@@ -24,7 +24,19 @@ export async function resolveLoginEmail(identifier: string): Promise<string> {
 
 export async function signInWithIdentifier(identifier: string, password: string) {
   const email = await resolveLoginEmail(identifier)
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  let { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+  // Student default passwords use register numbers (often uppercase in imports).
+  if (error && password !== password.toUpperCase()) {
+    const retry = await supabase.auth.signInWithPassword({
+      email,
+      password: password.toUpperCase(),
+    })
+    if (!retry.error) {
+      data = retry.data
+      error = null
+    }
+  }
 
   if (error) throw error
   return data

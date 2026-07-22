@@ -88,7 +88,8 @@ export function Login() {
                   disabled={submitting}
                 />
                 <p className="text-xs text-slate-500">
-                  Students: use your register/admission number as both username and password.
+                  Students: use register/admission number or college email. Password is your
+                  register number (case may matter, e.g. 2023CS0097).
                 </p>
               </div>
 
