@@ -18,6 +18,7 @@ interface StudentImportRow {
   hostel_block?: string
   department?: string
   year_of_study?: number | string
+  gender?: string
 }
 
 interface StudentUpsertRow {
@@ -27,6 +28,7 @@ interface StudentUpsertRow {
   hostel_block: string
   department: string
   year_of_study: number
+  gender: 'male' | 'female'
   parent_phone: string
   parent_email: string
   is_active: true
@@ -63,6 +65,12 @@ function normalizeYear(value: number | string | undefined): number {
   const n = typeof value === 'number' ? value : Number(String(value ?? '').trim())
   if (!Number.isFinite(n) || n < 1 || n > 4) return 1
   return Math.trunc(n)
+}
+
+function normalizeGender(value: string | undefined): 'male' | 'female' {
+  const g = String(value ?? '').trim().toLowerCase()
+  if (g === 'female' || g === 'f' || g === 'girl' || g === 'girls') return 'female'
+  return 'male'
 }
 
 function isAlreadyExistsError(message: string | undefined): boolean {
@@ -450,8 +458,8 @@ Deno.serve(async (req) => {
           hostel_block: String(raw.hostel_block ?? '').trim(),
           department: String(raw.department ?? '').trim(),
           year_of_study: normalizeYear(raw.year_of_study),
-          // Keep parent contact blank unless separately collected — never store student email here.
-          parent_phone: '',
+          gender: normalizeGender(raw.gender),
+          parent_phone: String(raw.phone ?? '').trim(),
           parent_email: '',
           is_active: true,
         })
@@ -491,6 +499,8 @@ Deno.serve(async (req) => {
           hostel_block: row.hostel_block,
           department: row.department,
           year_of_study: row.year_of_study,
+          gender: row.gender,
+          parent_phone: row.parent_phone,
           is_active: true,
         })
         .eq('reg_number', row.reg_number)

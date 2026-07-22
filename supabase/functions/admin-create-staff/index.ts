@@ -81,11 +81,19 @@ Deno.serve(async (req) => {
       phone: string
       role: 'warden' | 'security_guard'
       assignment_value: string
+      gender?: 'male' | 'female'
     }
 
-    const { full_name, email, phone, role, assignment_value } = body
+    const { full_name, email, phone, role, assignment_value, gender } = body
     if (!full_name?.trim() || !email?.trim() || !role) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (role === 'warden' && gender !== 'male' && gender !== 'female') {
+      return new Response(JSON.stringify({ error: 'Wardens require gender (male or female)' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -115,6 +123,7 @@ Deno.serve(async (req) => {
       role,
       full_name: full_name.trim(),
       phone: phone?.trim() ?? '',
+      gender: role === 'warden' ? gender : null,
       password_changed: true,
     })
 

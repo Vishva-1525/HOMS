@@ -22,12 +22,15 @@ export type ExtensionStatus = 'pending' | 'approved' | 'rejected'
 
 export type GateEventType = 'exit' | 'entry'
 
+export type HostelGender = 'male' | 'female'
+
 export interface Profile {
   id: string
   role: UserRole
   full_name: string
   phone: string
   password_changed: boolean
+  gender?: HostelGender | null
   created_at: string
 }
 
@@ -41,6 +44,7 @@ export interface Student {
   parent_email: string
   department: string
   year_of_study: number
+  gender?: HostelGender
   is_active?: boolean
 }
 
@@ -72,6 +76,7 @@ export interface StudentProfile {
   reg_number: string
   room_number: string
   hostel_block: string
+  gender?: 'male' | 'female'
   profiles: { full_name: string; phone?: string } | null
 }
 

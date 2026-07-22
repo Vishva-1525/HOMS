@@ -181,6 +181,8 @@ export interface ReportsPanelProps {
   title: string
   /** Warden: fixed block filter. Admin: omit to use dropdown. */
   fixedHostelBlock?: string | null
+  /** Warden: fixed gender filter. */
+  fixedGender?: 'male' | 'female' | null
   showBlockFilter?: boolean
   showDepartmentFilter?: boolean
   showAggregateTab?: boolean
@@ -262,6 +264,7 @@ function ReportAggregateTable({ rows }: { rows: ReportRow[] }) {
 export function ReportsPanel({
   title,
   fixedHostelBlock,
+  fixedGender = null,
   showBlockFilter = false,
   showDepartmentFilter = false,
   showAggregateTab = false,
@@ -321,7 +324,10 @@ export function ReportsPanel({
     }
   }, [activeRange, fixedHostelBlock, blockFilter, departmentFilter])
 
-  const { rows, stats, loading, error, fetchAllForExport, viewLimit } = useReportData(reportFilters)
+  const { rows, stats, loading, error, fetchAllForExport, viewLimit } = useReportData(
+    reportFilters,
+    fixedGender,
+  )
 
   const exportReportType = reportTypeLabel(periodTab)
   const exportDateLabel = dateSubtitle

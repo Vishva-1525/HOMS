@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { debounce } from '@/lib/debounce'
 import { formatNetworkError } from '@/lib/network-error'
 import { isApprovedToday, isOverdueReturn, isStudentCurrentlyOut } from '@/lib/warden'
+import { normalizeHostelBlock } from '@/lib/block-display'
+import { fetchWardenAssignment } from '@/hooks/useReportData'
+import { useAuth } from '@/contexts/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import type {
   ExtensionRequest,
@@ -54,6 +57,7 @@ const PASS_SELECT = `
     reg_number,
     room_number,
     hostel_block,
+    gender,
     profiles ( full_name )
   )
 `
@@ -102,10 +106,29 @@ async function fetchGateLogsForPassIds(passIds: string[]): Promise<GateLog[]> {
   return logs
 }
 
+function passMatchesWardenScope(
+  pass: OutpassWithStudent,
+  block: string | null,
+  gender: 'male' | 'female' | null,
+): boolean {
+  if (!block || !gender) return true
+  const student = pass.students
+  if (!student) return false
+  return (
+    normalizeHostelBlock(student.hostel_block) === normalizeHostelBlock(block)
+    && student.gender === gender
+  )
+}
+
 export function useWardenData(): WardenData {
+  const { user } = useAuth()
   const [passes, setPasses] = useState<OutpassWithStudent[]>([])
   const [gateLogs, setGateLogs] = useState<GateLog[]>([])
   const [extensions, setExtensions] = useState<ExtensionRequest[]>([])
+  const [wardenScope, setWardenScope] = useState<{
+    block: string
+    gender: 'male' | 'female'
+  } | null>(null)
   const [hasLoaded, setHasLoaded] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -113,6 +136,24 @@ export function useWardenData(): WardenData {
   const hasLoadedRef = useRef(false)
   const inFlightRef = useRef<Promise<void> | null>(null)
   const passIdsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!user?.id) {
+      setWardenScope(null)
+      return
+    }
+    let cancelled = false
+    void fetchWardenAssignment(user.id).then((assignment) => {
+      if (cancelled || !assignment?.block || !assignment.gender) {
+        if (!cancelled) setWardenScope(null)
+        return
+      }
+      setWardenScope({ block: assignment.block, gender: assignment.gender })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
 
   const fetchData = useCallback(async () => {
     if (inFlightRef.current) {
@@ -180,11 +221,18 @@ export function useWardenData(): WardenData {
           ...((activeResult.data ?? []) as unknown as OutpassWithStudent[]),
           ...((overdueResult.data ?? []) as unknown as OutpassWithStudent[]),
           ...((closedResult.data ?? []) as unknown as OutpassWithStudent[]),
-        ])
+        ]).filter((pass) =>
+          passMatchesWardenScope(pass, wardenScope?.block ?? null, wardenScope?.gender ?? null),
+        )
 
         setPasses(allPasses)
-        setExtensions((extensionsResult.data ?? []) as ExtensionRequest[])
-        passIdsRef.current = new Set(allPasses.map((p) => p.id))
+        const passIdSet = new Set(allPasses.map((p) => p.id))
+        setExtensions(
+          ((extensionsResult.data ?? []) as ExtensionRequest[]).filter((ext) =>
+            passIdSet.has(ext.outpass_id),
+          ),
+        )
+        passIdsRef.current = passIdSet
 
         const logs = await fetchGateLogsForPassIds(allPasses.map((p) => p.id))
         setGateLogs(logs)
@@ -203,7 +251,7 @@ export function useWardenData(): WardenData {
     } finally {
       inFlightRef.current = null
     }
-  }, [])
+  }, [wardenScope])
 
   useEffect(() => {
     void fetchData()

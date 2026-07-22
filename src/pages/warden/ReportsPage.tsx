@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { ReportsPanel } from '@/components/reports/ReportsPanel'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
-import { fetchWardenBlockAssignment } from '@/hooks/useReportData'
+import { fetchWardenAssignment } from '@/hooks/useReportData'
 import { formatBlockLabel } from '@/lib/block-display'
 
 export function ReportsPage() {
   const { user } = useAuth()
   const [block, setBlock] = useState<string | null>(null)
+  const [gender, setGender] = useState<'male' | 'female' | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -16,10 +17,11 @@ export function ReportsPage() {
     void (async () => {
       setLoading(true)
       try {
-        const assigned = await fetchWardenBlockAssignment(user.id)
-        setBlock(assigned)
-        if (!assigned) {
-          setError('No hostel block assigned to your account. Contact the administrator.')
+        const assigned = await fetchWardenAssignment(user.id)
+        setBlock(assigned?.block ?? null)
+        setGender(assigned?.gender ?? null)
+        if (!assigned?.block || !assigned.gender) {
+          setError('No hostel block/gender assigned to your account. Contact the administrator.')
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load block assignment')
@@ -37,7 +39,7 @@ export function ReportsPage() {
     )
   }
 
-  if (error || !block) {
+  if (error || !block || !gender) {
     return (
       <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
         {error ?? 'Block assignment not found.'}
@@ -45,5 +47,11 @@ export function ReportsPage() {
     )
   }
 
-  return <ReportsPanel title={`Reports — ${formatBlockLabel(block)}`} fixedHostelBlock={block} />
+  return (
+    <ReportsPanel
+      title={`Reports — ${formatBlockLabel(block)} (${gender})`}
+      fixedHostelBlock={block}
+      fixedGender={gender}
+    />
+  )
 }

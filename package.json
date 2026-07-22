@@ -15,7 +15,9 @@
     "db:apply-pwa": "echo 'Run supabase/migrations/014_pwa_notifications.sql in Supabase SQL Editor (after db:apply-admin)'",
     "import:auth-users": "node scripts/bulk-import-auth-users.mjs",
     "import:csv-to-json": "node scripts/csv-to-users-json.mjs",
-    "import:provision-students": "node scripts/provision-auth-students.mjs"
+    "import:provision-students": "node scripts/provision-auth-students.mjs",
+    "import:students-csv": "node scripts/bulk-import-students-from-csv.mjs",
+    "import:wardens-csv": "node scripts/import-wardens-from-csv.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
