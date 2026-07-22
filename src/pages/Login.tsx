@@ -81,12 +81,15 @@ export function Login() {
                   id="identifier"
                   type="text"
                   autoComplete="username"
-                  placeholder="email@svce.ac.in or 21CS001"
+                  placeholder="email@svce.ac.in or register number"
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={submitting}
                 />
+                <p className="text-xs text-slate-500">
+                  Students: use your register/admission number as both username and password.
+                </p>
               </div>
 
               <div className="space-y-2">

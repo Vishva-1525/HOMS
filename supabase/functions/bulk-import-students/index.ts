@@ -51,17 +51,12 @@ function jsonResponse(body: unknown, status = 200) {
   })
 }
 
-function firstNameToken(fullName: string): string {
-  const token = fullName.trim().split(/\s+/)[0] ?? 'student'
-  return token.toLowerCase().replace(/[^a-z0-9]/g, '') || 'student'
-}
-
-function generatePassword(fullName: string, regNumber: string): string {
-  const base = firstNameToken(fullName)
-  const suffix =
-    regNumber.replace(/[^a-zA-Z0-9]/g, '').slice(-4)
-    || String(Math.floor(1000 + Math.random() * 9000))
-  return `${base}${suffix}`
+function generatePassword(regNumber: string): string {
+  const password = regNumber.trim()
+  if (!password) {
+    throw new Error('Register number is required to set student password')
+  }
+  return password
 }
 
 function normalizeYear(value: number | string | undefined): number {
@@ -137,7 +132,7 @@ async function ensureAuthUser(
   const email = row.email.trim().toLowerCase()
   const fullName = row.full_name.trim()
   const phone = (row.phone ?? '').trim()
-  const password = generatePassword(fullName, row.reg_number)
+  const password = generatePassword(row.reg_number)
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
@@ -157,7 +152,8 @@ async function ensureAuthUser(
       role: 'student',
       full_name: fullName,
       phone,
-      password_changed: false,
+      // Admission number is the known default password — no forced first-login change.
+      password_changed: true,
     })
     if (profileError) {
       throw new Error(`Profile upsert failed for ${email}: ${profileError.message}`)
@@ -174,17 +170,31 @@ async function ensureAuthUser(
     throw new Error(`Auth user exists for ${email} but could not resolve user id`)
   }
 
+  const { error: updateAuthError } = await admin.auth.admin.updateUserById(existingId, {
+    password,
+    email_confirm: true,
+    user_metadata: {
+      role: 'student',
+      full_name: fullName,
+      phone,
+    },
+  })
+  if (updateAuthError) {
+    throw new Error(`Failed to sync password for ${email}: ${updateAuthError.message}`)
+  }
+
   const { error: profileError } = await admin.from('profiles').upsert({
     id: existingId,
     role: 'student',
     full_name: fullName,
     phone,
+    password_changed: true,
   })
   if (profileError) {
     throw new Error(`Profile upsert failed for ${email}: ${profileError.message}`)
   }
 
-  return { userId: existingId, created: false }
+  return { userId: existingId, created: false, password }
 }
 
 Deno.serve(async (req) => {
@@ -364,11 +374,20 @@ Deno.serve(async (req) => {
         if (existingStudent?.id) {
           userId = existingStudent.id as string
 
+          const password = generatePassword(regNumber)
+          const { error: updateAuthError } = await admin.auth.admin.updateUserById(userId, {
+            password,
+          })
+          if (updateAuthError) {
+            throw new Error(`Failed to sync password: ${updateAuthError.message}`)
+          }
+
           const { error: profileError } = await admin
             .from('profiles')
             .update({
               full_name: fullName,
               phone: String(raw.phone ?? '').trim(),
+              password_changed: true,
             })
             .eq('id', userId)
 

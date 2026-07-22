@@ -444,6 +444,7 @@ export function BulkStudentUploadModal({
             <p className="font-semibold">Append &amp; update</p>
             <p className="mt-0.5 text-xs text-[#0D3F72]/90">
               New students are added and existing register numbers are updated.
+              Default password for each student is their register/admission number.
               {forcedHostelBlock?.trim()
                 ? ` Imported students will be assigned to block “${forcedHostelBlock.trim()}”.`
                 : ''}
