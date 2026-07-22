@@ -15,6 +15,7 @@ dist-ssr
 .env.*
 !.env.example
 scripts/users.json
+students.csv
 
 # Editor directories and files
 .vscode/*
