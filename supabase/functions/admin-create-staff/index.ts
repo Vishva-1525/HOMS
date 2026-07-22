@@ -5,15 +5,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function firstNameToken(fullName: string): string {
-  const token = fullName.trim().split(/\s+/)[0] ?? 'user'
-  return token.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'
+function passwordFromFullName(fullName: string): string {
+  const trimmed = fullName.trim()
+  const withoutInitial = trimmed.replace(/^[A-Za-z]\.\s*/, '').trim() || trimmed
+  let password = withoutInitial.toLowerCase().replace(/\s+/g, '')
+  if (password.length < 6) {
+    password = trimmed.toLowerCase().replace(/[.\s]+/g, '')
+  }
+  if (password.length < 6) {
+    throw new Error(`Password derived from name is too short for ${fullName}`)
+  }
+  return password
 }
 
 function generatePassword(fullName: string): string {
-  const base = firstNameToken(fullName)
-  const digits = String(Math.floor(1000 + Math.random() * 9000))
-  return `${base}${digits}`
+  return passwordFromFullName(fullName)
 }
 
 Deno.serve(async (req) => {

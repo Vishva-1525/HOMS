@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cachedQuery, invalidateCachedQuery } from '@/lib/query-cache'
+import { violationMatchesWardenScope, type WardenScope } from '@/lib/warden-scope'
 import { supabase } from '@/lib/supabase'
+import type { HostelGender } from '@/lib/types'
 
 export interface PassLimitViolation {
   student_id: string
   reg_number: string
   student_name: string
   hostel_block: string
+  gender?: HostelGender | null
   weekly_used: number
   weekly_limit: number
   monthly_used: number
@@ -18,7 +21,7 @@ export interface PassLimitViolation {
 const VIOLATIONS_TTL_MS = 60_000
 const CACHE_KEY = 'rpc:get_pass_limit_violations'
 
-export function usePassLimitViolations() {
+export function usePassLimitViolations(wardenScope?: WardenScope | null) {
   const [violations, setViolations] = useState<PassLimitViolation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,11 +50,16 @@ export function usePassLimitViolations() {
     void fetchViolations()
   }, [fetchViolations])
 
+  const scopedViolations = useMemo(() => {
+    if (!wardenScope) return violations
+    return violations.filter((v) => violationMatchesWardenScope(v, wardenScope))
+  }, [violations, wardenScope])
+
   const violationIndex = useMemo(() => {
     const map = new Map<string, PassLimitViolation>()
-    for (const v of violations) map.set(v.student_id, v)
+    for (const v of scopedViolations) map.set(v.student_id, v)
     return map
-  }, [violations])
+  }, [scopedViolations])
 
   const violationByStudentId = useCallback(
     (studentId: string) => violationIndex.get(studentId) ?? null,
@@ -59,7 +67,7 @@ export function usePassLimitViolations() {
   )
 
   return {
-    violations,
+    violations: scopedViolations,
     loading,
     error,
     violationByStudentId,

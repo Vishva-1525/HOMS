@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -6,14 +6,17 @@ import { Spinner } from '@/components/ui/spinner'
 import { WardenExtensionDrawer } from '@/components/warden/WardenExtensionDrawer'
 import { WardenExtensionMobileCard } from '@/components/warden/WardenMobileCards'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
+import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { formatReturnTime } from '@/lib/outpass'
 import { formatRelativeTime } from '@/lib/relative-time'
 import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
+import { extensionMatchesWardenScope } from '@/lib/warden-scope'
 import { supabase } from '@/lib/supabase'
 import type { ExtensionWithOutpass } from '@/lib/types'
 
 export function ExtensionRequestsPage() {
   const { refetch } = useWardenDataContext()
+  const { scope, loading: scopeLoading, error: scopeError } = useWardenScope()
   const [extensions, setExtensions] = useState<ExtensionWithOutpass[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +27,14 @@ export function ExtensionRequestsPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set())
 
-  async function fetchExtensions() {
+  const fetchExtensions = useCallback(async () => {
+    if (!scope) {
+      setExtensions([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
     setError(null)
     const { data, error: fetchError } = await supabase
       .from('extension_requests')
@@ -36,6 +46,7 @@ export function ExtensionRequestsPage() {
             reg_number,
             room_number,
             hostel_block,
+            gender,
             profiles ( full_name )
           )
         )
@@ -45,14 +56,22 @@ export function ExtensionRequestsPage() {
 
     if (fetchError) {
       setError(fetchError.message)
+      setExtensions([])
     } else {
-      setExtensions((data ?? []) as ExtensionWithOutpass[])
+      setExtensions(
+        ((data ?? []) as ExtensionWithOutpass[]).filter((row) =>
+          extensionMatchesWardenScope(row, scope),
+        ),
+      )
     }
     setLoading(false)
-  }
+  }, [scope])
 
   useEffect(() => {
-    fetchExtensions()
+    if (scopeLoading) return
+    void fetchExtensions()
+
+    if (!scope) return
 
     const channel = supabase
       .channel('warden-extensions')
@@ -64,9 +83,9 @@ export function ExtensionRequestsPage() {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      void supabase.removeChannel(channel)
     }
-  }, [])
+  }, [scope, scopeLoading, fetchExtensions])
 
   function openDrawer(ext: ExtensionWithOutpass, mode: 'approve' | 'reject') {
     setSelectedExtension(ext)
@@ -139,12 +158,12 @@ export function ExtensionRequestsPage() {
         next.delete(id)
         return next
       })
-      fetchExtensions()
-      refetch()
+      void fetchExtensions()
+      void refetch()
     }, 300)
   }
 
-  if (loading) {
+  if (scopeLoading || loading) {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading extensions…" />
@@ -159,9 +178,9 @@ export function ExtensionRequestsPage() {
         subtitle={`${extensions.length} pending extension${extensions.length !== 1 ? 's' : ''}`}
       />
 
-      {error && (
+      {(error || scopeError) && (
         <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
-          {error}
+          {scopeError ?? error}
         </div>
       )}
 

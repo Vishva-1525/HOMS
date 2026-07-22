@@ -15,6 +15,7 @@ import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
+import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { bulkApproveOutpassRequests, bulkRejectOutpassRequests } from '@/lib/bulk-approval'
 import { classifyPass } from '@/lib/pass-classification'
 import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
@@ -25,8 +26,9 @@ import type { PassClassificationFilter } from '@/components/shared/PassListFilte
 
 export function PendingRequestsPage() {
   const { user } = useAuth()
-  const { passes, gateLogs, loading, error, refetch } = useWardenDataContext()
-  const { violationByStudentId } = usePassLimitViolations()
+  const { scope } = useWardenScope()
+  const { passes, gateLogs, loading, error, scopeError, refetch } = useWardenDataContext()
+  const { violationByStudentId } = usePassLimitViolations(scope)
 
   const [nameSearch, setNameSearch] = useState('')
   const [regSearch, setRegSearch] = useState('')
@@ -197,9 +199,9 @@ export function PendingRequestsPage() {
         subtitle={`${filteredPasses.length} matching your filters`}
       />
 
-      {error && (
+      {(error || scopeError) && (
         <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
-          {error}
+          {scopeError ?? error}
         </div>
       )}
 

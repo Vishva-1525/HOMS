@@ -15,6 +15,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
+import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { getGreeting } from '@/lib/outpass'
 import { formatPassDuration, formatRelativeTime, formatTodayDate } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
@@ -23,8 +24,9 @@ import type { OutpassWithStudent } from '@/lib/types'
 
 export function WardenHomePage() {
   const { profile, user } = useAuth()
-  const { passes, stats, loading, error, refetch } = useWardenDataContext()
-  const { violations, loading: violationsLoading } = usePassLimitViolations()
+  const { scope } = useWardenScope()
+  const { passes, stats, loading, error, scopeError, refetch } = useWardenDataContext()
+  const { violations, loading: violationsLoading } = usePassLimitViolations(scope)
   const [drawerMode, setDrawerMode] = useState<'approve' | 'reject' | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<OutpassWithStudent | null>(null)
   const [remarks, setRemarks] = useState('')
@@ -105,9 +107,9 @@ export function WardenHomePage() {
         <p className="dashboard-subheading mt-1 text-sm">{formatTodayDate()}</p>
       </div>
 
-      {error && (
+      {(error || scopeError) && (
         <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
-          {error}
+          {scopeError ?? error}
         </div>
       )}
 

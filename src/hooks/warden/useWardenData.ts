@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { debounce } from '@/lib/debounce'
 import { formatNetworkError } from '@/lib/network-error'
 import { isApprovedToday, isOverdueReturn, isStudentCurrentlyOut } from '@/lib/warden'
-import { normalizeHostelBlock } from '@/lib/block-display'
-import { fetchWardenAssignment } from '@/hooks/useReportData'
-import { useAuth } from '@/contexts/AuthProvider'
+import { passMatchesWardenScope } from '@/lib/warden-scope'
+import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { supabase } from '@/lib/supabase'
 import type {
   ExtensionRequest,
@@ -30,11 +29,11 @@ interface WardenData {
   loading: boolean
   refreshing: boolean
   error: string | null
+  scopeError: string | null
   refetch: () => Promise<void>
 }
 
 const REALTIME_DEBOUNCE_MS = 600
-/** Bound historical load — pending/is_overdue always included regardless of age. */
 const ACTIVE_LOOKBACK_DAYS = 120
 const CLOSED_LOOKBACK_DAYS = 45
 const GATE_LOG_CHUNK = 80
@@ -53,6 +52,7 @@ const PASS_SELECT = `
   approved_at,
   is_overdue,
   qr_code_data,
+  created_at,
   students (
     reg_number,
     room_number,
@@ -106,29 +106,11 @@ async function fetchGateLogsForPassIds(passIds: string[]): Promise<GateLog[]> {
   return logs
 }
 
-function passMatchesWardenScope(
-  pass: OutpassWithStudent,
-  block: string | null,
-  gender: 'male' | 'female' | null,
-): boolean {
-  if (!block || !gender) return true
-  const student = pass.students
-  if (!student) return false
-  return (
-    normalizeHostelBlock(student.hostel_block) === normalizeHostelBlock(block)
-    && student.gender === gender
-  )
-}
-
 export function useWardenData(): WardenData {
-  const { user } = useAuth()
+  const { scope, loading: scopeLoading, error: scopeError } = useWardenScope()
   const [passes, setPasses] = useState<OutpassWithStudent[]>([])
   const [gateLogs, setGateLogs] = useState<GateLog[]>([])
   const [extensions, setExtensions] = useState<ExtensionRequest[]>([])
-  const [wardenScope, setWardenScope] = useState<{
-    block: string
-    gender: 'male' | 'female'
-  } | null>(null)
   const [hasLoaded, setHasLoaded] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -136,30 +118,17 @@ export function useWardenData(): WardenData {
   const hasLoadedRef = useRef(false)
   const inFlightRef = useRef<Promise<void> | null>(null)
   const passIdsRef = useRef<Set<string>>(new Set())
-
-  useEffect(() => {
-    if (!user?.id) {
-      setWardenScope(null)
-      return
-    }
-    let cancelled = false
-    void fetchWardenAssignment(user.id).then((assignment) => {
-      if (cancelled || !assignment?.block || !assignment.gender) {
-        if (!cancelled) setWardenScope(null)
-        return
-      }
-      setWardenScope({ block: assignment.block, gender: assignment.gender })
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [user?.id])
+  const fetchGenerationRef = useRef(0)
 
   const fetchData = useCallback(async () => {
+    if (!scope) return
+
     if (inFlightRef.current) {
       await inFlightRef.current
       return
     }
+
+    const generation = ++fetchGenerationRef.current
 
     const run = (async () => {
       setError(null)
@@ -204,6 +173,8 @@ export function useWardenData(): WardenData {
               .limit(400),
           ])
 
+        if (generation !== fetchGenerationRef.current) return
+
         const firstError =
           pendingResult.error
           ?? activeResult.error
@@ -221,9 +192,7 @@ export function useWardenData(): WardenData {
           ...((activeResult.data ?? []) as unknown as OutpassWithStudent[]),
           ...((overdueResult.data ?? []) as unknown as OutpassWithStudent[]),
           ...((closedResult.data ?? []) as unknown as OutpassWithStudent[]),
-        ]).filter((pass) =>
-          passMatchesWardenScope(pass, wardenScope?.block ?? null, wardenScope?.gender ?? null),
-        )
+        ]).filter((pass) => passMatchesWardenScope(pass, scope))
 
         setPasses(allPasses)
         const passIdSet = new Set(allPasses.map((p) => p.id))
@@ -235,10 +204,13 @@ export function useWardenData(): WardenData {
         passIdsRef.current = passIdSet
 
         const logs = await fetchGateLogsForPassIds(allPasses.map((p) => p.id))
+        if (generation !== fetchGenerationRef.current) return
         setGateLogs(logs)
       } catch (err) {
+        if (generation !== fetchGenerationRef.current) return
         setError(formatNetworkError(err, 'Failed to load warden data.'))
       } finally {
+        if (generation !== fetchGenerationRef.current) return
         hasLoadedRef.current = true
         setHasLoaded(true)
         setRefreshing(false)
@@ -251,13 +223,25 @@ export function useWardenData(): WardenData {
     } finally {
       inFlightRef.current = null
     }
-  }, [wardenScope])
+  }, [scope])
 
   useEffect(() => {
+    if (scopeLoading) return
+    if (!scope) {
+      setPasses([])
+      setGateLogs([])
+      setExtensions([])
+      passIdsRef.current = new Set()
+      hasLoadedRef.current = true
+      setHasLoaded(true)
+      return
+    }
     void fetchData()
-  }, [fetchData])
+  }, [scope, scopeLoading, fetchData])
 
   useEffect(() => {
+    if (!scope) return
+
     const scheduleRefresh = debounce(() => {
       void fetchData()
     }, REALTIME_DEBOUNCE_MS)
@@ -289,7 +273,7 @@ export function useWardenData(): WardenData {
       scheduleRefresh.cancel()
       void supabase.removeChannel(channel)
     }
-  }, [fetchData])
+  }, [fetchData, scope])
 
   const stats = useMemo(() => computeStats(passes, gateLogs), [passes, gateLogs])
   const pendingCount = stats.pendingReview
@@ -306,9 +290,10 @@ export function useWardenData(): WardenData {
       stats,
       pendingCount,
       pendingExtensionsCount,
-      loading: !hasLoaded,
+      loading: scopeLoading || !hasLoaded,
       refreshing,
       error,
+      scopeError,
       refetch: fetchData,
     }),
     [
@@ -318,9 +303,11 @@ export function useWardenData(): WardenData {
       stats,
       pendingCount,
       pendingExtensionsCount,
+      scopeLoading,
       hasLoaded,
       refreshing,
       error,
+      scopeError,
       fetchData,
     ],
   )
