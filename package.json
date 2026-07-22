@@ -12,10 +12,11 @@
     "build-storybook": "storybook build",
     "db:push": "npx supabase db push --linked",
     "db:apply-admin": "echo 'Run supabase/scripts/apply-admin-and-reports.sql in Supabase SQL Editor (007+012+013)'",
-    "db:apply-pwa": "echo 'Run supabase/migrations/014_pwa_notifications.sql in Supabase SQL Editor (after db:apply-admin)'"
+    "db:apply-pwa": "echo 'Run supabase/migrations/014_pwa_notifications.sql in Supabase SQL Editor (after db:apply-admin)'",
+    "import:auth-users": "node scripts/bulk-import-auth-users.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.108.1",
+    "@supabase/supabase-js": "^2.110.8",
     "@tabler/icons-react": "^3.44.0",
     "@zxing/browser": "^0.2.0",
     "@zxing/library": "^0.22.0",

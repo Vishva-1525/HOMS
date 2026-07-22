@@ -1,0 +1,12 @@
+[
+  {
+    "email": "student1@svce.ac.in",
+    "password": "2127251001030",
+    "full_name": "Student One"
+  },
+  {
+    "email": "student2@svce.ac.in",
+    "password": "2127251001031",
+    "full_name": "Student Two"
+  }
+]
