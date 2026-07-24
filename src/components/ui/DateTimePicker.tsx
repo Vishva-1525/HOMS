@@ -28,6 +28,12 @@ interface DateTimePickerProps {
   hint?: string
   calendarMap: Map<string, AcademicCalendarDay>
   calendarLoading?: boolean
+  /**
+   * When true (default), only working days / study holidays are selectable.
+   * Set false for return dates so staypass windows that fall on weekends
+   * still offer valid return days.
+   */
+  requireAcademicDay?: boolean
 }
 
 const MONTH_NAMES_SHORT = [
@@ -55,6 +61,7 @@ export function DateTimePicker({
   hint,
   calendarMap,
   calendarLoading,
+  requireAcademicDay = true,
 }: DateTimePickerProps) {
   const parsed = parseDatetimeLocal(value)
   const selectedDateKey = parsed?.dateKey
@@ -62,6 +69,10 @@ export function DateTimePicker({
   const [viewMonth, setViewMonth] = useState(() => {
     if (selectedDateKey) {
       const d = parseDateKey(selectedDateKey)
+      return new Date(d.getFullYear(), d.getMonth(), 1)
+    }
+    if (min) {
+      const d = parseDateKey(min.slice(0, 10))
       return new Date(d.getFullYear(), d.getMonth(), 1)
     }
     const now = new Date()
@@ -73,6 +84,15 @@ export function DateTimePicker({
     const selected = parseDateKey(selectedDateKey)
     setViewMonth(new Date(selected.getFullYear(), selected.getMonth(), 1))
   }, [selectedDateKey])
+
+  // When bounds change and nothing is selected yet, jump to the min date's month
+  // so staypass/night windows that spill into the next month are visible.
+  useEffect(() => {
+    if (selectedDateKey || !min) return
+    const d = parseDateKey(min.slice(0, 10))
+    if (Number.isNaN(d.getTime())) return
+    setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+  }, [min, max, selectedDateKey])
 
   const year = viewMonth.getFullYear()
   const month = viewMonth.getMonth()
@@ -89,6 +109,19 @@ export function DateTimePicker({
       isTimeWithinBounds(selectedDateKey, slot.hours, slot.minutes, min, max),
     )
   }, [selectedDateKey, min, max])
+
+  function isDaySelectable(dateKey: string): boolean {
+    if (!dateKeyInRange(dateKey, min, max)) return false
+    if (!requireAcademicDay) return true
+    return isDateSelectableForOutpass(dateKey, calendarMap)
+  }
+
+  const selectableInView = useMemo(
+    () => cells.filter((key): key is string => Boolean(key) && isDaySelectable(key)).length,
+    // cells depends on year/month; isDaySelectable uses min/max/calendarMap/requireAcademicDay
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [year, month, min, max, calendarMap, requireAcademicDay],
+  )
 
   function shiftMonth(delta: number) {
     setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
@@ -172,9 +205,7 @@ export function DateTimePicker({
                   return <div key={`empty-${index}`} className="h-8" />
                 }
 
-                const selectable =
-                  isDateSelectableForOutpass(dateKey, calendarMap) &&
-                  dateKeyInRange(dateKey, min, max)
+                const selectable = isDaySelectable(dateKey)
                 const isSelected = selectedDateKey === dateKey
                 const isToday = dateKey === toDateKey(new Date())
                 const dayNum = parseDateKey(dateKey).getDate()
@@ -201,8 +232,18 @@ export function DateTimePicker({
               })}
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Working days and study holidays only.
+              {requireAcademicDay
+                ? 'Working days and study holidays only.'
+                : 'Any day within the allowed return window.'}
             </p>
+            {selectableInView === 0 && (min || max) && (
+              <p className="mt-1.5 rounded-lg border border-amber-300/70 bg-amber-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-amber-900">
+                No return dates available in this window
+                {requireAcademicDay
+                  ? ' (weekends/holidays are blocked). Try a different departure date.'
+                  : '. Try a different departure date.'}
+              </p>
+            )}
           </>
         )}
 

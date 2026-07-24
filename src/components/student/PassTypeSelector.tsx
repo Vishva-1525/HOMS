@@ -16,7 +16,7 @@ const PASS_OPTIONS: {
   },
   {
     type: 'staypass',
-    description: 'Overnight — return in 1–2 days',
+    description: 'Overnight — return within 10 days',
     icon: Moon,
   },
   {

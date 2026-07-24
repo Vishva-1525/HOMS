@@ -271,6 +271,7 @@ export function StudentNewRequestPage() {
             }
             calendarMap={calendarMap}
             calendarLoading={calendarLoading}
+            requireAcademicDay={false}
           />
           {!form.passType && !submitting && (
             <button

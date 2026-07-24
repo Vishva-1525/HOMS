@@ -25,7 +25,8 @@ export const OUTPASS_MAX_HOURS = 8
 export const NIGHT_PASS_MAX_HOURS = 78
 export const SPECIAL_PASS_MAX_DAYS = 7
 export const STAYPASS_MIN_DAYS = 1
-export const STAYPASS_MAX_DAYS = 2
+/** How far ahead the return date picker may go from departure. */
+export const STAYPASS_MAX_DAYS = 10
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -53,7 +54,7 @@ export function getPassTypeDurationHint(passType: PassType | null): string | nul
     case 'outpass':
       return `Outpass: return the same day, within ${OUTPASS_MAX_HOURS} hours of departure.`
     case 'staypass':
-      return 'Staypass: return 1–2 days after departure.'
+      return `Staypass: return between 1 and ${STAYPASS_MAX_DAYS} days after departure (weekends and leaves allowed).`
     case 'night_pass':
       return `Night Pass: return within ${NIGHT_PASS_MAX_HOURS} hours of departure.`
     case 'special_pass':
@@ -127,11 +128,11 @@ export function validateNewRequestForm(
     errors.returnBy = 'Return must be after departure.'
   }
 
+  // Only departure must fall on a working day / study holiday.
+  // Return may be any day within the pass duration (incl. weekends),
+  // otherwise staypass windows that land on Sat–Sun show zero return dates.
   const departureRestriction = validateCalendarDate(values.departureAt, calendarMap)
   if (departureRestriction) errors.departureAt = departureRestriction
-
-  const returnRestriction = validateCalendarDate(values.returnBy, calendarMap)
-  if (returnRestriction) errors.returnBy = returnRestriction
 
   if (errors.departureAt || errors.returnBy || !values.passType) {
     return errors
@@ -150,7 +151,7 @@ export function validateNewRequestForm(
       break
     case 'staypass':
       if (daysApart < STAYPASS_MIN_DAYS || daysApart > STAYPASS_MAX_DAYS) {
-        errors.returnBy = 'Staypass: return must be 1–2 days after departure.'
+        errors.returnBy = `Staypass: return must be between ${STAYPASS_MIN_DAYS} and ${STAYPASS_MAX_DAYS} days after departure.`
       }
       break
     case 'night_pass': {
