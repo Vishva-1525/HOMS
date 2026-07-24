@@ -9,6 +9,8 @@ declare const self: ServiceWorkerGlobalScope & {
 clientsClaim()
 precacheAndRoute(self.__WB_MANIFEST)
 
+self.skipWaiting()
+
 interface PushPayload {
   title?: string
   body?: string

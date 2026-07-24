@@ -54,7 +54,7 @@ export function getPassTypeDurationHint(passType: PassType | null): string | nul
     case 'outpass':
       return `Outpass: return the same day, within ${OUTPASS_MAX_HOURS} hours of departure.`
     case 'staypass':
-      return `Staypass: return between 1 and ${STAYPASS_MAX_DAYS} days after departure (weekends and leaves allowed).`
+      return `Staypass: choose any return date up to ${STAYPASS_MAX_DAYS} days after departure (including weekends and holidays).`
     case 'night_pass':
       return `Night Pass: return within ${NIGHT_PASS_MAX_HOURS} hours of departure.`
     case 'special_pass':

@@ -49,6 +49,40 @@ function dateKeyInRange(dateKey: string, min?: string, max?: string): boolean {
   return true
 }
 
+function formatRangeLabel(min?: string, max?: string): string | null {
+  if (!min && !max) return null
+  const fmt = (iso: string) => {
+    const d = parseDateKey(iso.slice(0, 10))
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  }
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`
+  if (min) return `from ${fmt(min)}`
+  return `until ${fmt(max!)}`
+}
+
+function firstSelectableDateKey(
+  min: string | undefined,
+  max: string | undefined,
+  requireAcademicDay: boolean,
+  calendarMap: Map<string, AcademicCalendarDay>,
+): string | null {
+  if (!min || !max) return null
+  const cursor = parseDateKey(min.slice(0, 10))
+  const end = parseDateKey(max.slice(0, 10))
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(end.getTime())) return null
+
+  while (cursor.getTime() <= end.getTime()) {
+    const key = toDateKey(cursor)
+    if (dateKeyInRange(key, min, max)) {
+      if (!requireAcademicDay || isDateSelectableForOutpass(key, calendarMap)) {
+        return key
+      }
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return null
+}
+
 export function DateTimePicker({
   id,
   label,
@@ -85,14 +119,15 @@ export function DateTimePicker({
     setViewMonth(new Date(selected.getFullYear(), selected.getMonth(), 1))
   }, [selectedDateKey])
 
-  // When bounds change and nothing is selected yet, jump to the min date's month
-  // so staypass/night windows that spill into the next month are visible.
+  // Prefer the month of the first selectable day in the allowed window
+  // (e.g. Jul 31 departure → jump return calendar to August automatically).
   useEffect(() => {
-    if (selectedDateKey || !min) return
-    const d = parseDateKey(min.slice(0, 10))
-    if (Number.isNaN(d.getTime())) return
+    if (selectedDateKey) return
+    const first = firstSelectableDateKey(min, max, requireAcademicDay, calendarMap)
+    if (!first) return
+    const d = parseDateKey(first)
     setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1))
-  }, [min, max, selectedDateKey])
+  }, [min, max, selectedDateKey, requireAcademicDay, calendarMap])
 
   const year = viewMonth.getFullYear()
   const month = viewMonth.getMonth()
@@ -118,10 +153,25 @@ export function DateTimePicker({
 
   const selectableInView = useMemo(
     () => cells.filter((key): key is string => Boolean(key) && isDaySelectable(key)).length,
-    // cells depends on year/month; isDaySelectable uses min/max/calendarMap/requireAcademicDay
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [year, month, min, max, calendarMap, requireAcademicDay],
   )
+
+  const rangeLabel = useMemo(() => formatRangeLabel(min, max), [min, max])
+
+  const nextMonthHasSelectable = useMemo(() => {
+    if (!min || !max) return false
+    const next = new Date(year, month + 1, 1)
+    const nextYear = next.getFullYear()
+    const nextMonth = next.getMonth()
+    const days = new Date(nextYear, nextMonth + 1, 0).getDate()
+    for (let i = 1; i <= days; i++) {
+      const key = toDateKey(new Date(nextYear, nextMonth, i))
+      if (!dateKeyInRange(key, min, max)) continue
+      if (!requireAcademicDay || isDateSelectableForOutpass(key, calendarMap)) return true
+    }
+    return false
+  }, [year, month, min, max, requireAcademicDay, calendarMap])
 
   function shiftMonth(delta: number) {
     setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
@@ -234,14 +284,30 @@ export function DateTimePicker({
             <p className="mt-2 text-[11px] text-slate-500">
               {requireAcademicDay
                 ? 'Working days and study holidays only.'
-                : 'Any day within the allowed return window.'}
+                : 'Any day in the return window (weekends and holidays allowed).'}
             </p>
+            {rangeLabel && (
+              <p className="mt-1 text-[11px] font-medium text-[#0D3F72]">
+                Available: {rangeLabel}
+              </p>
+            )}
+            {nextMonthHasSelectable && (
+              <button
+                type="button"
+                onClick={() => shiftMonth(1)}
+                className="mt-1.5 text-[11px] font-semibold text-[#1A5CA0] underline-offset-2 hover:underline"
+              >
+                More dates in {MONTH_NAMES_SHORT[(month + 1) % 12]} →
+              </button>
+            )}
             {selectableInView === 0 && (min || max) && (
               <p className="mt-1.5 rounded-lg border border-amber-300/70 bg-amber-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-amber-900">
-                No return dates available in this window
-                {requireAcademicDay
-                  ? ' (weekends/holidays are blocked). Try a different departure date.'
-                  : '. Try a different departure date.'}
+                No dates in this month are selectable
+                {nextMonthHasSelectable
+                  ? ' — tap the arrow above or “More dates” to open the next month.'
+                  : requireAcademicDay
+                    ? ' (weekends/holidays are blocked). Try a different departure date.'
+                    : '. Try a different departure date.'}
               </p>
             )}
           </>
