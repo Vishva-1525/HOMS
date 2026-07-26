@@ -1,0 +1,14 @@
+---
+description: Always commit and push after making code changes
+alwaysApply: true
+---
+
+# Commit and push after every change
+
+When you finish a set of code changes for a user request:
+
+1. **Commit** the relevant files (follow the repo’s git safety protocol and commit-message style).
+2. **Push** to `origin` on the current branch immediately after a successful commit (`git push -u origin HEAD` if needed).
+3. Do this as the default wrap-up for every task that changes files — do not wait to be asked to commit or push.
+4. Skip only secrets (e.g. `.env`) and unrelated dirty files; if unsure about unrelated local changes, leave them unstaged and mention them.
+5. After pushing, briefly confirm the commit hash / that the remote is updated.
