@@ -9,12 +9,23 @@ import type { GateLog, OutpassRequest } from '@/lib/types'
 interface StudentRecentRequestsTableProps {
   passes: OutpassRequest[]
   gateLogs: GateLog[]
+  studentName?: string | null
   onSelectPass: (pass: OutpassRequest) => void
+}
+
+function getCancelledByLabel(pass: OutpassRequest, studentName?: string | null): string | null {
+  if (pass.status !== 'cancelled') return null
+  if (pass.warden_remark?.startsWith('Cancelled by ')) {
+    return pass.warden_remark
+  }
+  const name = studentName?.trim() || 'student'
+  return `Cancelled by ${name}`
 }
 
 export function StudentRecentRequestsTable({
   passes,
   gateLogs,
+  studentName,
   onSelectPass,
 }: StudentRecentRequestsTableProps) {
   return (
@@ -42,6 +53,7 @@ export function StudentRecentRequestsTable({
             {passes.map((pass) => {
               const displayStatus = getPassDisplayStatus(pass, gateLogs)
               const label = getPassStatusLabel(pass.status, gateLogs, pass)
+              const cancelledBy = getCancelledByLabel(pass, studentName)
 
               return (
                 <MobileDataCard key={pass.id} onClick={() => onSelectPass(pass)}>
@@ -53,6 +65,9 @@ export function StudentRecentRequestsTable({
                   <p className="dashboard-muted mt-1 text-xs">
                     {formatTableDateTime(pass.departure_at)} → {formatTableDateTime(pass.return_by)}
                   </p>
+                  {cancelledBy && (
+                    <p className="mt-1.5 text-xs font-medium text-red-800">{cancelledBy}</p>
+                  )}
                 </MobileDataCard>
               )
             })}
@@ -73,6 +88,7 @@ export function StudentRecentRequestsTable({
                 {passes.map((pass) => {
                   const displayStatus = getPassDisplayStatus(pass, gateLogs)
                   const label = getPassStatusLabel(pass.status, gateLogs, pass)
+                  const cancelledBy = getCancelledByLabel(pass, studentName)
 
                   return (
                     <tr
@@ -93,7 +109,12 @@ export function StudentRecentRequestsTable({
                         {formatTableDateTime(pass.return_by)}
                       </td>
                       <td className="px-4 py-3.5 sm:px-5">
-                        <StatusBadge status={displayStatus} label={label} />
+                        <div className="space-y-1">
+                          <StatusBadge status={displayStatus} label={label} />
+                          {cancelledBy && (
+                            <p className="text-xs font-medium text-red-800">{cancelledBy}</p>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )

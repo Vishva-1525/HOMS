@@ -11,11 +11,19 @@ import { cn } from '@/lib/utils'
 interface PassListCardProps {
   pass: OutpassRequest
   gateLogs: GateLog[]
+  studentName?: string | null
   onClick: () => void
   onViewQr?: () => void
 }
 
 type PassCardTone = 'pending' | 'approved' | 'rejected' | 'completed' | 'neutral'
+
+function getCancelledByName(pass: OutpassRequest, studentName?: string | null): string {
+  if (pass.warden_remark?.startsWith('Cancelled by ')) {
+    return pass.warden_remark.replace(/^Cancelled by\s+/i, '').trim()
+  }
+  return studentName?.trim() || 'student'
+}
 
 function getCardTone(pass: OutpassRequest, gateLogs: GateLog[]): PassCardTone {
   if (pass.status === 'pending') return 'pending'
@@ -69,13 +77,23 @@ const CARD_TONE_STYLES: Record<
   },
 }
 
-export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCardProps) {
+export function PassListCard({
+  pass,
+  gateLogs,
+  studentName,
+  onClick,
+  onViewQr,
+}: PassListCardProps) {
   const displayStatus = getPassDisplayStatus(pass, gateLogs)
   const label = getPassStatusLabel(pass.status, gateLogs, pass)
   const showQr = isQrEligibleStatus(pass.status)
   const tone = getCardTone(pass, gateLogs)
   const toneStyle = CARD_TONE_STYLES[tone]
   const StatusIcon = toneStyle.icon
+  const statusHint =
+    pass.status === 'cancelled'
+      ? `Cancelled by ${getCancelledByName(pass, studentName)}`
+      : toneStyle.statusHint
 
   return (
     <div
@@ -111,7 +129,7 @@ export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCard
               {formatReturnTime(pass.departure_at)} → {formatReturnTime(pass.return_by)}
             </p>
 
-            {toneStyle.statusHint && (
+            {statusHint && (
               <p
                 className={cn(
                   'mt-2 text-xs font-medium',
@@ -121,7 +139,7 @@ export function PassListCard({ pass, gateLogs, onClick, onViewQr }: PassListCard
                   tone === 'completed' && 'text-slate-600',
                 )}
               >
-                {toneStyle.statusHint}
+                {statusHint}
               </p>
             )}
           </div>

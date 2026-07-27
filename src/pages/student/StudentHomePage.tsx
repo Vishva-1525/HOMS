@@ -181,6 +181,7 @@ export function StudentHomePage() {
         <StudentRecentRequestsTable
           passes={recentPasses}
           gateLogs={gateLogs}
+          studentName={profile?.full_name}
           onSelectPass={setSelectedPass}
         />
       </section>

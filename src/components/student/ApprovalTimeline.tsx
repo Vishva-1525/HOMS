@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 interface ApprovalTimelineProps {
   pass: OutpassRequest
   gateLogs?: GateLog[]
+  cancelledByName?: string | null
   className?: string
 }
 
@@ -26,8 +27,13 @@ const STATE_STYLES = {
   },
 } as const
 
-export function ApprovalTimeline({ pass, gateLogs = [], className }: ApprovalTimelineProps) {
-  const stages = buildApprovalTimeline(pass, gateLogs)
+export function ApprovalTimeline({
+  pass,
+  gateLogs = [],
+  cancelledByName,
+  className,
+}: ApprovalTimelineProps) {
+  const stages = buildApprovalTimeline(pass, gateLogs, { cancelledByName })
 
   return (
     <div className={cn('mt-4', className)}>

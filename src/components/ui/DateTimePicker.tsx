@@ -151,7 +151,7 @@ export function DateTimePicker({
   }
 
   const selectableInView = useMemo(
-    () => cells.filter((key): key is string => Boolean(key) && isDaySelectable(key)).length,
+    () => cells.filter((key): key is string => key !== null && isDaySelectable(key)).length,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [year, month, min, max, calendarMap, requireAcademicDay],
   )

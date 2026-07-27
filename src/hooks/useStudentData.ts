@@ -8,11 +8,11 @@ import type { ExtensionRequest, GateLog, OutpassRequest, Student, StudentPassQuo
 
 const DEFAULT_QUOTAS: StudentPassQuotas = {
   weekly_limit: 2,
-  monthly_limit: 8,
+  monthly_limit: 15,
   weekly_used: 0,
   monthly_used: 0,
   weekly_remaining: 2,
-  monthly_remaining: 8,
+  monthly_remaining: 15,
   week_start: '',
   month_start: '',
 }

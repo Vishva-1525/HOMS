@@ -7,10 +7,12 @@ import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/spinner'
 import { useStudentDataContext } from '@/contexts/StudentDataContext'
+import { useAuth } from '@/contexts/AuthProvider'
 import { filterPasses, isQrEligibleStatus, type PassFilter } from '@/lib/pass-filters'
 import type { OutpassRequest } from '@/lib/types'
 
 export function StudentPassesPage() {
+  const { profile } = useAuth()
   const {
     passes,
     gateLogs,
@@ -90,6 +92,7 @@ export function StudentPassesPage() {
               key={pass.id}
               pass={pass}
               gateLogs={gateLogs}
+              studentName={profile?.full_name}
               onClick={() => setSelectedPass(pass)}
               onViewQr={
                 isQrEligibleStatus(pass.status)

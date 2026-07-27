@@ -122,9 +122,13 @@ export function PassDetailSheet({
 
   async function handleCancel() {
     setCancelling(true)
+    const cancelledBy = profile?.full_name?.trim() || 'student'
     const { error } = await supabase
       .from('outpass_requests')
-      .update({ status: 'cancelled' })
+      .update({
+        status: 'cancelled',
+        warden_remark: `Cancelled by ${cancelledBy}`,
+      })
       .eq('id', pass!.id)
 
     setCancelling(false)
@@ -236,9 +240,29 @@ export function PassDetailSheet({
               {pass.approved_by && (
                 <DetailRow label="Approved by" value={wardenName ?? 'Loading…'} />
               )}
+              {pass.status === 'cancelled' && (
+                <DetailRow
+                  label="Cancelled by"
+                  value={
+                    pass.warden_remark?.startsWith('Cancelled by ')
+                      ? pass.warden_remark.replace(/^Cancelled by\s+/i, '').trim()
+                      : (profile?.full_name ?? 'Student')
+                  }
+                />
+              )}
             </div>
 
-            <ApprovalTimeline pass={pass} gateLogs={gateLogs} />
+            <ApprovalTimeline
+              pass={pass}
+              gateLogs={gateLogs}
+              cancelledByName={
+                pass.status === 'cancelled'
+                  ? (pass.warden_remark?.startsWith('Cancelled by ')
+                      ? pass.warden_remark.replace(/^Cancelled by\s+/i, '').trim()
+                      : profile?.full_name)
+                  : null
+              }
+            />
 
             {student && (pass.status === 'approved' || pass.status === 'extended') ? (
               <div className="mt-6">

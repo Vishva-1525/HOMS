@@ -12,14 +12,45 @@ export interface ApprovalTimelineStage {
 export function buildApprovalTimeline(
   pass: OutpassRequest,
   gateLogs: GateLog[] = [],
+  options?: { cancelledByName?: string | null },
 ): ApprovalTimelineStage[] {
   const isSpecial = pass.pass_type === 'special_pass' || pass.requires_hod_approval
   const submitted = true
   const isPending = pass.status === 'pending'
   const isRejected = pass.status === 'rejected'
+  const isCancelled = pass.status === 'cancelled'
   const isApproved = pass.status === 'approved' || pass.status === 'extended'
   const hasQr = Boolean(pass.qr_code_data)
   const hasExit = gateLogs.some((l) => l.event_type === 'exit')
+  const cancelledBy =
+    options?.cancelledByName?.trim() ||
+    (pass.warden_remark?.startsWith('Cancelled by ')
+      ? pass.warden_remark.replace(/^Cancelled by\s+/i, '').trim()
+      : null)
+
+  if (isCancelled) {
+    return [
+      {
+        id: 'submitted',
+        label: 'Submitted',
+        state: 'completed',
+        detail: new Date(pass.created_at).toLocaleString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      },
+      {
+        id: 'cancelled',
+        label: 'Cancelled',
+        state: 'completed',
+        detail: cancelledBy
+          ? `Cancelled by ${cancelledBy}`
+          : 'Request was cancelled',
+      },
+    ]
+  }
 
   const stages: ApprovalTimelineStage[] = [
     {
