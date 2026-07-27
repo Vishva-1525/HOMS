@@ -17,13 +17,13 @@ export function StudentPassQuotaStats({ quotas }: StudentPassQuotaStatsProps) {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <StudentDashboardStatCard
         label="Weekly Passes Used"
-        value={`${quotas.weekly_used} / ${quotas.weekly_limit}`}
+        value={`${quotas.weekly_used}/${quotas.weekly_limit} days`}
         subtext="Used this week"
         valueClassName={cn('text-2xl sm:text-[28px]', usageTone(quotas.weekly_used, quotas.weekly_limit))}
       />
       <StudentDashboardStatCard
         label="Monthly Passes Used"
-        value={`${quotas.monthly_used} / ${quotas.monthly_limit}`}
+        value={`${quotas.monthly_used}/${quotas.monthly_limit} days`}
         subtext="Used this month"
         valueClassName={cn('text-2xl sm:text-[28px]', usageTone(quotas.monthly_used, quotas.monthly_limit))}
       />

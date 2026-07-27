@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { formatNetworkError } from '@/lib/network-error'
 import { isPassActive } from '@/lib/outpass'
-import { getCurrentSemesterRange, isWithinSemester } from '@/lib/semester'
+import { hasEntryLog } from '@/lib/pass-filters'
+import { isWithinSemester } from '@/lib/semester'
 import { fetchStudentRecord } from '@/lib/student-data'
 import { supabase } from '@/lib/supabase'
 import type { GateLog, OutpassRequest, Student } from '@/lib/types'
@@ -46,6 +47,8 @@ export function findCheckedOutPass(
   const activePasses = passes.filter(isPassActive)
 
   for (const pass of activePasses) {
+    if (hasEntryLog(pass.id, gateLogs)) continue
+
     const passLogs = gateLogs
       .filter((log) => log.outpass_id === pass.id)
       .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())
@@ -174,7 +177,11 @@ export function useStudentDashboardData(): DashboardData {
 
   const recentPasses = useMemo(() => passes.slice(0, 5), [passes])
 
-  const activePass = useMemo(() => passes.find(isPassActive) ?? null, [passes])
+  const activePass = useMemo(() => {
+    const pass = passes.find(isPassActive) ?? null
+    if (!pass || hasEntryLog(pass.id, gateLogs)) return null
+    return pass
+  }, [passes, gateLogs])
 
   const stats = useMemo(() => computeSemesterStats(semesterPasses), [semesterPasses])
 
@@ -194,9 +201,4 @@ export function useStudentDashboardData(): DashboardData {
     error,
     refetch: fetchData,
   }
-}
-
-export function getSemesterLabel(): string {
-  const { start } = getCurrentSemesterRange()
-  return start.getMonth() >= 6 ? 'Sem 1' : 'Sem 2'
 }

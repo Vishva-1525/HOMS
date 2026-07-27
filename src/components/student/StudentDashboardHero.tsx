@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { StudentGreetingCard } from '@/components/student/StudentGreetingCard'
-import { getSemesterLabel } from '@/hooks/useStudentDashboardData'
 import type { ActiveCheckedOutPass } from '@/hooks/useStudentDashboardData'
 import type { Student } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -43,7 +42,7 @@ export function StudentDashboardHero({
           />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#D6E6F7]">
-              {getSemesterLabel()} · SVCE Hostel
+              SVCE Hostel
             </p>
             <StudentGreetingCard
               firstName={firstName}
