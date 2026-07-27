@@ -50,7 +50,7 @@ export function WardenCalendarPanel() {
         </p>
       )}
 
-      <div className="rounded-xl border border-white/55 bg-white/50 p-3 shadow-sm backdrop-blur-md">
+      <div className="liquid-glass rounded-xl p-3">
         <AcademicCalendarPicker
           days={days}
           calendarMap={calendarMap}

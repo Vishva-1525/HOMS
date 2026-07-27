@@ -96,4 +96,82 @@
   --svce-scrollbar-width: 4px;
   --svce-scrollbar-thumb: var(--svce-border-strong);
   --svce-scrollbar-track: transparent;
+
+  /* ── Liquid glass surfaces ─────────────────────────────────────────────── */
+
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-border-strong: rgba(255, 255, 255, 0.68);
+  --glass-bg: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.56) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  --glass-bg-strong: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.52) 100%
+  );
+  --glass-bg-muted: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.46) 0%,
+    rgba(255, 255, 255, 0.32) 100%
+  );
+  --glass-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.28) inset,
+    0 10px 36px -14px rgba(15, 23, 42, 0.3);
+  --glass-blur: blur(18px) saturate(1.45);
+  --glass-fg: #0f172a;
+  --glass-fg-muted: #475569;
+}
+
+html.dark {
+  --svce-primary-blue: #3b82f6;
+  --svce-dark-blue: #93c5fd;
+  --svce-blue-tint: rgba(59, 130, 246, 0.22);
+  --svce-orange-tint: rgba(251, 146, 60, 0.18);
+  --svce-accent-green: #34d399;
+  --svce-green-tint: rgba(52, 211, 153, 0.16);
+  --svce-white: #0b1220;
+  --svce-page-bg: #060b16;
+  --svce-text-primary: #f8fafc;
+  --svce-text-secondary: #cbd5e1;
+  --svce-text-muted: #94a3b8;
+  --svce-border-default: rgba(148, 197, 255, 0.16);
+  --svce-border-strong: rgba(148, 197, 255, 0.28);
+  --svce-success: #34d399;
+  --svce-success-tint: rgba(52, 211, 153, 0.16);
+  --svce-warning: #fbbf24;
+  --svce-warning-tint: rgba(251, 191, 36, 0.16);
+  --svce-danger: #f87171;
+  --svce-danger-tint: rgba(248, 113, 113, 0.16);
+  --svce-info: #60a5fa;
+  --svce-info-tint: rgba(96, 165, 250, 0.18);
+  --svce-selection-bg: rgba(59, 130, 246, 0.35);
+  --svce-selection-text: #f8fafc;
+  --svce-scrollbar-thumb: rgba(148, 163, 184, 0.45);
+
+  --glass-border: rgba(148, 197, 255, 0.2);
+  --glass-border-strong: rgba(186, 230, 253, 0.28);
+  --glass-bg: linear-gradient(
+    165deg,
+    rgba(36, 54, 88, 0.52) 0%,
+    rgba(10, 18, 34, 0.58) 100%
+  );
+  --glass-bg-strong: linear-gradient(
+    165deg,
+    rgba(44, 64, 102, 0.6) 0%,
+    rgba(12, 22, 40, 0.68) 100%
+  );
+  --glass-bg-muted: linear-gradient(
+    165deg,
+    rgba(30, 46, 76, 0.44) 0%,
+    rgba(8, 14, 28, 0.5) 100%
+  );
+  --glass-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 14px 40px -12px rgba(0, 0, 0, 0.55),
+    0 0 48px -24px rgba(59, 130, 246, 0.28);
+  --glass-blur: blur(20px) saturate(1.35);
+  --glass-fg: #f8fafc;
+  --glass-fg-muted: #94a3b8;
 }

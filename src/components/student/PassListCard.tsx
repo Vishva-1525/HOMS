@@ -42,37 +42,33 @@ const CARD_TONE_STYLES: Record<
   { container: string; icon: typeof Clock3; iconWrap: string; statusHint: string }
 > = {
   pending: {
-    container:
-      'border-amber-200/80 bg-gradient-to-br from-amber-50/90 via-white/95 to-white/90 shadow-amber-900/5',
+    container: 'liquid-glass border-amber-300/50 ring-1 ring-amber-400/20',
     icon: Clock3,
-    iconWrap: 'bg-amber-100 text-amber-700 ring-amber-200/80',
+    iconWrap: 'bg-[var(--svce-warning-tint)] text-[var(--svce-warning)] ring-amber-300/40',
     statusHint: 'Awaiting warden approval',
   },
   approved: {
-    container:
-      'border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white/95 to-white/90 shadow-emerald-900/5',
+    container: 'liquid-glass border-emerald-300/45 ring-1 ring-emerald-400/20',
     icon: CheckCircle2,
-    iconWrap: 'bg-emerald-100 text-emerald-700 ring-emerald-200/80',
+    iconWrap: 'bg-[var(--svce-green-tint)] text-[var(--svce-accent-green)] ring-emerald-300/40',
     statusHint: 'Approved — QR ready at gate',
   },
   rejected: {
-    container:
-      'border-red-200/70 bg-gradient-to-br from-red-50/70 via-white/95 to-white/90 shadow-red-900/5',
+    container: 'liquid-glass border-red-300/40 ring-1 ring-red-400/15',
     icon: XCircle,
-    iconWrap: 'bg-red-100 text-red-700 ring-red-200/80',
+    iconWrap: 'bg-[var(--svce-danger-tint)] text-[var(--svce-danger)] ring-red-300/40',
     statusHint: 'Request not approved',
   },
   completed: {
-    container:
-      'border-slate-200/80 bg-gradient-to-br from-slate-50/90 via-white/95 to-white/90 shadow-slate-900/5',
+    container: 'liquid-glass',
     icon: CheckCircle2,
-    iconWrap: 'bg-slate-100 text-slate-600 ring-slate-200/80',
+    iconWrap: 'bg-slate-500/10 text-[var(--svce-text-secondary)] ring-white/30',
     statusHint: 'Trip completed',
   },
   neutral: {
-    container: 'border-white/70 bg-white/90 shadow-slate-900/5',
+    container: 'liquid-glass',
     icon: Clock3,
-    iconWrap: 'bg-slate-100 text-slate-600 ring-slate-200/80',
+    iconWrap: 'bg-slate-500/10 text-[var(--svce-text-secondary)] ring-white/30',
     statusHint: '',
   },
 }
@@ -98,7 +94,7 @@ export function PassListCard({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition-shadow hover:shadow-xl sm:p-5',
+        'overflow-hidden rounded-2xl p-4 transition-shadow hover:shadow-xl sm:p-5',
         toneStyle.container,
       )}
     >

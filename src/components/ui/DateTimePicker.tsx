@@ -210,7 +210,7 @@ export function DateTimePicker({
 
       <div
         className={cn(
-          'rounded-xl border border-white/55 bg-white/50 p-3 shadow-sm backdrop-blur-md',
+          'rounded-xl liquid-glass p-3',
           disabled && 'pointer-events-none opacity-50',
         )}
       >

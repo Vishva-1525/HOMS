@@ -17,10 +17,10 @@ const ICON_TONE_STYLES: Record<
     bg: 'bg-[var(--svce-blue-tint)]',
     icon: 'text-[var(--svce-primary-blue)]',
   },
-  amber: { bg: 'bg-[#FFF8E1]', icon: 'text-[#D97706]' },
-  blue: { bg: 'bg-[#EBF3FF]', icon: 'text-[#1A5CA0]' },
-  green: { bg: 'bg-[var(--svce-green-tint)]', icon: 'text-[#166534]' },
-  red: { bg: 'bg-[#FEF2F2]', icon: 'text-[#DC2626]' },
+  amber: { bg: 'bg-[var(--svce-warning-tint)]', icon: 'text-[var(--svce-warning)]' },
+  blue: { bg: 'bg-[var(--svce-blue-tint)]', icon: 'text-[var(--svce-primary-blue)]' },
+  green: { bg: 'bg-[var(--svce-green-tint)]', icon: 'text-[var(--svce-accent-green)]' },
+  red: { bg: 'bg-[var(--svce-danger-tint)]', icon: 'text-[var(--svce-danger)]' },
 }
 
 export interface StatCardProps {
@@ -54,17 +54,17 @@ export function StatCard({
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1A5CA0]/0 via-[#1A5CA0]/30 to-[#1A5CA0]/0" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[length:var(--svce-text-small)] font-medium text-slate-600">{label}</p>
+          <p className="text-[length:var(--svce-text-small)] font-medium text-[var(--svce-text-secondary)]">{label}</p>
           <p
             className={cn(
-              'mt-1 text-[28px] font-semibold leading-tight tabular-nums text-slate-900',
+              'mt-1 text-[28px] font-semibold leading-tight tabular-nums text-[var(--svce-text-primary)]',
               valueClassName,
             )}
           >
             {value}
           </p>
           {subtext && (
-            <p className="mt-1 text-[length:var(--svce-text-small)] text-slate-600">
+            <p className="mt-1 text-[length:var(--svce-text-small)] text-[var(--svce-text-secondary)]">
               {subtext}
             </p>
           )}
@@ -89,10 +89,10 @@ export function StatCard({
               iconStyles.bg,
               iconPulse &&
                 (iconTone === 'red'
-                  ? 'ring-2 ring-[#DC2626]/45 ring-offset-2 ring-offset-white'
+                  ? 'ring-2 ring-[var(--svce-danger)]/45 ring-offset-2 ring-offset-transparent'
                   : iconTone === 'amber'
-                    ? 'ring-2 ring-[#D97706]/40 ring-offset-2 ring-offset-white'
-                    : 'ring-2 ring-[#1A5CA0]/35 ring-offset-2 ring-offset-white'),
+                    ? 'ring-2 ring-[var(--svce-warning)]/40 ring-offset-2 ring-offset-transparent'
+                    : 'ring-2 ring-[var(--svce-primary-blue)]/35 ring-offset-2 ring-offset-transparent'),
             )}
           >
             <Icon className={cn('relative h-5 w-5', iconStyles.icon)} strokeWidth={1.75} />

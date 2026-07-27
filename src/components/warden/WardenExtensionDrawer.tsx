@@ -49,49 +49,49 @@ export function WardenExtensionDrawer({
       />
       <aside
         className={cn(
-          'absolute inset-x-0 bottom-0 flex max-h-[92dvh] w-full flex-col rounded-t-2xl border-t border-[var(--svce-border-default)] bg-white shadow-xl',
+          'absolute inset-x-0 bottom-0 flex max-h-[92dvh] w-full flex-col rounded-t-2xl glass-panel-strong border-t',
           'animate-[slideUpFull_0.3s_ease-out]',
           'md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:max-w-[480px] md:rounded-none md:border-l md:border-t-0 md:animate-[slideInRight_0.25s_ease-out]',
         )}
       >
-        <div className="border-b border-[var(--svce-border-default)] px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-semibold text-[#1A1A2E]">
+        <div className="border-b border-white/40 px-4 py-4 sm:px-6 dark:border-white/10">
+          <h2 className="text-lg font-semibold text-[var(--svce-text-primary)]">
             {isReject ? 'Reject extension' : 'Review extension'}
           </h2>
-          <p className="mt-0.5 text-sm text-[#4B5563]">
+          <p className="mt-0.5 text-sm text-[var(--svce-text-secondary)]">
             {getStudentName(student)} · {getStudentReg(student)}
           </p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-          <div className="flex items-center gap-4 rounded-xl border border-[var(--svce-border-default)] bg-[var(--svce-page-bg)] p-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EBF3FF]">
-              <User className="h-7 w-7 text-[#1A5CA0]" strokeWidth={1.5} />
+          <div className="liquid-glass flex items-center gap-4 rounded-xl p-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--svce-blue-tint)]">
+              <User className="h-7 w-7 text-[var(--svce-primary-blue)]" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="font-semibold text-[#1A1A2E]">{getStudentName(student)}</p>
-              <p className="text-sm text-[#4B5563]">{getStudentRoom(student)}</p>
+              <p className="font-semibold text-[var(--svce-text-primary)]">{getStudentName(student)}</p>
+              <p className="text-sm text-[var(--svce-text-secondary)]">{getStudentRoom(student)}</p>
             </div>
           </div>
 
           <div className="mt-5 space-y-3 text-sm">
             <div className="flex justify-between gap-4">
-              <span className="text-[#4B5563]">Current return</span>
-              <span className="font-medium">
+              <span className="text-[var(--svce-text-secondary)]">Current return</span>
+              <span className="font-medium text-[var(--svce-text-primary)]">
                 {outpass ? formatReturnTime(outpass.return_by) : '—'}
               </span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-[#4B5563]">Requested return</span>
-              <span className="font-medium text-[#1A5CA0]">
+              <span className="text-[var(--svce-text-secondary)]">Requested return</span>
+              <span className="font-medium text-[var(--svce-primary-blue)]">
                 {formatReturnTime(extension.new_return_time)}
               </span>
             </div>
             <div>
-              <p className="text-[#4B5563]">Reason</p>
-              <p className="mt-1 font-medium text-[#1A1A2E]">{extension.reason}</p>
+              <p className="text-[var(--svce-text-secondary)]">Reason</p>
+              <p className="mt-1 font-medium text-[var(--svce-text-primary)]">{extension.reason}</p>
             </div>
-            <p className="text-xs text-[#4B5563]">
+            <p className="text-xs text-[var(--svce-text-secondary)]">
               Submitted {formatRelativeTime(extension.created_at)}
             </p>
           </div>
@@ -99,7 +99,10 @@ export function WardenExtensionDrawer({
           <div className="mt-6 space-y-2">
             <label
               htmlFor="ext-remarks"
-              className={cn('text-sm font-medium', isReject ? 'text-[#DC2626]' : 'text-[#1A1A2E]')}
+              className={cn(
+                'text-sm font-medium',
+                isReject ? 'text-[var(--svce-danger)]' : 'text-[var(--svce-text-primary)]',
+              )}
             >
               Remarks {isReject ? '(required)' : '(optional)'}
             </label>
@@ -109,13 +112,13 @@ export function WardenExtensionDrawer({
               value={remarks}
               onChange={(e) => onRemarksChange(e.target.value)}
               disabled={submitting}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--svce-border-default)] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-2"
+              className="w-full rounded-xl liquid-glass px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-2"
             />
-            {error && <p className="text-sm text-[#DC2626]">{error}</p>}
+            {error && <p className="text-sm text-[var(--svce-danger)]">{error}</p>}
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-[var(--svce-border-default)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+        <div className="space-y-2 border-t border-white/40 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-white/10">
           <Button
             type="button"
             className="w-full"

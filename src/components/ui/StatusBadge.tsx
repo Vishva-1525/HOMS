@@ -29,15 +29,15 @@ const STATUS_LABELS: Record<StatusBadgeStatus, string> = {
 }
 
 const STATUS_STYLES: Record<StatusBadgeStatus, string> = {
-  pending: 'bg-[#FFF8E1] text-[#92400E]',
-  approved: 'bg-[var(--svce-green-tint)] text-[#166534]',
-  rejected: 'bg-[var(--svce-danger-tint)] text-[#991B1B]',
+  pending: 'bg-[var(--svce-warning-tint)] text-[var(--svce-warning)]',
+  approved: 'bg-[var(--svce-green-tint)] text-[var(--svce-accent-green)]',
+  rejected: 'bg-[var(--svce-danger-tint)] text-[var(--svce-danger)]',
   overdue:
-    'border border-[#FECACA] bg-[#FEF2F2] font-semibold text-[#991B1B] shadow-[inset_0_0_0_1px_rgba(252,165,165,0.35)]',
-  expired: 'bg-[#FFEDD5] text-[#9A3412]',
-  return_completed: 'bg-[var(--svce-blue-tint)] text-[#1E40AF]',
-  completed: 'bg-[var(--svce-blue-tint)] text-[#1E40AF]',
-  cancelled: 'bg-[#F3F4F6] text-[#6B7280]',
+    'border border-[color-mix(in_srgb,var(--svce-danger)_45%,transparent)] bg-[var(--svce-danger-tint)] font-semibold text-[var(--svce-danger)]',
+  expired: 'bg-[var(--svce-orange-tint)] text-[var(--svce-accent-orange)]',
+  return_completed: 'bg-[var(--svce-blue-tint)] text-[var(--svce-primary-blue)]',
+  completed: 'bg-[var(--svce-blue-tint)] text-[var(--svce-primary-blue)]',
+  cancelled: 'bg-[color-mix(in_srgb,var(--svce-text-muted)_18%,transparent)] text-[var(--svce-text-secondary)]',
 }
 
 export function StatusBadge({ status, label, className }: StatusBadgeProps) {
@@ -50,7 +50,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
       )}
     >
       {status === 'overdue' && (
-        <AlertTriangle className="h-3 w-3 shrink-0 text-[#DC2626]" strokeWidth={2.5} aria-hidden />
+        <AlertTriangle className="h-3 w-3 shrink-0 text-[var(--svce-danger)]" strokeWidth={2.5} aria-hidden />
       )}
       {label ?? STATUS_LABELS[status]}
     </span>

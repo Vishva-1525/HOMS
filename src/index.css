@@ -49,24 +49,24 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.16 0.03 255);
+  --foreground: oklch(0.97 0.01 250);
+  --card: oklch(0.28 0.04 255 / 55%);
+  --card-foreground: oklch(0.97 0.01 250);
+  --popover: oklch(0.24 0.035 255 / 88%);
+  --popover-foreground: oklch(0.97 0.01 250);
+  --primary: oklch(0.62 0.16 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.28 0.04 255 / 70%);
+  --secondary-foreground: oklch(0.95 0.01 250);
+  --muted: oklch(0.28 0.03 255 / 55%);
+  --muted-foreground: oklch(0.78 0.02 250);
+  --accent: oklch(0.32 0.05 255 / 55%);
+  --accent-foreground: oklch(0.97 0.01 250);
+  --destructive: oklch(0.68 0.18 22);
+  --border: oklch(0.78 0.06 250 / 22%);
+  --input: oklch(0.28 0.04 255 / 55%);
+  --ring: oklch(0.68 0.14 255);
 }
 
 @layer base {
@@ -95,16 +95,16 @@
   }
 
   html.dark .dashboard-shell {
-    --card: oklch(0.24 0.022 250 / 92%);
-    --popover: oklch(0.22 0.022 250 / 96%);
-    --background: oklch(0.17 0.02 250 / 60%);
-    --muted: oklch(0.26 0.022 250 / 85%);
-    --accent: oklch(0.28 0.03 250 / 80%);
-    --secondary: oklch(0.26 0.022 250 / 82%);
-    --border: oklch(1 0 0 / 14%);
-    --input: oklch(1 0 0 / 12%);
-    --foreground: oklch(0.97 0.008 250);
-    --muted-foreground: oklch(0.78 0.02 250);
+    --card: oklch(0.32 0.045 255 / 52%);
+    --popover: oklch(0.26 0.04 255 / 90%);
+    --background: oklch(0.2 0.035 255 / 45%);
+    --muted: oklch(0.3 0.04 255 / 48%);
+    --accent: oklch(0.34 0.05 255 / 45%);
+    --secondary: oklch(0.3 0.04 255 / 50%);
+    --border: oklch(0.8 0.06 250 / 22%);
+    --input: oklch(0.3 0.04 255 / 50%);
+    --foreground: oklch(0.97 0.01 250);
+    --muted-foreground: oklch(0.78 0.025 250);
   }
 
   .dashboard-shell .bg-card,
@@ -114,27 +114,49 @@
   .dashboard-shell .bg-muted\/40,
   .dashboard-shell .bg-muted\/20,
   .dashboard-shell .bg-popover {
-    backdrop-filter: blur(20px) saturate(1.4);
-    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  /* Shared liquid-morphism language (matches calendar / DateTimePicker glass) */
+  .liquid-glass {
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .glass-panel {
-    @apply rounded-2xl border border-white/75 bg-white/88 text-slate-900 shadow-[0_10px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-[box-shadow,transform] duration-200;
+    @apply rounded-2xl transition-[box-shadow,transform,background-color] duration-200;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .glass-panel-strong {
-    @apply rounded-2xl border border-white/80 bg-white/92 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.32)] backdrop-blur-2xl;
+    @apply rounded-2xl;
+    border: 1px solid var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   /* Login split cards — true glass over campus photo */
   .login-glass-card {
-    @apply rounded-3xl border border-white/55 bg-white/40 text-slate-900 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.45)] backdrop-blur-2xl;
-    -webkit-backdrop-filter: blur(28px) saturate(1.35);
+    @apply rounded-3xl;
+    border: 1px solid var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
     backdrop-filter: blur(28px) saturate(1.35);
-  }
-
-  html.dark .login-glass-card {
-    @apply border-white/15 bg-slate-950/45 text-slate-100 shadow-[0_20px_60px_-18px_rgba(0,0,0,0.55)];
+    -webkit-backdrop-filter: blur(28px) saturate(1.35);
   }
 
   html.dark .login-glass-card h1,
@@ -152,11 +174,22 @@
   }
 
   .glass-nav {
-    @apply border-white/70 bg-white/88 text-slate-900 shadow-lg shadow-slate-900/10 backdrop-blur-2xl;
+    @apply text-slate-900 shadow-lg shadow-slate-900/10;
+    border-color: var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
   }
 
   .dashboard-page-header {
-    @apply mb-6 rounded-2xl border border-white/80 bg-white/90 p-5 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.28)] backdrop-blur-2xl sm:p-6;
+    @apply mb-6 rounded-2xl p-5 sm:p-6;
+    border: 1px solid var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-heading {
@@ -175,11 +208,23 @@
   }
 
   .dashboard-surface {
-    @apply overflow-hidden rounded-2xl border border-white/80 bg-white/90 text-slate-900 shadow-[0_16px_48px_-14px_rgba(15,23,42,0.28)] backdrop-blur-2xl;
+    @apply overflow-hidden rounded-2xl;
+    border: 1px solid var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-surface-muted {
-    @apply overflow-hidden rounded-2xl border border-white/75 bg-white/85 text-slate-900 shadow-[0_10px_36px_-12px_rgba(15,23,42,0.24)] backdrop-blur-xl;
+    @apply overflow-hidden rounded-2xl;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg-muted);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   /* On white/glass panels: invert back to dark text for readability */
@@ -223,15 +268,21 @@
   }
 
   .academic-calendar-panel {
-    @apply rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white/90 via-white/88 to-slate-50/80 p-4 shadow-[0_12px_40px_-14px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-5;
+    @apply rounded-2xl p-4 sm:p-5;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .academic-calendar-nav-btn {
-    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-[#1A5CA0]/40 hover:bg-[#EBF3FF] hover:text-[#0D3F72] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] active:translate-y-0;
+    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-white/55 bg-white/50 text-slate-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:-translate-y-px hover:border-[#1A5CA0]/40 hover:bg-[#EBF3FF]/80 hover:text-[#0D3F72] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] active:translate-y-0;
   }
 
   .academic-calendar-select {
-    @apply h-9 rounded-xl border border-slate-200/90 bg-white px-2.5 text-xs font-bold text-slate-900 shadow-sm transition-all duration-200 hover:border-[#1A5CA0]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0];
+    @apply h-9 rounded-xl border border-white/55 bg-white/50 px-2.5 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#1A5CA0]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0];
   }
 
   .academic-calendar-day {
@@ -273,7 +324,13 @@
   }
 
   .dashboard-loading-panel {
-    @apply flex min-h-[40vh] items-center justify-center rounded-2xl border border-white/80 bg-white/97 p-8 shadow-xl shadow-slate-900/14 backdrop-blur-2xl;
+    @apply flex min-h-[40vh] items-center justify-center rounded-2xl p-8;
+    border: 1px solid var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-section {
@@ -341,43 +398,83 @@
   }
 
   .qr-action-secondary {
-    @apply border-2 border-[#1A5CA0] bg-white font-semibold text-[#0D3F72] shadow-sm hover:bg-[#EBF3FF];
+    @apply border-2 border-[#1A5CA0] font-semibold text-[#0D3F72] shadow-sm;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .qr-action-secondary:hover {
+    background: var(--svce-blue-tint);
   }
 
   .admin-row-action-btn {
-    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] focus-visible:outline-offset-1;
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--svce-text-secondary)] shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-1;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .admin-row-action-btn:hover {
+    background: var(--glass-bg-strong);
   }
 
   .admin-row-action-btn-danger {
-    @apply border-red-300/90 bg-red-50 text-red-700 hover:bg-red-100;
+    border-color: color-mix(in srgb, var(--svce-danger) 40%, transparent);
+    background: var(--svce-danger-tint);
+    color: var(--svce-danger);
+  }
+
+  .admin-row-action-btn-danger:hover {
+    filter: brightness(1.05);
   }
 
   .admin-row-action-btn:disabled {
-    @apply cursor-not-allowed border-slate-200/70 bg-slate-100/90 text-slate-400 opacity-100 hover:bg-slate-100/90;
+    @apply cursor-not-allowed opacity-55;
   }
 
   .admin-table-actions-head {
-    @apply sticky right-0 z-10 bg-slate-50/98;
+    @apply sticky right-0 z-10;
+    background: var(--glass-bg-muted);
   }
 
   .admin-table-actions-cell {
-    @apply sticky right-0 z-10 bg-white/98;
+    @apply sticky right-0 z-10;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-table-row:hover .admin-table-actions-cell {
-    @apply bg-slate-50/95;
+    background: var(--glass-bg-strong);
   }
 
   .dashboard-table-head {
-    @apply border-b border-slate-200/90 bg-slate-100/95 text-left text-xs font-bold uppercase tracking-wider text-slate-900;
+    @apply border-b text-left text-xs font-bold uppercase tracking-wider;
+    border-color: var(--glass-border);
+    background: var(--glass-bg-muted);
+    color: var(--glass-fg);
   }
 
   .dashboard-table-row {
-    @apply border-b border-slate-200/70 bg-white/55 transition-colors hover:bg-slate-50/95;
+    @apply border-b transition-colors;
+    border-color: color-mix(in srgb, var(--glass-border) 70%, transparent);
+    background: transparent;
+  }
+
+  .dashboard-table-row:hover {
+    background: var(--glass-bg-muted);
   }
 
   .dashboard-section-bar {
-    @apply mb-3 flex items-center justify-between rounded-xl border border-white/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur-xl;
+    @apply mb-3 flex items-center justify-between rounded-xl px-4 py-3;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg-muted);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-link {
@@ -385,7 +482,16 @@
   }
 
   .dashboard-filter-chip {
-    @apply rounded-full border border-white/70 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur-md transition-colors hover:bg-white;
+    @apply rounded-full px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-colors;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--glass-fg);
+    backdrop-filter: blur(12px) saturate(1.3);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+  }
+
+  .dashboard-filter-chip:hover {
+    background: var(--glass-bg-strong);
   }
 
   .dashboard-filter-chip-active {
@@ -410,15 +516,30 @@
   }
 
   .security-scan-card {
-    @apply rounded-2xl border border-white/85 bg-white/97 text-slate-900 shadow-2xl shadow-slate-900/18 backdrop-blur-2xl ring-1 ring-white/60;
+    @apply rounded-2xl ring-1 ring-white/40;
+    border: 1px solid var(--glass-border-strong);
+    background: var(--glass-bg-strong);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .security-scan-dock {
-    @apply shrink-0 border-t border-white/80 bg-gradient-to-b from-white/90 to-white/98 px-3 py-3 backdrop-blur-xl sm:px-5 sm:py-4;
+    @apply shrink-0 border-t px-3 py-3 sm:px-5 sm:py-4;
+    border-color: var(--glass-border);
+    background: var(--glass-bg-strong);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .security-info-pill {
-    @apply inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-slate-600 shadow-sm;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-sm;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--glass-fg-muted);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .security-action-btn {
@@ -426,10 +547,16 @@
   }
 
   .security-identity-card {
-    @apply rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-md backdrop-blur-sm;
+    @apply rounded-2xl p-4;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--glass-fg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
-  /* Dark mode — elevated surfaces with subtle blue depth */
+  /* Dark mode liquid surfaces — luminous glass over night campus */
   html.dark .dashboard-shell .glass-panel,
   html.dark .dashboard-shell .glass-panel-strong,
   html.dark .dashboard-shell .glass-nav,
@@ -438,35 +565,33 @@
   html.dark .dashboard-shell .dashboard-surface-muted,
   html.dark .dashboard-shell .dashboard-loading-panel,
   html.dark .dashboard-shell .security-scan-card,
-  html.dark .dashboard-shell .academic-calendar-panel {
-    border-color: rgb(148 163 184 / 0.2) !important;
-    background:
-      linear-gradient(165deg, rgb(30 41 59 / 0.78) 0%, rgb(15 23 42 / 0.84) 100%) !important;
-    color: rgb(248 250 252) !important;
-    box-shadow:
-      0 0 0 1px rgb(255 255 255 / 0.05) inset,
-      0 12px 28px -8px rgb(0 0 0 / 0.5),
-      0 4px 10px -4px rgb(0 0 0 / 0.35) !important;
-    --tw-shadow-color: rgb(0 0 0 / 0.35);
+  html.dark .dashboard-shell .security-identity-card,
+  html.dark .dashboard-shell .academic-calendar-panel,
+  html.dark .dashboard-shell .liquid-glass {
+    border-color: var(--glass-border) !important;
+    background: var(--glass-bg) !important;
+    color: var(--glass-fg) !important;
+    box-shadow: var(--glass-shadow) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
   }
 
   html.dark .dashboard-shell .glass-panel-strong,
   html.dark .dashboard-shell .dashboard-page-header,
   html.dark .dashboard-shell .dashboard-surface,
-  html.dark .dashboard-shell .dashboard-loading-panel {
-    background:
-      linear-gradient(165deg, rgb(36 48 72 / 0.82) 0%, rgb(15 23 42 / 0.88) 100%) !important;
+  html.dark .dashboard-shell .dashboard-loading-panel,
+  html.dark .dashboard-shell .security-scan-card,
+  html.dark .dashboard-shell .glass-nav {
+    border-color: var(--glass-border-strong) !important;
+    background: var(--glass-bg-strong) !important;
   }
 
-  html.dark .dashboard-shell .dashboard-surface-muted {
-    background:
-      linear-gradient(165deg, rgb(30 41 59 / 0.72) 0%, rgb(15 23 42 / 0.78) 100%) !important;
-  }
-
-  html.dark .dashboard-shell .dashboard-section-bar {
-    border-color: rgb(148 163 184 / 0.14) !important;
-    background-color: rgb(30 41 59 / 0.65) !important;
-    color: rgb(226 232 240) !important;
+  html.dark .dashboard-shell .dashboard-surface-muted,
+  html.dark .dashboard-shell .dashboard-section-bar,
+  html.dark .dashboard-shell .security-scan-dock {
+    border-color: var(--glass-border) !important;
+    background: var(--glass-bg-muted) !important;
+    color: var(--glass-fg) !important;
   }
 
   html.dark .dashboard-shell .dashboard-heading,
@@ -576,7 +701,11 @@
   }
 
   html.dark .dashboard-shell .bg-white {
-    background-color: rgb(30 41 59) !important;
+    background: var(--glass-bg-strong) !important;
+    border-color: var(--glass-border) !important;
+    color: var(--glass-fg) !important;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   html.dark .dashboard-shell .bg-white\/45,
@@ -586,7 +715,19 @@
   html.dark .dashboard-shell .bg-white\/70,
   html.dark .dashboard-shell .bg-white\/75,
   html.dark .dashboard-shell .bg-white\/80 {
-    background-color: rgb(51 65 85 / 0.45) !important;
+    background: var(--glass-bg-muted) !important;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  html.dark .dashboard-shell .bg-white\/90,
+  html.dark .dashboard-shell .bg-white\/92,
+  html.dark .dashboard-shell .bg-white\/95,
+  html.dark .dashboard-shell .bg-white\/97,
+  html.dark .dashboard-shell .bg-white\/98 {
+    background: var(--glass-bg-strong) !important;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   html.dark .dashboard-shell .academic-calendar-nav-btn {

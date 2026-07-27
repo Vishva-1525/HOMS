@@ -37,7 +37,7 @@ export function NotificationDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-md p-2 text-[#4B5563] hover:bg-[#F5F7FA]"
+        className="relative rounded-md p-2 text-[var(--svce-text-secondary)] hover:bg-white/40 dark:hover:bg-white/10"
         aria-label="Notifications"
         aria-expanded={open}
       >
@@ -58,12 +58,12 @@ export function NotificationDropdown({
 
           <div
             className={cn(
-              'z-50 overflow-hidden bg-white shadow-lg',
-              'fixed inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:max-h-none md:w-[min(360px,calc(100vw-2rem))] md:rounded-xl md:border md:border-[var(--svce-border-default)]',
+              'z-50 overflow-hidden glass-panel-strong',
+              'fixed inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:max-h-none md:w-[min(360px,calc(100vw-2rem))] md:rounded-xl',
             )}
           >
-            <div className="flex items-center justify-between border-b border-[var(--svce-border-default)] px-4 py-3 md:py-3">
-              <p className="text-sm font-semibold text-[#1A1A2E]">Notifications</p>
+            <div className="flex items-center justify-between border-b border-white/40 px-4 py-3 dark:border-white/10 md:py-3">
+              <p className="text-sm font-semibold text-[var(--svce-text-primary)]">Notifications</p>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button

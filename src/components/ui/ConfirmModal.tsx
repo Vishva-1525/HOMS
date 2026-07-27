@@ -51,7 +51,7 @@ export function ConfirmModal({
         aria-labelledby="confirm-modal-title"
         aria-describedby="confirm-modal-description"
         className={cn(
-          'relative z-10 w-full max-w-[440px] rounded-[var(--radius-lg)] border border-[var(--svce-border-default)] bg-[var(--svce-white)] p-6',
+          'relative z-10 w-full max-w-[440px] glass-panel-strong p-6',
         )}
       >
         <h2

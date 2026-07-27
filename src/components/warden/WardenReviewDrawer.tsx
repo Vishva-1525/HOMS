@@ -25,9 +25,9 @@ interface WardenReviewDrawerProps {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-[var(--svce-border-default)] py-2.5 text-sm last:border-0">
-      <span className="text-[#4B5563]">{label}</span>
-      <span className="text-right font-medium text-[#1A1A2E]">{value}</span>
+    <div className="flex justify-between gap-4 border-b border-white/35 py-2.5 text-sm last:border-0 dark:border-white/10">
+      <span className="text-[var(--svce-text-secondary)]">{label}</span>
+      <span className="text-right font-medium text-[var(--svce-text-primary)]">{value}</span>
     </div>
   )
 }
@@ -51,8 +51,8 @@ function ParentPhoneRow({ phone }: { phone: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--svce-border-default)] py-2.5 text-sm last:border-0">
-      <span className="shrink-0 text-[#4B5563]">Parent phone</span>
+    <div className="flex items-center justify-between gap-3 border-b border-white/35 py-2.5 text-sm last:border-0 dark:border-white/10">
+      <span className="shrink-0 text-[var(--svce-text-secondary)]">Parent phone</span>
       <div className="flex min-w-0 items-center gap-1.5">
         <a
           href={dialableHref(phone)}
@@ -106,22 +106,22 @@ export function WardenReviewDrawer({
       />
       <aside
         className={cn(
-          'absolute inset-x-0 bottom-0 flex max-h-[92dvh] w-full flex-col rounded-t-2xl border-t border-[var(--svce-border-default)] bg-white shadow-xl',
+          'absolute inset-x-0 bottom-0 flex max-h-[92dvh] w-full flex-col rounded-t-2xl glass-panel-strong border-t',
           'animate-[slideUpFull_0.3s_ease-out]',
           'md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:max-w-[480px] md:rounded-none md:border-l md:border-t-0 md:animate-[slideInRight_0.25s_ease-out]',
         )}
       >
-        <div className="border-b border-[var(--svce-border-default)] px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-semibold text-[#1A1A2E]">
+        <div className="border-b border-white/40 px-4 py-4 sm:px-6 dark:border-white/10">
+          <h2 className="text-lg font-semibold text-[var(--svce-text-primary)]">
             {isReject ? 'Reject request' : 'Review request'}
           </h2>
-          <p className="mt-0.5 text-sm text-[#4B5563]">
+          <p className="mt-0.5 text-sm text-[var(--svce-text-secondary)]">
             {getStudentName(student)} · {getStudentReg(student)}
           </p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-          <div className="flex items-center gap-4 rounded-xl border border-[var(--svce-border-default)] bg-[var(--svce-page-bg)] p-4">
+          <div className="liquid-glass flex items-center gap-4 rounded-xl p-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EBF3FF]">
               <User className="h-7 w-7 text-[#1A5CA0]" strokeWidth={1.5} />
             </div>
@@ -186,13 +186,13 @@ export function WardenReviewDrawer({
               onChange={(e) => onRemarksChange(e.target.value)}
               disabled={submitting}
               placeholder={isReject ? 'Reason for rejection…' : 'Optional notes for the student…'}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--svce-border-default)] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-2 disabled:opacity-50"
+              className="w-full rounded-xl liquid-glass px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-2 disabled:opacity-50"
             />
             {error && <p className="text-sm text-[#DC2626]">{error}</p>}
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-[var(--svce-border-default)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+        <div className="space-y-2 border-t border-white/40 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-white/10">
           <Button
             type="button"
             className="w-full"

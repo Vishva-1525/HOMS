@@ -24,7 +24,7 @@ export function ActivePassBanner({
 
   return (
     <>
-      <div className="glass-panel-strong relative overflow-hidden border-emerald-400/40 bg-gradient-to-br from-white/97 via-emerald-50/85 to-white/97 p-4 sm:p-5">
+      <div className="glass-panel-strong relative overflow-hidden border-emerald-400/35 p-4 sm:p-5">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400/0 via-emerald-500/55 to-emerald-400/0" />
         <span className="absolute right-3 top-3 rounded-full bg-[var(--svce-green-tint)] px-2.5 py-0.5 text-[length:var(--svce-text-small)] font-semibold text-emerald-800">
           Active pass

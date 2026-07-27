@@ -74,7 +74,7 @@ export function TimeScrollPicker({
       role="listbox"
       aria-label="Select time"
       className={cn(
-        'time-scroll-picker max-h-44 overflow-y-auto overscroll-contain scroll-smooth rounded-xl border border-white/55 bg-white/50 p-1 shadow-sm backdrop-blur-md',
+        'time-scroll-picker max-h-44 overflow-y-auto overscroll-contain scroll-smooth rounded-xl liquid-glass p-1',
         disabled && 'pointer-events-none opacity-50',
       )}
     >
