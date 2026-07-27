@@ -241,6 +241,7 @@ export function StudentNewRequestPage() {
             hint={!form.passType ? 'Select a pass type first.' : undefined}
             calendarMap={calendarMap}
             calendarLoading={calendarLoading}
+            requireAcademicDay={false}
           />
           {!form.passType && !submitting && (
             <button

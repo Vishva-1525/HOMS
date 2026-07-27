@@ -29,9 +29,8 @@ interface DateTimePickerProps {
   calendarMap: Map<string, AcademicCalendarDay>
   calendarLoading?: boolean
   /**
-   * When true (default), only working days / study holidays are selectable.
-   * Set false for return dates so staypass windows that fall on weekends
-   * still offer valid return days.
+   * When true, only working days / study holidays are selectable.
+   * Defaults to false — all pass types may use any calendar day.
    */
   requireAcademicDay?: boolean
 }
@@ -95,7 +94,7 @@ export function DateTimePicker({
   hint,
   calendarMap,
   calendarLoading,
-  requireAcademicDay = true,
+  requireAcademicDay = false,
 }: DateTimePickerProps) {
   const parsed = parseDatetimeLocal(value)
   const selectedDateKey = parsed?.dateKey
@@ -284,7 +283,7 @@ export function DateTimePicker({
             <p className="mt-2 text-[11px] text-slate-500">
               {requireAcademicDay
                 ? 'Working days and study holidays only.'
-                : 'Any day in the return window (weekends and holidays allowed).'}
+                : 'All days available, including weekends and holidays.'}
             </p>
             {rangeLabel && (
               <p className="mt-1 text-[11px] font-medium text-[#0D3F72]">

@@ -1,9 +1,4 @@
 import type { PassType, SpecialPassPurpose, AcademicCalendarDay } from '@/lib/types'
-import {
-  getDateRestrictionMessage,
-  isDateSelectableForOutpass,
-  toDateKey,
-} from '@/lib/academic-calendar'
 import { specialPassPurposeRequiresDocument } from '@/lib/special-pass'
 
 export interface NewRequestFormValues {
@@ -37,24 +32,12 @@ function calendarDaysBetween(departure: Date, returnDate: Date): number {
   return Math.round(diff / DAY_MS)
 }
 
-function validateCalendarDate(
-  dateIso: string,
-  calendarMap: Map<string, AcademicCalendarDay> | undefined,
-): string | null {
-  if (!calendarMap || calendarMap.size === 0) return null
-  const dateKey = toDateKey(new Date(dateIso))
-  if (!isDateSelectableForOutpass(dateKey, calendarMap)) {
-    return getDateRestrictionMessage(dateKey, calendarMap) ?? 'This date is not available.'
-  }
-  return null
-}
-
 export function getPassTypeDurationHint(passType: PassType | null): string | null {
   switch (passType) {
     case 'outpass':
       return `Outpass: return the same day, within ${OUTPASS_MAX_HOURS} hours of departure.`
     case 'staypass':
-      return `Staypass: choose any return date up to ${STAYPASS_MAX_DAYS} days after departure (including weekends and holidays).`
+      return `Staypass: return ${STAYPASS_MIN_DAYS}–${STAYPASS_MAX_DAYS} days after departure (any day).`
     case 'night_pass':
       return `Night Pass: return within ${NIGHT_PASS_MAX_HOURS} hours of departure.`
     case 'special_pass':
@@ -66,7 +49,7 @@ export function getPassTypeDurationHint(passType: PassType | null): string | nul
 
 export function validateNewRequestForm(
   values: NewRequestFormValues,
-  calendarMap?: Map<string, AcademicCalendarDay>,
+  _calendarMap?: Map<string, AcademicCalendarDay>,
 ): NewRequestFormErrors {
   const errors: NewRequestFormErrors = {}
 
@@ -127,12 +110,6 @@ export function validateNewRequestForm(
   if (returnDate.getTime() <= departure.getTime()) {
     errors.returnBy = 'Return must be after departure.'
   }
-
-  // Only departure must fall on a working day / study holiday.
-  // Return may be any day within the pass duration (incl. weekends),
-  // otherwise staypass windows that land on Sat–Sun show zero return dates.
-  const departureRestriction = validateCalendarDate(values.departureAt, calendarMap)
-  if (departureRestriction) errors.departureAt = departureRestriction
 
   if (errors.departureAt || errors.returnBy || !values.passType) {
     return errors
