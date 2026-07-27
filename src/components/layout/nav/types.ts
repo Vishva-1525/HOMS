@@ -14,8 +14,19 @@ export type NavConfig = NavItem[]
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   student: 'Student',
-  warden: 'Warden',
+  warden: 'RT',
   security_guard: 'Security',
   parent: 'Parent',
   admin: 'Admin',
+}
+
+/** RT vs superior warden display name (same DB role). */
+export function getRoleDisplayLabel(
+  role: UserRole,
+  wardenTier?: 'rt' | 'superior' | null,
+): string {
+  if (role === 'warden') {
+    return wardenTier === 'superior' ? 'Warden' : 'RT'
+  }
+  return ROLE_LABELS[role]
 }

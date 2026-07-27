@@ -31,6 +31,9 @@ export interface Profile {
   phone: string
   password_changed: boolean
   gender?: HostelGender | null
+  warden_tier?: 'rt' | 'superior' | null
+  is_available?: boolean | null
+  unavailable_reason?: string | null
   created_at: string
 }
 

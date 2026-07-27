@@ -3,7 +3,7 @@ import { LogOut } from 'lucide-react'
 import { ShellLogo } from '@/components/layout/ShellLogo'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import type { NavItem } from '@/components/layout/nav'
-import { ROLE_LABELS } from '@/components/layout/nav'
+import { getRoleDisplayLabel } from '@/components/layout/nav'
 import type { UserRole } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -11,6 +11,7 @@ interface SidebarProps {
   collapsed: boolean
   navItems: NavItem[]
   role: UserRole
+  roleLabel?: string
   userName: string
   onSignOut: () => void | Promise<void>
   getNavBadgeCount?: (path: string) => number
@@ -21,11 +22,13 @@ export function Sidebar({
   collapsed,
   navItems,
   role,
+  roleLabel,
   userName,
   onSignOut,
   getNavBadgeCount,
   signingOut = false,
 }: SidebarProps) {
+  const displayRole = roleLabel ?? getRoleDisplayLabel(role)
   return (
     <aside
       className={cn(
@@ -37,7 +40,7 @@ export function Sidebar({
         <ShellLogo collapsed={collapsed} showLabel={!collapsed} />
         {!collapsed && (
           <span className="inline-flex w-fit rounded-full bg-[#1A5CA0] px-2.5 py-0.5 text-xs font-medium text-white">
-            {ROLE_LABELS[role]}
+            {displayRole}
           </span>
         )}
       </div>
@@ -89,7 +92,7 @@ export function Sidebar({
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{userName}</p>
-              <p className="truncate text-xs text-white/70">{ROLE_LABELS[role]}</p>
+              <p className="truncate text-xs text-white/70">{displayRole}</p>
             </div>
           )}
         </div>

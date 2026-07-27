@@ -21,9 +21,15 @@ interface WardenPendingCardProps {
   pass: OutpassWithStudent
   onApprove: () => void
   onReject: () => void
+  actionsDisabled?: boolean
 }
 
-export function WardenPendingMobileCard({ pass, onApprove, onReject }: WardenPendingCardProps) {
+export function WardenPendingMobileCard({
+  pass,
+  onApprove,
+  onReject,
+  actionsDisabled = false,
+}: WardenPendingCardProps) {
   return (
     <MobileDataCard>
       <div className="flex items-start justify-between gap-2">
@@ -50,20 +56,26 @@ export function WardenPendingMobileCard({ pass, onApprove, onReject }: WardenPen
         <MobileDataCardRow label="Submitted" value={formatRelativeTime(pass.created_at)} />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button type="button" size="sm" onClick={onApprove}>
-          Approve
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="text-[#DC2626] hover:bg-[#FEF2F2]"
-          onClick={onReject}
-        >
-          Reject
-        </Button>
-      </div>
+      {actionsDisabled ? (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-900">
+          Read-only while Away — superior wardens can approve
+        </p>
+      ) : (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button type="button" size="sm" onClick={onApprove}>
+            Approve
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-[#DC2626] hover:bg-[#FEF2F2]"
+            onClick={onReject}
+          >
+            Reject
+          </Button>
+        </div>
+      )}
     </MobileDataCard>
   )
 }

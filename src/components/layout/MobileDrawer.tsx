@@ -4,7 +4,7 @@ import { LogOut, X } from 'lucide-react'
 import { ShellLogo } from '@/components/layout/ShellLogo'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import type { NavItem } from '@/components/layout/nav'
-import { ROLE_LABELS } from '@/components/layout/nav'
+import { getRoleDisplayLabel } from '@/components/layout/nav'
 import type { UserRole } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +13,7 @@ interface MobileDrawerProps {
   onClose: () => void
   navItems: NavItem[]
   role: UserRole
+  roleLabel?: string
   userName: string
   onSignOut: () => void | Promise<void>
   getNavBadgeCount?: (path: string) => number
@@ -24,11 +25,13 @@ export function MobileDrawer({
   onClose,
   navItems,
   role,
+  roleLabel,
   userName,
   onSignOut,
   getNavBadgeCount,
   signingOut = false,
 }: MobileDrawerProps) {
+  const displayRole = roleLabel ?? getRoleDisplayLabel(role)
   useEffect(() => {
     if (!open) return
     const previous = document.body.style.overflow
@@ -53,7 +56,7 @@ export function MobileDrawer({
           <div>
             <ShellLogo />
             <span className="mt-3 inline-flex rounded-full bg-[#1A5CA0] px-2.5 py-0.5 text-xs font-medium text-white">
-              {ROLE_LABELS[role]}
+              {displayRole}
             </span>
           </div>
           <button
@@ -103,7 +106,7 @@ export function MobileDrawer({
             <UserAvatar name={userName} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{userName}</p>
-              <p className="truncate text-xs text-white/70">{ROLE_LABELS[role]}</p>
+              <p className="truncate text-xs text-white/70">{displayRole}</p>
             </div>
           </div>
 

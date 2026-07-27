@@ -9,6 +9,7 @@ export function ReportsPage() {
   const { user } = useAuth()
   const [block, setBlock] = useState<string | null>(null)
   const [gender, setGender] = useState<'male' | 'female' | null>(null)
+  const [tier, setTier] = useState<'rt' | 'superior'>('rt')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,11 +21,14 @@ export function ReportsPage() {
         const assigned = await fetchWardenAssignment(user.id)
         setBlock(assigned?.block ?? null)
         setGender(assigned?.gender ?? null)
-        if (!assigned?.block || !assigned.gender) {
-          setError('No hostel block/gender assigned to your account. Contact the administrator.')
+        setTier(assigned?.tier ?? 'rt')
+        if (!assigned?.gender) {
+          setError('No gender assigned to your account. Contact the administrator.')
+        } else if (assigned.tier === 'rt' && !assigned.block) {
+          setError('No hostel block assigned to your account. Contact the administrator.')
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load block assignment')
+        setError(err instanceof Error ? err.message : 'Failed to load assignment')
       } finally {
         setLoading(false)
       }
@@ -39,17 +43,27 @@ export function ReportsPage() {
     )
   }
 
-  if (error || !block || !gender) {
+  if (error || !gender || (tier === 'rt' && !block)) {
     return (
       <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#991B1B]">
-        {error ?? 'Block assignment not found.'}
+        {error ?? 'Assignment not found.'}
       </div>
+    )
+  }
+
+  if (tier === 'superior') {
+    return (
+      <ReportsPanel
+        title={`Warden reports — all ${gender} blocks`}
+        fixedHostelBlock={null}
+        fixedGender={gender}
+      />
     )
   }
 
   return (
     <ReportsPanel
-      title={`Reports — ${formatBlockLabel(block)} (${gender})`}
+      title={`RT reports — ${formatBlockLabel(block!)} (${gender})`}
       fixedHostelBlock={block}
       fixedGender={gender}
     />

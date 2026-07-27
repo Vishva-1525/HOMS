@@ -30,6 +30,9 @@ interface WardenData {
   refreshing: boolean
   error: string | null
   scopeError: string | null
+  scope: ReturnType<typeof useWardenScope>['scope']
+  setAvailability: ReturnType<typeof useWardenScope>['setAvailability']
+  refetchScope: ReturnType<typeof useWardenScope>['refetch']
   refetch: () => Promise<void>
 }
 
@@ -107,7 +110,13 @@ async function fetchGateLogsForPassIds(passIds: string[]): Promise<GateLog[]> {
 }
 
 export function useWardenData(): WardenData {
-  const { scope, loading: scopeLoading, error: scopeError } = useWardenScope()
+  const {
+    scope,
+    loading: scopeLoading,
+    error: scopeError,
+    setAvailability,
+    refetch: refetchScope,
+  } = useWardenScope()
   const [passes, setPasses] = useState<OutpassWithStudent[]>([])
   const [gateLogs, setGateLogs] = useState<GateLog[]>([])
   const [extensions, setExtensions] = useState<ExtensionRequest[]>([])
@@ -294,6 +303,9 @@ export function useWardenData(): WardenData {
       refreshing,
       error,
       scopeError,
+      scope,
+      setAvailability,
+      refetchScope,
       refetch: fetchData,
     }),
     [
@@ -308,6 +320,9 @@ export function useWardenData(): WardenData {
       refreshing,
       error,
       scopeError,
+      scope,
+      setAvailability,
+      refetchScope,
       fetchData,
     ],
   )

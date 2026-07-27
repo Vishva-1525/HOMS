@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react'
 import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
+import { WardenAvailabilityPanel } from '@/components/warden/WardenAvailabilityPanel'
 import { WardenCalendarPanel } from '@/components/warden/WardenCalendarPanel'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
@@ -15,7 +16,6 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
-import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { getGreeting } from '@/lib/outpass'
 import { formatPassDuration, formatRelativeTime, formatTodayDate } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
@@ -24,8 +24,16 @@ import type { OutpassWithStudent } from '@/lib/types'
 
 export function WardenHomePage() {
   const { profile, user } = useAuth()
-  const { scope } = useWardenScope()
-  const { passes, stats, loading, error, scopeError, refetch } = useWardenDataContext()
+  const {
+    passes,
+    stats,
+    loading,
+    error,
+    scopeError,
+    scope,
+    setAvailability,
+    refetch,
+  } = useWardenDataContext()
   const { violations, loading: violationsLoading } = usePassLimitViolations(scope)
   const [drawerMode, setDrawerMode] = useState<'approve' | 'reject' | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<OutpassWithStudent | null>(null)
@@ -56,6 +64,10 @@ export function WardenHomePage() {
 
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedRequest || !user) return
+    if (scope && !scope.canApprove) {
+      setActionError('You are Away — approvals are handled by superior wardens. Switch back to Working to approve.')
+      return
+    }
 
     if (action === 'reject' && !remarks.trim()) {
       setActionError('Remarks are required when rejecting a request.')
@@ -113,6 +125,10 @@ export function WardenHomePage() {
         </div>
       )}
 
+      {scope && (
+        <WardenAvailabilityPanel scope={scope} onSetAvailability={setAvailability} />
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Pending review"
@@ -144,7 +160,9 @@ export function WardenHomePage() {
 
       <OverdueAlertBanner count={stats.overdueReturns} />
 
-      <PassPeriodStatsPanel title="RT pass statistics" />
+      <PassPeriodStatsPanel
+        title={scope?.tier === 'superior' ? 'Warden pass statistics' : 'RT pass statistics'}
+      />
 
       {!violationsLoading && violations.length > 0 && (
         <section className="dashboard-surface-muted space-y-4 p-4 sm:p-5">
@@ -233,13 +251,19 @@ export function WardenHomePage() {
                   accessor: 'id',
                   render: (row) => (
                     <div className="flex gap-2">
-                      <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!scope?.canApprove}
+                        onClick={() => openDrawer(row, 'approve')}
+                      >
                         Approve
                       </Button>
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
+                        disabled={!scope?.canApprove}
                         className="text-[#DC2626] hover:bg-[#FEF2F2]"
                         onClick={() => openDrawer(row, 'reject')}
                       >
@@ -256,6 +280,7 @@ export function WardenHomePage() {
               mobileCardRender={(row) => (
                 <WardenPendingMobileCard
                   pass={row}
+                  actionsDisabled={!scope?.canApprove}
                   onApprove={() => openDrawer(row, 'approve')}
                   onReject={() => openDrawer(row, 'reject')}
                 />

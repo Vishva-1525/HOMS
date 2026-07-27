@@ -79,7 +79,14 @@ export async function fetchWardenBlockAssignment(userId: string): Promise<string
 
 export async function fetchWardenAssignment(
   userId: string,
-): Promise<{ block: string; gender: 'male' | 'female' | null } | null> {
+): Promise<{
+  block: string | null
+  gender: 'male' | 'female' | null
+  tier: 'rt' | 'superior'
+  isAvailable: boolean
+  unavailableReason: string | null
+  escalatedBlocks: string[]
+} | null> {
   const [{ data: assignment }, { data: profile }] = await Promise.all([
     supabase
       .from('staff_assignments')
@@ -87,14 +94,44 @@ export async function fetchWardenAssignment(
       .eq('profile_id', userId)
       .eq('assignment_type', 'block')
       .maybeSingle(),
-    supabase.from('profiles').select('gender').eq('id', userId).maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('gender, warden_tier, is_available, unavailable_reason')
+      .eq('id', userId)
+      .maybeSingle(),
   ])
 
-  const block = assignment?.assignment_value?.trim()
-  if (!block) return null
+  const gender =
+    profile?.gender === 'female' ? 'female' : profile?.gender === 'male' ? 'male' : null
+  if (!gender) return null
 
-  const gender = profile?.gender === 'female' ? 'female' : profile?.gender === 'male' ? 'male' : null
-  return { block, gender }
+  const tier = profile?.warden_tier === 'superior' ? 'superior' : 'rt'
+  const block = assignment?.assignment_value?.trim() || null
+  const isAvailable = profile?.is_available !== false
+  const unavailableReason = profile?.unavailable_reason?.trim() || null
+
+  let escalatedBlocks: string[] = []
+  if (tier === 'superior') {
+    const { data: blocks, error } = await supabase.rpc('get_unavailable_rt_blocks', {
+      p_gender: gender,
+    })
+    if (!error && Array.isArray(blocks)) {
+      escalatedBlocks = blocks
+        .map((b) => String(b ?? '').trim())
+        .filter(Boolean)
+    }
+  } else if (!block) {
+    return null
+  }
+
+  return {
+    block,
+    gender,
+    tier,
+    isAvailable,
+    unavailableReason,
+    escalatedBlocks,
+  }
 }
 
 export async function fetchDistinctBlocks(): Promise<string[]> {

@@ -6,7 +6,6 @@ import { Spinner } from '@/components/ui/spinner'
 import { WardenExtensionDrawer } from '@/components/warden/WardenExtensionDrawer'
 import { WardenExtensionMobileCard } from '@/components/warden/WardenMobileCards'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
-import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { formatReturnTime } from '@/lib/outpass'
 import { formatRelativeTime } from '@/lib/relative-time'
 import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
@@ -15,8 +14,7 @@ import { supabase } from '@/lib/supabase'
 import type { ExtensionWithOutpass } from '@/lib/types'
 
 export function ExtensionRequestsPage() {
-  const { refetch } = useWardenDataContext()
-  const { scope, loading: scopeLoading, error: scopeError } = useWardenScope()
+  const { refetch, scope, loading: dataLoading, scopeError } = useWardenDataContext()
   const [extensions, setExtensions] = useState<ExtensionWithOutpass[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,7 +66,7 @@ export function ExtensionRequestsPage() {
   }, [scope])
 
   useEffect(() => {
-    if (scopeLoading) return
+    if (dataLoading) return
     void fetchExtensions()
 
     if (!scope) return
@@ -85,7 +83,7 @@ export function ExtensionRequestsPage() {
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [scope, scopeLoading, fetchExtensions])
+  }, [scope, dataLoading, fetchExtensions])
 
   function openDrawer(ext: ExtensionWithOutpass, mode: 'approve' | 'reject') {
     setSelectedExtension(ext)
@@ -104,6 +102,10 @@ export function ExtensionRequestsPage() {
 
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedExtension) return
+    if (scope && !scope.canApprove) {
+      setActionError('You are Away — superior wardens handle approvals while you are Away.')
+      return
+    }
 
     if (action === 'reject' && !remarks.trim()) {
       setActionError('Remarks are required when rejecting an extension.')
@@ -163,7 +165,7 @@ export function ExtensionRequestsPage() {
     }, 300)
   }
 
-  if (scopeLoading || loading) {
+  if (dataLoading || loading) {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading extensions…" />
@@ -230,13 +232,19 @@ export function ExtensionRequestsPage() {
               accessor: 'id',
               render: (row) => (
                 <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!scope?.canApprove}
+                    onClick={() => openDrawer(row, 'approve')}
+                  >
                     Approve
                   </Button>
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
+                    disabled={!scope?.canApprove}
                     className="text-[#DC2626] hover:bg-[#FEF2F2]"
                     onClick={() => openDrawer(row, 'reject')}
                   >
@@ -253,8 +261,12 @@ export function ExtensionRequestsPage() {
           mobileCardRender={(row) => (
             <WardenExtensionMobileCard
               extension={row}
-              onApprove={() => openDrawer(row, 'approve')}
-              onReject={() => openDrawer(row, 'reject')}
+              onApprove={
+                scope?.canApprove ? () => openDrawer(row, 'approve') : () => undefined
+              }
+              onReject={
+                scope?.canApprove ? () => openDrawer(row, 'reject') : () => undefined
+              }
             />
           )}
         />

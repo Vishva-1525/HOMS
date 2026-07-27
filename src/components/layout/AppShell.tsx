@@ -6,7 +6,7 @@ import { MobileDrawer } from '@/components/layout/MobileDrawer'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { SuspenseOutlet } from '@/components/layout/SuspenseOutlet'
 import { TopBar } from '@/components/layout/TopBar'
-import { getBreadcrumbLabel, getMobileNavForRole, getNavForRole } from '@/components/layout/nav'
+import { getBreadcrumbLabel, getMobileNavForRole, getNavForRole, getRoleDisplayLabel } from '@/components/layout/nav'
 import { useAuth } from '@/contexts/AuthProvider'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +47,7 @@ export function AppShell({
   const mobileNavItems = getMobileNavForRole(role)
   const breadcrumb = getBreadcrumbLabel(location.pathname, navItems)
   const userName = profile.full_name
+  const roleLabel = getRoleDisplayLabel(role, profile.warden_tier)
 
   return (
     <DashboardBackground>
@@ -54,6 +55,7 @@ export function AppShell({
         collapsed={collapsed}
         navItems={navItems}
         role={role}
+        roleLabel={roleLabel}
         userName={userName}
         onSignOut={handleSignOut}
         signingOut={signingOut}
@@ -65,6 +67,7 @@ export function AppShell({
         onClose={() => setMobileDrawerOpen(false)}
         navItems={navItems}
         role={role}
+        roleLabel={roleLabel}
         userName={userName}
         onSignOut={handleSignOut}
         signingOut={signingOut}

@@ -15,7 +15,6 @@ import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
-import { useWardenScope } from '@/hooks/warden/useWardenScope'
 import { bulkApproveOutpassRequests, bulkRejectOutpassRequests } from '@/lib/bulk-approval'
 import { classifyPass } from '@/lib/pass-classification'
 import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
@@ -26,8 +25,7 @@ import type { PassClassificationFilter } from '@/components/shared/PassListFilte
 
 export function PendingRequestsPage() {
   const { user } = useAuth()
-  const { scope } = useWardenScope()
-  const { passes, gateLogs, loading, error, scopeError, refetch } = useWardenDataContext()
+  const { passes, gateLogs, loading, error, scopeError, scope, refetch } = useWardenDataContext()
   const { violationByStudentId } = usePassLimitViolations(scope)
 
   const [nameSearch, setNameSearch] = useState('')
@@ -112,6 +110,10 @@ export function PendingRequestsPage() {
 
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedRequest || !user) return
+    if (scope && !scope.canApprove) {
+      setActionError('You are Away — approvals are handled by superior wardens.')
+      return
+    }
 
     if (action === 'reject' && !remarks.trim()) {
       setActionError('Remarks are required when rejecting a request.')
@@ -205,6 +207,12 @@ export function PendingRequestsPage() {
         </div>
       )}
 
+      {scope && !scope.canApprove && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          You are Away — this queue is read-only. Superior wardens are handling approvals for your block.
+        </div>
+      )}
+
       <PassListFilters
         nameSearch={nameSearch}
         regSearch={regSearch}
@@ -226,7 +234,7 @@ export function PendingRequestsPage() {
         onApprove={() => setBulkAction('approve')}
         onReject={() => setBulkAction('reject')}
         onClear={() => setSelectedIds(new Set())}
-        disabled={submitting}
+        disabled={submitting || !scope?.canApprove}
       />
 
       <div className="dashboard-surface">
@@ -286,13 +294,19 @@ export function PendingRequestsPage() {
               render: (row) =>
                 row.status === 'pending' ? (
                   <div className="flex gap-2">
-                    <Button type="button" size="sm" onClick={() => openDrawer(row, 'approve')}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!scope?.canApprove}
+                      onClick={() => openDrawer(row, 'approve')}
+                    >
                       Approve
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
+                      disabled={!scope?.canApprove}
                       className="text-[#DC2626] hover:bg-[#FEF2F2]"
                       onClick={() => openDrawer(row, 'reject')}
                     >
@@ -311,6 +325,7 @@ export function PendingRequestsPage() {
           mobileCardRender={(row) => (
             <WardenPendingMobileCard
               pass={row}
+              actionsDisabled={!scope?.canApprove}
               onApprove={() => openDrawer(row, 'approve')}
               onReject={() => openDrawer(row, 'reject')}
             />

@@ -34,3 +34,4 @@ export function getBreadcrumbLabel(pathname: string, nav: NavConfig): string {
 
 export * from './types'
 export { studentNav, wardenNav, securityNav, parentNav, adminNav }
+export { getRoleDisplayLabel } from './types'
