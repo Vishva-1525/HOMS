@@ -19,6 +19,7 @@ export default defineConfig({
         'favicon.svg',
       ],
       manifest: {
+        id: '/',
         name: 'HOMS — SVCE Hostel Outpass',
         short_name: 'HOMS',
         description: 'Hostel Outpass Management System for Sri Venkateswara College of Engineering',

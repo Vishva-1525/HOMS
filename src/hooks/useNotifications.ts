@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import type { NotificationLog } from '@/lib/notifications'
 import {
+  flushNotificationOutbox,
   requestNotificationDispatch,
   showLocalNotification,
 } from '@/lib/push-notifications'
@@ -78,6 +79,7 @@ export function useNotifications() {
         notificationUrl(role, item.type),
       )
       void requestNotificationDispatch(item.id)
+      void flushNotificationOutbox()
     },
     [role],
   )
@@ -85,6 +87,12 @@ export function useNotifications() {
   useEffect(() => {
     fetchNotifications()
   }, [fetchNotifications])
+
+  // Recover any stuck outbox rows when the dashboard opens
+  useEffect(() => {
+    if (!user) return
+    void flushNotificationOutbox()
+  }, [user])
 
   useEffect(() => {
     if (!user) return

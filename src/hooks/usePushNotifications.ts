@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import {
+  getPushSupportHint,
   getVapidPublicKey,
+  isIosDevice,
   isPushSupported,
+  isStandalonePwa,
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/lib/push-notifications'
@@ -13,8 +16,12 @@ export function usePushNotifications() {
   const { user } = useAuth()
   const [state, setState] = useState<PushPermissionState>('default')
   const [enabling, setEnabling] = useState(false)
+  const [standalone, setStandalone] = useState(() =>
+    typeof window !== 'undefined' ? isStandalonePwa() : false,
+  )
 
   const refreshState = useCallback(() => {
+    setStandalone(isStandalonePwa())
     if (!isPushSupported()) {
       setState('unsupported')
       return
@@ -37,7 +44,7 @@ export function usePushNotifications() {
     void subscribeToPush(user.id).then((ok) => {
       if (ok) setState('granted')
     })
-  }, [user])
+  }, [user, standalone])
 
   async function enablePush(): Promise<boolean> {
     if (!user) return false
@@ -62,6 +69,8 @@ export function usePushNotifications() {
     enabling,
     isSupported: isPushSupported(),
     hasVapidKey: Boolean(getVapidPublicKey()),
+    iosNeedsInstall: isIosDevice() && !standalone,
+    supportHint: getPushSupportHint(),
     enablePush,
     disablePush,
     refreshState,

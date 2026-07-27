@@ -10,6 +10,7 @@ import { formatReturnTime } from '@/lib/outpass'
 import { formatRelativeTime } from '@/lib/relative-time'
 import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
 import { extensionMatchesWardenScope } from '@/lib/warden-scope'
+import { flushNotificationOutbox } from '@/lib/push-notifications'
 import { supabase } from '@/lib/supabase'
 import type { ExtensionWithOutpass } from '@/lib/types'
 
@@ -153,6 +154,7 @@ export function ExtensionRequestsPage() {
     setFadingIds((prev) => new Set(prev).add(id))
     setSubmitting(false)
     closeDrawer()
+    void flushNotificationOutbox()
 
     window.setTimeout(() => {
       setFadingIds((prev) => {

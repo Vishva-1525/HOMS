@@ -6,6 +6,7 @@ import { StudentDashboardHero } from '@/components/student/StudentDashboardHero'
 import { StudentDashboardStats } from '@/components/student/StudentDashboardStats'
 import { StudentPassQuotaStats } from '@/components/student/StudentPassQuotaStats'
 import { StudentRecentRequestsTable } from '@/components/student/StudentRecentRequestsTable'
+import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
 import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
@@ -130,6 +131,8 @@ export function StudentHomePage() {
           warden office to complete registration.
         </div>
       )}
+
+      <PushPermissionBanner compact />
 
       <StudentDashboardHero
         firstName={firstName}

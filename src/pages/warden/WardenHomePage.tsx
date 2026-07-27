@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react'
 import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
+import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
 import { WardenAvailabilityPanel } from '@/components/warden/WardenAvailabilityPanel'
 import { WardenCalendarPanel } from '@/components/warden/WardenCalendarPanel'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
@@ -128,6 +129,8 @@ export function WardenHomePage() {
       {scope && (
         <WardenAvailabilityPanel scope={scope} onSetAvailability={setAvailability} />
       )}
+
+      <PushPermissionBanner compact />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

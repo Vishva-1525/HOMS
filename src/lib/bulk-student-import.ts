@@ -73,6 +73,12 @@ const HEADER_ALIASES: Record<string, keyof ParsedStudentImportRow | 'room' | 'bl
   'mobile number': 'phone',
   'mobile no': 'phone',
   'contact number': 'phone',
+  'parent phone': 'phone',
+  parent_phone: 'phone',
+  'parent mobile': 'phone',
+  'parents phone': 'phone',
+  'father phone': 'phone',
+  'mother phone': 'phone',
   room: 'room',
   'room number': 'room',
   room_number: 'room',
@@ -96,7 +102,7 @@ const TEMPLATE_HEADERS = [
   'Email',
   'Reg Number',
   'Full Name',
-  'Phone',
+  'Parent Phone',
   'Room',
   'Block',
   'Department',
@@ -149,7 +155,7 @@ function mapRecordsToStudents(
     return {
       rows: [],
       errors: [
-        `Missing required columns: ${missing.join(', ')}. Expected at least: Email, Reg Number, Full Name, Phone, Year. ${OPTIONAL_HEADER_HINT}.`,
+        `Missing required columns: ${missing.join(', ')}. Expected at least: Email, Reg Number, Full Name, Parent Phone, Year. ${OPTIONAL_HEADER_HINT}.`,
       ],
       warnings: [],
     }

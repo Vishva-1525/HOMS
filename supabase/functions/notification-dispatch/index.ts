@@ -8,6 +8,8 @@ const corsHeaders = {
 
 interface DispatchBody {
   notification_id?: string
+  /** Process all unprocessed outbox rows (used after create/approve from clients). */
+  flush?: boolean
   secret?: string
 }
 
@@ -16,7 +18,7 @@ function getNotificationTitle(type: string): string {
     case 'pending':
       return 'New outpass request'
     case 'approved':
-      return 'Request approved'
+      return 'Request approved — QR ready'
     case 'rejected':
       return 'Request rejected'
     case 'extension':
@@ -34,7 +36,10 @@ function getNotificationUrl(role: string, type: string): string {
     if (type === 'pending') return '/warden/pending'
     return '/warden/dashboard'
   }
-  if (role === 'student') return '/student/passes'
+  if (role === 'student') {
+    if (type === 'approved') return '/student/passes'
+    return '/student/passes'
+  }
   if (role === 'parent') return '/parent/dashboard'
   return '/'
 }
@@ -72,6 +77,117 @@ async function sendSms(phone: string, message: string): Promise<boolean> {
   return response.ok
 }
 
+async function dispatchOne(
+  admin: ReturnType<typeof createClient>,
+  notificationId: string,
+): Promise<{ push_sent: number; sms_sent: boolean }> {
+  const { data: notification, error: notifError } = await admin
+    .from('notifications_log')
+    .select('id, user_id, type, message')
+    .eq('id', notificationId)
+    .maybeSingle()
+
+  if (notifError || !notification) {
+    throw new Error('Notification not found')
+  }
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('role, phone, full_name')
+    .eq('id', notification.user_id)
+    .maybeSingle()
+
+  const title = getNotificationTitle(notification.type)
+  const url = getNotificationUrl(profile?.role ?? 'student', notification.type)
+
+  const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY')
+  const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY')
+  const vapidSubject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:hostel@svce.ac.in'
+
+  let pushSent = 0
+  if (vapidPublic && vapidPrivate) {
+    webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate)
+
+    const { data: subscriptions } = await admin
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth')
+      .eq('user_id', notification.user_id)
+
+    const payload = JSON.stringify({
+      title,
+      body: notification.message,
+      url,
+      type: notification.type,
+    })
+
+    for (const sub of subscriptions ?? []) {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          },
+          payload,
+          {
+            TTL: 60 * 60 * 24,
+            urgency: notification.type === 'pending' || notification.type === 'approved'
+              ? 'high'
+              : 'normal',
+          },
+        )
+        pushSent += 1
+      } catch (err) {
+        const statusCode = (err as { statusCode?: number }).statusCode
+        if (statusCode === 404 || statusCode === 410) {
+          await admin
+            .from('push_subscriptions')
+            .delete()
+            .eq('user_id', notification.user_id)
+            .eq('endpoint', sub.endpoint)
+        } else {
+          console.error('push failed', sub.endpoint.slice(0, 48), err)
+        }
+      }
+    }
+  }
+
+  let smsSent = false
+  if (await isSmsEnabled(admin)) {
+    let phone = profile?.phone ?? ''
+    let smsMessage = notification.message
+
+    // Approval/rejection SMS still goes to parent phone when available.
+    if (profile?.role === 'student' && (notification.type === 'approved' || notification.type === 'rejected')) {
+      const { data: student } = await admin
+        .from('students')
+        .select('parent_phone')
+        .eq('id', notification.user_id)
+        .maybeSingle()
+      if (student?.parent_phone) {
+        phone = student.parent_phone
+        smsMessage = `SVCE HOMS: ${notification.message}`
+      }
+    }
+
+    if (phone.trim()) {
+      smsSent = await sendSms(phone, smsMessage)
+      await admin.from('sms_log').insert({
+        phone,
+        message: smsMessage,
+        status: smsSent ? 'sent' : 'failed',
+        provider: 'msg91',
+      })
+    }
+  }
+
+  await admin
+    .from('notification_outbox')
+    .update({ processed_at: new Date().toISOString(), error_message: null })
+    .eq('notification_id', notification.id)
+
+  return { push_sent: pushSent, sms_sent: smsSent }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -80,15 +196,10 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const admin = createClient(supabaseUrl, serviceRoleKey)
 
     const body = (await req.json()) as DispatchBody
-    if (!body.notification_id) {
-      return new Response(JSON.stringify({ error: 'notification_id required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
 
     const { data: secretRow } = await admin
       .from('system_settings')
@@ -96,113 +207,84 @@ Deno.serve(async (req) => {
       .eq('key', 'notification_dispatch_secret')
       .maybeSingle()
 
-    if (body.secret && secretRow?.value && body.secret !== secretRow.value) {
-      return new Response(JSON.stringify({ error: 'Invalid dispatch secret' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const authHeader = req.headers.get('Authorization') ?? ''
+    let callerAuthed = false
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false, autoRefreshToken: false },
       })
+      const jwt = authHeader.replace(/^Bearer\s+/i, '').trim()
+      const { data: userData } = await userClient.auth.getUser(jwt)
+      callerAuthed = Boolean(userData.user)
     }
 
-    const { data: notification, error: notifError } = await admin
-      .from('notifications_log')
-      .select('id, user_id, type, message')
-      .eq('id', body.notification_id)
-      .maybeSingle()
+    const secretOk =
+      Boolean(body.secret)
+      && Boolean(secretRow?.value)
+      && body.secret === secretRow?.value
 
-    if (notifError || !notification) {
-      return new Response(JSON.stringify({ error: 'Notification not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('role, phone, full_name')
-      .eq('id', notification.user_id)
-      .maybeSingle()
-
-    const title = getNotificationTitle(notification.type)
-    const url = getNotificationUrl(profile?.role ?? 'student', notification.type)
-
-    const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY')
-    const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY')
-    const vapidSubject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:hostel@svce.ac.in'
-
-    let pushSent = 0
-    if (vapidPublic && vapidPrivate) {
-      webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate)
-
-      const { data: subscriptions } = await admin
-        .from('push_subscriptions')
-        .select('endpoint, p256dh, auth')
-        .eq('user_id', notification.user_id)
-
-      const payload = JSON.stringify({
-        title,
-        body: notification.message,
-        url,
-        type: notification.type,
-      })
-
-      for (const sub of subscriptions ?? []) {
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: sub.endpoint,
-              keys: { p256dh: sub.p256dh, auth: sub.auth },
-            },
-            payload,
-          )
-          pushSent += 1
-        } catch (err) {
-          const statusCode = (err as { statusCode?: number }).statusCode
-          if (statusCode === 404 || statusCode === 410) {
-            await admin
-              .from('push_subscriptions')
-              .delete()
-              .eq('user_id', notification.user_id)
-              .eq('endpoint', sub.endpoint)
-          }
-        }
-      }
-    }
-
-    let smsSent = false
-    if (await isSmsEnabled(admin)) {
-      let phone = profile?.phone ?? ''
-      let smsMessage = notification.message
-
-      if (profile?.role === 'student' && (notification.type === 'approved' || notification.type === 'rejected')) {
-        const { data: student } = await admin
-          .from('students')
-          .select('parent_phone')
-          .eq('id', notification.user_id)
-          .maybeSingle()
-        if (student?.parent_phone) {
-          phone = student.parent_phone
-          smsMessage = `SVCE HOMS: ${notification.message}`
-        }
-      }
-
-      if (phone.trim()) {
-        smsSent = await sendSms(phone, smsMessage)
-        await admin.from('sms_log').insert({
-          phone,
-          message: smsMessage,
-          status: smsSent ? 'sent' : 'failed',
-          provider: 'msg91',
+    // Allow: matching dispatch secret (DB trigger) OR logged-in HOMS user (client flush)
+    if (!secretOk && !callerAuthed) {
+      // Legacy: if no secret is configured, allow unauthenticated single-id dispatch
+      // only when flush is not requested (keeps older clients working).
+      if (body.flush || secretRow?.value) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
     }
 
-    await admin
-      .from('notification_outbox')
-      .update({ processed_at: new Date().toISOString(), error_message: null })
-      .eq('notification_id', notification.id)
+    if (body.flush) {
+      const { data: pending } = await admin
+        .from('notification_outbox')
+        .select('notification_id')
+        .is('processed_at', null)
+        .order('created_at', { ascending: true })
+        .limit(40)
+
+      let totalPush = 0
+      let totalSms = 0
+      let processed = 0
+
+      for (const row of pending ?? []) {
+        try {
+          const result = await dispatchOne(admin, row.notification_id)
+          totalPush += result.push_sent
+          if (result.sms_sent) totalSms += 1
+          processed += 1
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Dispatch failed'
+          await admin
+            .from('notification_outbox')
+            .update({ error_message: message })
+            .eq('notification_id', row.notification_id)
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          flushed: processed,
+          push_sent: totalPush,
+          sms_sent: totalSms,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (!body.notification_id) {
+      return new Response(JSON.stringify({ error: 'notification_id or flush required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const result = await dispatchOne(admin, body.notification_id)
 
     return new Response(
-      JSON.stringify({ ok: true, push_sent: pushSent, sms_sent: smsSent }),
+      JSON.stringify({ ok: true, push_sent: result.push_sent, sms_sent: result.sms_sent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (error) {

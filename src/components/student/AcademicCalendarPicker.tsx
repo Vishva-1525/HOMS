@@ -19,6 +19,8 @@ interface AcademicCalendarPickerProps {
   compact?: boolean
   /** browse = inspect any day (warden); picker = outpass selectable days only */
   mode?: 'picker' | 'browse'
+  /** glass = student DateTimePicker-style chrome (used on RT/warden home) */
+  variant?: 'default' | 'glass'
   title?: string
   helperText?: string
 }
@@ -34,6 +36,14 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
+
+const MONTH_NAMES_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+]
+
+const WEEKDAYS_FULL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WEEKDAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 function getDayTypeForCell(
   dateKey: string,
@@ -61,6 +71,7 @@ export function AcademicCalendarPicker({
   loading,
   compact = false,
   mode = 'picker',
+  variant = 'default',
   title = 'Academic calendar',
   helperText,
 }: AcademicCalendarPickerProps) {
@@ -73,6 +84,7 @@ export function AcademicCalendarPicker({
   const month = viewMonth.getMonth()
   const yearOptions = useMemo(() => buildYearOptions(year), [year])
   const browse = mode === 'browse'
+  const glass = variant === 'glass'
 
   useEffect(() => {
     if (!selectedDateKey) return
@@ -108,67 +120,107 @@ export function AcademicCalendarPicker({
         : 'Select departure/return dates on working days or study holidays only.')
 
   return (
-    <div className={cn(compact ? 'p-0' : 'academic-calendar-panel')}>
+    <div className={cn(!glass && (compact ? 'p-0' : 'academic-calendar-panel'), glass && 'p-0')}>
       {!compact && (
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="dashboard-heading text-base sm:text-lg">{title}</p>
-            <p className="dashboard-muted mt-1 text-xs font-medium leading-relaxed sm:text-sm">
-              {MONTH_NAMES[month]} {year}
+            <p
+              className={cn(
+                glass
+                  ? 'text-sm font-semibold text-slate-900'
+                  : 'dashboard-heading text-base sm:text-lg',
+              )}
+            >
+              {title}
             </p>
+            {!glass && (
+              <p className="dashboard-muted mt-1 text-xs font-medium leading-relaxed sm:text-sm">
+                {MONTH_NAMES[month]} {year}
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      <div className={cn('flex flex-wrap items-center justify-between gap-2', !compact && 'mt-4')}>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => shiftMonth(-1)}
-            className="academic-calendar-nav-btn"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
+      <div
+        className={cn(
+          'flex flex-wrap items-center justify-between gap-2',
+          !compact && 'mt-4',
+          glass && 'mb-2 mt-3',
+        )}
+      >
+        {glass ? (
+          <div className="flex w-full items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => shiftMonth(-1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-[#EBF3FF]"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <p className="text-sm font-semibold text-slate-900">
+              {MONTH_NAMES_SHORT[month]} {year}
+            </p>
+            <button
+              type="button"
+              onClick={() => shiftMonth(1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-[#EBF3FF]"
+              aria-label="Next month"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => shiftMonth(-1)}
+              className="academic-calendar-nav-btn"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
 
-          <select
-            value={month}
-            onChange={(e) => setMonthIndex(Number(e.target.value))}
-            aria-label="Select month"
-            className="academic-calendar-select min-w-[8rem] text-[13px]"
-          >
-            {MONTH_NAMES.map((name, index) => (
-              <option key={name} value={index}>
-                {name}
-              </option>
-            ))}
-          </select>
+            <select
+              value={month}
+              onChange={(e) => setMonthIndex(Number(e.target.value))}
+              aria-label="Select month"
+              className="academic-calendar-select min-w-[8rem] text-[13px]"
+            >
+              {MONTH_NAMES.map((name, index) => (
+                <option key={name} value={index}>
+                  {name}
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            aria-label="Select year"
-            className="academic-calendar-select min-w-[5.5rem] text-[13px]"
-          >
-            {yearOptions.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              aria-label="Select year"
+              className="academic-calendar-select min-w-[5.5rem] text-[13px]"
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
 
-          <button
-            type="button"
-            onClick={() => shiftMonth(1)}
-            className="academic-calendar-nav-btn"
-            aria-label="Next month"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => shiftMonth(1)}
+              className="academic-calendar-nav-btn"
+              aria-label="Next month"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {!compact && (
+      {!compact && !glass && (
         <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
           {LEGEND_TYPES.map((type) => (
             <span
@@ -188,21 +240,49 @@ export function AcademicCalendarPicker({
         </div>
       )}
 
+      {glass && (
+        <div className="mb-2 flex flex-wrap gap-1">
+          {LEGEND_TYPES.map((type) => (
+            <span
+              key={type}
+              className={cn(
+                'rounded-md border px-1.5 py-0.5 text-[9px] font-semibold tracking-wide',
+                ACADEMIC_DAY_STYLES[type],
+              )}
+            >
+              {ACADEMIC_DAY_LABELS[type]}
+            </span>
+          ))}
+        </div>
+      )}
+
       {loading ? (
-        <p className="dashboard-muted mt-4 text-center text-xs">Loading calendar…</p>
+        <p className={cn('mt-4 text-center text-xs', glass ? 'text-slate-500' : 'dashboard-muted')}>
+          Loading calendar…
+        </p>
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-7 gap-1 sm:gap-1.5">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-              <span key={d} className="academic-calendar-weekday">
+          <div className={cn('grid grid-cols-7', glass ? 'gap-0.5' : 'mt-4 gap-1 sm:gap-1.5')}>
+            {(glass ? WEEKDAYS_SHORT : WEEKDAYS_FULL).map((d, i) => (
+              <span
+                key={`${d}-${i}`}
+                className={
+                  glass
+                    ? 'py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400'
+                    : 'academic-calendar-weekday'
+                }
+              >
                 {d}
               </span>
             ))}
-          </div>
-          <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-1.5">
             {cells.map((dateKey, index) => {
               if (!dateKey) {
-                return <div key={`empty-${index}`} className="aspect-square" />
+                return (
+                  <div
+                    key={`empty-${index}`}
+                    className={glass ? 'h-8' : 'aspect-square'}
+                  />
+                )
               }
 
               const dayType = getDayTypeForCell(dateKey, calendarMap)
@@ -223,14 +303,21 @@ export function AcademicCalendarPicker({
                   aria-pressed={isSelected}
                   onClick={() => onSelectDate?.(dateKey)}
                   className={cn(
-                    'academic-calendar-day',
+                    glass
+                      ? 'flex h-8 items-center justify-center rounded-md text-xs font-medium transition-colors'
+                      : 'academic-calendar-day',
                     !isSelected && ACADEMIC_DAY_STYLES[dayType],
-                    isSelected && 'academic-calendar-day-selected',
-                    isToday && 'academic-calendar-day-today',
+                    glass && isSelected && 'bg-[#1A5CA0] text-white shadow-sm',
+                    !glass && isSelected && 'academic-calendar-day-selected',
+                    isToday &&
+                      !isSelected &&
+                      (glass ? 'ring-1 ring-[#1A5CA0]/40' : 'academic-calendar-day-today'),
                     !canInteract && 'cursor-not-allowed opacity-35 grayscale',
-                    canInteract &&
+                    !glass &&
+                      canInteract &&
                       !isSelected &&
                       'hover:-translate-y-0.5 hover:shadow-md hover:brightness-[0.98] active:translate-y-0 active:scale-[0.97]',
+                    glass && canInteract && !isSelected && 'hover:brightness-[0.97]',
                   )}
                 >
                   {dayNum}
@@ -238,7 +325,14 @@ export function AcademicCalendarPicker({
               )
             })}
           </div>
-          <p className="dashboard-muted mt-4 text-[11px] leading-relaxed sm:text-xs">{resolvedHelper}</p>
+          <p
+            className={cn(
+              'mt-2 text-[11px] leading-relaxed',
+              glass ? 'text-slate-500' : 'dashboard-muted mt-4 sm:text-xs',
+            )}
+          >
+            {resolvedHelper}
+          </p>
         </>
       )}
     </div>

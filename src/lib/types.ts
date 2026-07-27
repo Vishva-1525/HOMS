@@ -80,6 +80,7 @@ export interface StudentProfile {
   room_number: string
   hostel_block: string
   gender?: 'male' | 'female'
+  parent_phone?: string | null
   profiles: { full_name: string; phone?: string } | null
 }
 

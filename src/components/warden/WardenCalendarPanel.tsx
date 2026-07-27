@@ -20,6 +20,7 @@ function resolveDayType(
   return dow === 0 || dow === 6 ? 'holiday' : 'working_day'
 }
 
+/** Academic calendar styled like the student DateTimePicker glass calendar. */
 export function WardenCalendarPanel() {
   const { days, calendarMap, loading, error } = useAcademicCalendar()
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
@@ -49,20 +50,23 @@ export function WardenCalendarPanel() {
         </p>
       )}
 
-      <AcademicCalendarPicker
-        days={days}
-        calendarMap={calendarMap}
-        selectedDateKey={selectedDateKey}
-        onSelectDate={setSelectedDateKey}
-        loading={loading}
-        mode="browse"
-        title="Academic calendar"
-        helperText="Today has a blue ring and marker. Selected dates use the primary highlight. Day types are color-coded."
-      />
+      <div className="rounded-xl border border-white/55 bg-white/50 p-3 shadow-sm backdrop-blur-md">
+        <AcademicCalendarPicker
+          days={days}
+          calendarMap={calendarMap}
+          selectedDateKey={selectedDateKey}
+          onSelectDate={setSelectedDateKey}
+          loading={loading}
+          mode="browse"
+          variant="glass"
+          title="Academic calendar"
+          helperText="Working days, holidays, and exam days — same view students use when picking dates."
+        />
+      </div>
 
       <div
         className={cn(
-          'flex items-start justify-between gap-3 rounded-2xl border px-3.5 py-3 shadow-sm',
+          'flex items-start justify-between gap-3 rounded-xl border px-3.5 py-3 shadow-sm',
           ACADEMIC_DAY_STYLES[selectedMeta.dayType],
         )}
       >

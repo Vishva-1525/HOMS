@@ -139,7 +139,7 @@ async function ensureAuthUser(
 ): Promise<{ userId: string; created: boolean; password?: string }> {
   const email = row.email.trim().toLowerCase()
   const fullName = row.full_name.trim()
-  const phone = (row.phone ?? '').trim()
+  const phone = '' // Student personal phone — filled later on profile; CSV phone is parent only.
   const password = generatePassword(row.reg_number)
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -394,7 +394,8 @@ Deno.serve(async (req) => {
             .from('profiles')
             .update({
               full_name: fullName,
-              phone: String(raw.phone ?? '').trim(),
+              // CSV phone is parent-only; students set their own phone on profile later.
+              phone: '',
               password_changed: true,
             })
             .eq('id', userId)

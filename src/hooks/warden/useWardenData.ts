@@ -61,7 +61,8 @@ const PASS_SELECT = `
     room_number,
     hostel_block,
     gender,
-    profiles ( full_name )
+    parent_phone,
+    profiles ( full_name, phone )
   )
 `
 

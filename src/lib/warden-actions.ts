@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { buildPassQrValue, generateEntryCode } from '@/lib/pass-qr'
+import { flushNotificationOutbox } from '@/lib/push-notifications'
 import type { OutpassWithStudent } from '@/lib/types'
 
 export async function approveOutpassRequest(
@@ -22,6 +23,10 @@ export async function approveOutpassRequest(
     })
     .eq('id', request.id)
 
+  if (!error) {
+    void flushNotificationOutbox()
+  }
+
   return { error: error?.message ?? null }
 }
 
@@ -38,6 +43,10 @@ export async function rejectOutpassRequest(
       warden_remark: remarks.trim(),
     })
     .eq('id', request.id)
+
+  if (!error) {
+    void flushNotificationOutbox()
+  }
 
   return { error: error?.message ?? null }
 }

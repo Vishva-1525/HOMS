@@ -90,3 +90,19 @@ export async function markPasswordChanged(userId: string) {
 
   if (error) throw error
 }
+
+/** Students update their own phone on profiles (parent_phone is never writable by students). */
+export async function updateOwnPhone(userId: string, phone: string) {
+  const trimmed = phone.trim()
+  if (!trimmed) throw new Error('Phone number is required.')
+  if (!/^[0-9+\-\s()]{8,20}$/.test(trimmed)) {
+    throw new Error('Enter a valid phone number.')
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ phone: trimmed })
+    .eq('id', userId)
+
+  if (error) throw error
+}

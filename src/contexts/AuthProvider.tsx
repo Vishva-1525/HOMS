@@ -12,6 +12,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import {
   markPasswordChanged,
   signInWithIdentifier as authSignIn,
+  updateOwnPhone,
   updatePassword,
 } from '@/lib/auth'
 import {
@@ -33,6 +34,7 @@ interface AuthContextValue {
   signInWithIdentifier: (identifier: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   changePassword: (newPassword: string) => Promise<void>
+  updatePhone: (phone: string) => Promise<void>
   refreshProfile: () => Promise<void>
 }
 
@@ -188,6 +190,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(updatedProfile)
   }, [user])
 
+  const updatePhone = useCallback(async (phone: string) => {
+    if (!user) throw new Error('Not authenticated')
+    await updateOwnPhone(user.id, phone)
+    const updatedProfile = await fetchProfile(user.id)
+    setProfile(updatedProfile)
+  }, [user])
+
   const needsPasswordChange = studentNeedsPasswordChange(profile)
 
   const value = useMemo<AuthContextValue>(
@@ -201,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithIdentifier,
       signOut,
       changePassword,
+      updatePhone,
       refreshProfile,
     }),
     [
@@ -212,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithIdentifier,
       signOut,
       changePassword,
+      updatePhone,
       refreshProfile,
     ],
   )

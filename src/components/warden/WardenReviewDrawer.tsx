@@ -1,4 +1,5 @@
-import { User } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Copy, Phone, User } from 'lucide-react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { Button } from '@/components/ui/button'
 import { PASS_TYPE_LABELS, formatReturnTime } from '@/lib/outpass'
@@ -27,6 +28,53 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4 border-b border-[var(--svce-border-default)] py-2.5 text-sm last:border-0">
       <span className="text-[#4B5563]">{label}</span>
       <span className="text-right font-medium text-[#1A1A2E]">{value}</span>
+    </div>
+  )
+}
+
+function dialableHref(phone: string): string {
+  const digits = phone.replace(/[^\d+]/g, '')
+  return `tel:${digits}`
+}
+
+function ParentPhoneRow({ phone }: { phone: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(phone)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      /* clipboard may be blocked */
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--svce-border-default)] py-2.5 text-sm last:border-0">
+      <span className="shrink-0 text-[#4B5563]">Parent phone</span>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <a
+          href={dialableHref(phone)}
+          className="inline-flex min-w-0 items-center gap-1.5 truncate font-medium text-[#0D3F72] underline-offset-2 hover:underline"
+        >
+          <Phone className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+          <span className="truncate">{phone}</span>
+        </a>
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#1A5CA0] hover:bg-[#EBF3FF]"
+          aria-label={copied ? 'Copied' : 'Copy parent phone'}
+          title={copied ? 'Copied' : 'Copy to clipboard'}
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-[#166534]" strokeWidth={2} />
+          ) : (
+            <Copy className="h-4 w-4" strokeWidth={1.75} />
+          )}
+        </button>
+      </div>
     </div>
   )
 }
@@ -89,6 +137,11 @@ export function WardenReviewDrawer({
           </div>
 
           <div className="mt-4">
+            {student?.parent_phone?.trim() ? (
+              <ParentPhoneRow phone={student.parent_phone.trim()} />
+            ) : (
+              <DetailRow label="Parent phone" value="—" />
+            )}
             <DetailRow label="Destination" value={request.destination} />
             <DetailRow label="Reason" value={request.reason} />
             <DetailRow label="Pass type" value={PASS_TYPE_LABELS[request.pass_type]} />

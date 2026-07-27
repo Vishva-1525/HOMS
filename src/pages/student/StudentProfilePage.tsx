@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Building2, GraduationCap, Home, Mail, Phone, Shield } from 'lucide-react'
 import { PasswordInput } from '@/components/auth/PasswordInput'
 import { PasswordStrengthBar } from '@/components/auth/PasswordStrengthBar'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { Button } from '@/components/ui/button'
 import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
@@ -16,10 +17,12 @@ function ProfileInfoRow({
   icon: Icon,
   label,
   value,
+  locked,
 }: {
   icon: typeof Mail
   label: string
   value: string
+  locked?: boolean
 }) {
   return (
     <div className="flex items-start gap-3 px-4 py-4">
@@ -27,49 +30,87 @@ function ProfileInfoRow({
         <Icon className="h-4 w-4 text-[#0D3F72]" strokeWidth={1.75} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          {label}
+          {locked ? ' · locked' : ''}
+        </p>
         <p className="mt-0.5 break-words text-sm font-medium text-slate-900">{value}</p>
       </div>
     </div>
   )
 }
 
+function normalizePhone(value: string): string {
+  return value.replace(/\s+/g, '').trim()
+}
+
 export function StudentProfilePage() {
-  const { user, profile, changePassword } = useAuth()
+  const { user, profile, changePassword, updatePhone, refreshProfile } = useAuth()
   const { student, loading, error, refetch } = useStudentDataContext()
-  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [formSuccess, setFormSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [retrying, setRetrying] = useState(false)
 
-  async function handlePasswordSubmit(event: FormEvent) {
-    event.preventDefault()
-    setPasswordError(null)
-    setPasswordSuccess(false)
+  const parentPhone = student?.parent_phone?.trim() ?? ''
+  const currentPhone = profile?.phone?.trim() ?? ''
 
-    const strength = getPasswordStrength(password)
-    if (strength.level === 'weak') {
-      setPasswordError('Choose a stronger password — at least 8 characters with mixed case and numbers.')
+  const needsOwnPhone = useMemo(() => {
+    if (!currentPhone) return true
+    if (parentPhone && normalizePhone(currentPhone) === normalizePhone(parentPhone)) return true
+    return false
+  }, [currentPhone, parentPhone])
+
+  const needsPassword = profile?.password_changed === false
+
+  async function handleCompleteProfile(event: FormEvent) {
+    event.preventDefault()
+    setFormError(null)
+    setFormSuccess(null)
+
+    const nextPhone = phone.trim() || (needsOwnPhone ? '' : currentPhone)
+    if (needsOwnPhone && !nextPhone) {
+      setFormError('Enter your personal phone number to complete your profile.')
       return
     }
 
-    if (password !== confirmPassword) {
-      setPasswordError('Passwords do not match.')
+    if (parentPhone && nextPhone && normalizePhone(nextPhone) === normalizePhone(parentPhone)) {
+      setFormError('Use your own phone number — parent phone cannot be used here.')
       return
+    }
+
+    if (password || confirmPassword || needsPassword) {
+      const strength = getPasswordStrength(password)
+      if (strength.level === 'weak') {
+        setFormError(
+          'Choose a stronger password — at least 8 characters with mixed case and numbers.',
+        )
+        return
+      }
+      if (password !== confirmPassword) {
+        setFormError('Passwords do not match.')
+        return
+      }
     }
 
     setSubmitting(true)
     try {
-      await changePassword(password)
+      if (nextPhone && nextPhone !== currentPhone) {
+        await updatePhone(nextPhone)
+      }
+      if (password) {
+        await changePassword(password)
+      }
+      await refreshProfile()
       setPassword('')
       setConfirmPassword('')
-      setPasswordSuccess(true)
-      setShowPasswordForm(false)
+      setPhone('')
+      setFormSuccess('Profile updated successfully.')
     } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : 'Failed to update password.')
+      setFormError(err instanceof Error ? err.message : 'Failed to update profile.')
     } finally {
       setSubmitting(false)
     }
@@ -138,82 +179,99 @@ export function StudentProfilePage() {
         </div>
       </div>
 
+      {(needsOwnPhone || needsPassword) && (
+        <div className="rounded-xl border border-amber-300/80 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
+          Complete your profile: add your personal phone number
+          {needsPassword ? ' and set a new password' : ''}. Parent phone is managed by the hostel office
+          and cannot be changed.
+        </div>
+      )}
+
       <div className="glass-panel overflow-hidden">
         <div className="border-b border-white/50 px-4 py-3">
           <h2 className="dashboard-heading text-sm font-semibold">Contact information</h2>
         </div>
         <div className="divide-y divide-white/50">
           <ProfileInfoRow icon={Mail} label="Email" value={email ?? '—'} />
-          <ProfileInfoRow icon={Phone} label="Phone" value={profile?.phone ?? '—'} />
-          <ProfileInfoRow icon={Phone} label="Parent phone" value={student?.parent_phone ?? '—'} />
-          <ProfileInfoRow icon={Mail} label="Parent email" value={student?.parent_email ?? '—'} />
+          <ProfileInfoRow
+            icon={Phone}
+            label="Your phone"
+            value={needsOwnPhone ? 'Not set yet' : currentPhone}
+          />
+          <ProfileInfoRow
+            icon={Phone}
+            label="Parent phone"
+            value={parentPhone || '—'}
+            locked
+          />
+          <ProfileInfoRow icon={Mail} label="Parent email" value={student?.parent_email || '—'} />
         </div>
       </div>
 
-      {passwordSuccess && (
-        <p className="rounded-xl bg-[#EBF7EE] px-4 py-3 text-sm text-[#166534]">
-          Password updated successfully.
-        </p>
+      {formSuccess && (
+        <p className="rounded-xl bg-[#EBF7EE] px-4 py-3 text-sm text-[#166534]">{formSuccess}</p>
       )}
 
-      {!showPasswordForm ? (
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full gap-2"
-          onClick={() => {
-            setShowPasswordForm(true)
-            setPasswordError(null)
-          }}
-        >
-          <Shield className="h-4 w-4" strokeWidth={1.75} />
-          Change password
+      <form onSubmit={handleCompleteProfile} className="glass-panel space-y-4 p-5">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-[#0D3F72]" strokeWidth={1.75} />
+          <h2 className="dashboard-heading text-sm font-semibold">Complete / update profile</h2>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="student-phone">Your phone number</Label>
+          <Input
+            id="student-phone"
+            type="tel"
+            inputMode="tel"
+            placeholder={needsOwnPhone ? 'Enter your personal mobile number' : currentPhone}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            disabled={submitting}
+          />
+          <p className="text-xs text-slate-600">
+            This is your number. Parent phone below is fixed and cannot be edited.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Parent phone (read-only)
+          </p>
+          <p className="mt-1 text-sm font-medium text-slate-900">{parentPhone || '—'}</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="new-password">
+            {needsPassword ? 'Set a new password' : 'New password (optional)'}
+          </Label>
+          <PasswordInput
+            id="new-password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={submitting}
+          />
+          <PasswordStrengthBar password={password} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirm-new-password">Confirm password</Label>
+          <PasswordInput
+            id="confirm-new-password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={submitting}
+          />
+        </div>
+
+        {formError && <p className="text-sm text-[#DC2626]">{formError}</p>}
+
+        <Button type="submit" className="w-full" loading={submitting}>
+          Save profile
         </Button>
-      ) : (
-        <form onSubmit={handlePasswordSubmit} className="glass-panel space-y-4 p-5">
-          <h2 className="dashboard-heading text-sm font-semibold">Change password</h2>
-
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New password</Label>
-            <PasswordInput
-              id="new-password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={submitting}
-            />
-            <PasswordStrengthBar password={password} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-new-password">Confirm password</Label>
-            <PasswordInput
-              id="confirm-new-password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={submitting}
-            />
-          </div>
-
-          {passwordError && <p className="text-sm text-[#DC2626]">{passwordError}</p>}
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              className="flex-1"
-              onClick={() => setShowPasswordForm(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" loading={submitting}>
-              Update
-            </Button>
-          </div>
-        </form>
-      )}
+      </form>
     </div>
   )
 }

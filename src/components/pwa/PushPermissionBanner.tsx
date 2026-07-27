@@ -1,20 +1,53 @@
-import { Bell, BellOff } from 'lucide-react'
+import { Bell, BellOff, Share } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 
-export function PushPermissionBanner() {
-  const { state, enabling, isSupported, hasVapidKey, enablePush, disablePush } = usePushNotifications()
+export function PushPermissionBanner({ compact = false }: { compact?: boolean }) {
+  const {
+    state,
+    enabling,
+    isSupported,
+    hasVapidKey,
+    iosNeedsInstall,
+    supportHint,
+    enablePush,
+    disablePush,
+  } = usePushNotifications()
 
-  if (!isSupported) return null
   if (!hasVapidKey) return null
+
+  if (iosNeedsInstall) {
+    return (
+      <div className="rounded-xl border border-[#BFDBFE] bg-[#EBF3FF]/80 px-4 py-3 text-sm text-[#0D3F72]">
+        <p className="font-medium">Enable alerts on iPhone / iPad</p>
+        <p className="mt-1 text-xs leading-relaxed text-[#1A5CA0]">
+          Tap <Share className="inline h-3.5 w-3.5" strokeWidth={2} /> Share → <strong>Add to Home Screen</strong>,
+          open HOMS from that icon, then enable notifications. Safari tabs cannot receive push alerts.
+        </p>
+      </div>
+    )
+  }
+
+  if (!isSupported) {
+    if (!supportHint) return null
+    return (
+      <div className="rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-sm text-[#92400E]">
+        {supportHint}
+      </div>
+    )
+  }
+
   if (state === 'granted') {
+    if (compact) return null
     return (
       <div className="dashboard-surface-muted flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-3">
           <Bell className="h-5 w-5 text-[#1A5CA0]" strokeWidth={1.75} />
           <div>
             <p className="text-sm font-medium text-[#1A1A2E]">Push notifications enabled</p>
-            <p className="text-xs text-slate-600">You will receive alerts when the app is closed.</p>
+            <p className="text-xs text-slate-600">
+              You will receive request and approval alerts even when the app is closed.
+            </p>
           </div>
         </div>
         <Button type="button" size="sm" variant="outline" onClick={() => void disablePush()}>
@@ -28,7 +61,7 @@ export function PushPermissionBanner() {
   if (state === 'denied') {
     return (
       <div className="rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-sm text-[#92400E]">
-        Notifications are blocked in your browser settings. Enable them to receive outpass alerts.
+        Notifications are blocked in your device settings. Enable them for HOMS to receive outpass alerts.
       </div>
     )
   }
@@ -40,7 +73,8 @@ export function PushPermissionBanner() {
         <div>
           <p className="text-sm font-medium text-[#1A1A2E]">Enable push notifications</p>
           <p className="text-xs text-slate-600">
-            Get instant alerts for new requests, approvals, and rejections.
+            Instant alerts for new QR requests, approvals, and rejections — works in the background on
+            Android and installed iOS apps.
           </p>
         </div>
       </div>

@@ -99,7 +99,7 @@ export function WardenStudentsPage() {
         <p className="dashboard-muted text-sm leading-relaxed">
           Upload a <span className="font-semibold text-slate-800">.csv</span> or{' '}
           <span className="font-semibold text-slate-800">.xlsx</span> file with columns: Email, Reg
-          Number, Full Name, Phone, Year (Room, Block, and Department are optional).
+          Number, Full Name, Parent Phone, Year (Room, Block, and Department are optional).
         </p>
         {blockLoading ? (
           <p className="py-2 text-sm text-slate-600">Loading your block assignment…</p>

@@ -11,13 +11,41 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray
 }
 
-export function isPushSupported(): boolean {
+export function isIosDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  if (/iPad|iPhone|iPod/.test(ua)) return true
+  // iPadOS 13+ reports as Mac
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+}
+
+export function isStandalonePwa(): boolean {
+  if (typeof window === 'undefined') return false
   return (
-    typeof window !== 'undefined'
-    && 'serviceWorker' in navigator
-    && 'PushManager' in window
-    && 'Notification' in window
+    window.matchMedia('(display-mode: standalone)').matches
+    || (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   )
+}
+
+/** Web Push works on Android/desktop anytime; on iOS only in the installed Home Screen app (16.4+). */
+export function isPushSupported(): boolean {
+  if (typeof window === 'undefined') return false
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    return false
+  }
+  if (isIosDevice() && !isStandalonePwa()) return false
+  return true
+}
+
+export function getPushSupportHint(): string | null {
+  if (typeof window === 'undefined') return null
+  if (isIosDevice() && !isStandalonePwa()) {
+    return 'On iPhone/iPad: tap Share → Add to Home Screen, open HOMS from the home screen icon, then enable notifications.'
+  }
+  if (!('Notification' in window) || !('PushManager' in window)) {
+    return 'Push notifications are not supported in this browser.'
+  }
+  return null
 }
 
 export function getVapidPublicKey(): string | null {
@@ -89,6 +117,7 @@ export function showLocalNotification(title: string, body: string, url = '/'): v
         icon: '/pwa-icon-192.png',
         badge: '/pwa-icon-192.png',
         data: { url },
+        tag: `homs-local-${url}`,
       })
     })
     return
@@ -104,5 +133,16 @@ export async function requestNotificationDispatch(notificationId: string): Promi
     })
   } catch {
     // Server dispatch may already be in flight via outbox trigger.
+  }
+}
+
+/** Flush pending outbox so the other party's push (RT ↔ student) is sent immediately. */
+export async function flushNotificationOutbox(): Promise<void> {
+  try {
+    await supabase.functions.invoke('notification-dispatch', {
+      body: { flush: true },
+    })
+  } catch {
+    // Best-effort; outbox may still be processed by DB trigger / later flush.
   }
 }

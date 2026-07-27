@@ -1,0 +1,2 @@
+# Allow DB/client flush without end-user JWT — function still checks optional dispatch secret.
+verify_jwt = false

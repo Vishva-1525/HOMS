@@ -22,6 +22,7 @@ import {
   type NewRequestFormValues,
 } from '@/lib/outpass-request-validation'
 import { toDatetimeLocalNow } from '@/lib/datetime-local'
+import { flushNotificationOutbox } from '@/lib/push-notifications'
 import { supabase } from '@/lib/supabase'
 import { uploadSpecialPassDocument } from '@/lib/upload-special-pass-document'
 
@@ -135,6 +136,8 @@ export function StudentNewRequestPage() {
       setErrors({ submit: error.message })
       return
     }
+
+    void flushNotificationOutbox()
 
     setForm(INITIAL_NEW_REQUEST_FORM)
     void refetchStudentData()

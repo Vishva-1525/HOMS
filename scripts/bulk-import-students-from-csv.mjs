@@ -197,7 +197,8 @@ async function importRow(admin, row) {
     .from('profiles')
     .update({
       full_name: row.full_name,
-      phone: row.phone,
+      // CSV phone is parent-only; leave student phone empty for profile completion.
+      phone: '',
       password_changed: true,
     })
     .eq('id', userId)
@@ -230,7 +231,7 @@ async function importRow(admin, row) {
     user_metadata: {
       role: 'student',
       full_name: row.full_name,
-      phone: row.phone,
+      phone: '',
     },
   })
   if (authError) {
