@@ -263,7 +263,7 @@ export function AdminStudentsPage() {
               key={group.year}
               year={group.year}
               students={group.students}
-              showHeading={yearFilter === 'all'}
+              showHeading={false}
               onSelectStudent={openStudent}
               onDeactivateStudent={deactivateStudent}
               onRefetch={refetch}

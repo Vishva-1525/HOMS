@@ -270,9 +270,9 @@ export function DateTimePicker({
                     className={cn(
                       'flex h-8 items-center justify-center rounded-md text-xs font-medium transition-colors',
                       isSelected && 'bg-[#1A5CA0] text-white shadow-sm',
-                      !isSelected && selectable && 'text-slate-800 hover:bg-[#EBF3FF]',
-                      !isSelected && !selectable && 'cursor-not-allowed text-slate-300',
-                      isToday && !isSelected && selectable && 'ring-1 ring-[#1A5CA0]/40',
+                      !isSelected && selectable && 'text-slate-900 hover:bg-[#EBF3FF]',
+                      !isSelected && !selectable && 'cursor-not-allowed text-slate-400',
+                      isToday && !isSelected && selectable && 'font-bold ring-1 ring-[#1A5CA0]/60',
                     )}
                   >
                     {dayNum}
@@ -347,7 +347,7 @@ export function DateTimePicker({
                       'shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
                       isSelected
                         ? 'bg-[#1A5CA0] text-white shadow-sm'
-                        : 'bg-white/80 text-slate-700 ring-1 ring-slate-200/80 hover:bg-[#EBF3FF]',
+                        : 'bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-[#EBF3FF] hover:ring-[#1A5CA0]/40',
                     )}
                   >
                     {formatTimeLabel(slot.hours, slot.minutes)}

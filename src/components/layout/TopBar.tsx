@@ -29,15 +29,17 @@ export function TopBar({
 
   return (
     <header className="glass-nav sticky top-0 z-30 flex h-[60px] shrink-0 items-center border-b px-3 pt-[max(0px,env(safe-area-inset-top))] sm:px-4 md:px-6">
-      {/* Mobile left: hamburger */}
-      <button
-        type="button"
-        onClick={onOpenMobileMenu}
-        className="rounded-md p-2 text-slate-600 hover:bg-white/50 md:hidden"
-        aria-label="Open menu"
-      >
-        <Menu className="h-5 w-5" strokeWidth={1.75} />
-      </button>
+      {/* Mobile left: hamburger — fixed width so centre logo doesn't shift */}
+      <div className="flex w-10 shrink-0 items-center md:hidden">
+        <button
+          type="button"
+          onClick={onOpenMobileMenu}
+          className="rounded-md p-2 text-slate-600 hover:bg-white/50"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" strokeWidth={1.75} />
+        </button>
+      </div>
 
       {/* Desktop left: hamburger + breadcrumb */}
       <div className="hidden min-w-0 flex-1 items-center gap-3 md:flex">
@@ -52,13 +54,13 @@ export function TopBar({
         <p className="truncate text-sm font-semibold text-slate-900">{breadcrumb}</p>
       </div>
 
-      {/* Mobile centre: logo */}
-      <div className="absolute left-1/2 flex -translate-x-1/2 md:hidden">
+      {/* Mobile centre: logo — flex-1 centres between left and right fixed areas */}
+      <div className="flex flex-1 justify-center md:hidden">
         <ShellLogo />
       </div>
 
-      {/* Right: notifications, greeting, avatar */}
-      <div className="ml-auto flex items-center gap-2 md:gap-3">
+      {/* Right: notifications, greeting, avatar — fixed width matches left so logo stays centred */}
+      <div className="flex shrink-0 items-center gap-1.5 md:ml-auto md:gap-3">
         <ThemeToggle />
 
         {notificationSlot ?? (
@@ -75,7 +77,7 @@ export function TopBar({
         )}
 
         <p className={cn('hidden text-sm text-slate-600 sm:block')}>
-          {getGreeting()}, <span className="font-semibold text-slate-900">{firstName}</span>
+          {getGreeting()},&nbsp;<span className="font-semibold text-slate-900">{firstName}</span>
         </p>
 
         <UserAvatar name={userName} size="sm" className="hidden sm:flex" />

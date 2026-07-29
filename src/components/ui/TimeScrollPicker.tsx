@@ -74,7 +74,7 @@ export function TimeScrollPicker({
       role="listbox"
       aria-label="Select time"
       className={cn(
-        'time-scroll-picker max-h-44 overflow-y-auto overscroll-contain scroll-smooth rounded-xl liquid-glass p-1',
+        'time-scroll-picker max-h-44 overflow-y-auto overscroll-contain scroll-smooth rounded-xl liquid-glass px-1 py-1.5',
         disabled && 'pointer-events-none opacity-50',
       )}
     >
@@ -91,7 +91,7 @@ export function TimeScrollPicker({
             className={cn(
               'flex w-full items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
               isSelected
-                ? 'bg-[#1A5CA0] text-white shadow-sm'
+                ? 'bg-[#1A5CA0] text-white shadow-sm ring-2 ring-[#1A5CA0]/30'
                 : 'text-slate-700 hover:bg-[#EBF3FF]/80',
             )}
           >

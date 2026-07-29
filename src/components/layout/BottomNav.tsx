@@ -16,8 +16,10 @@ export function BottomNav({ items, variant = 'light' }: BottomNavProps) {
     <nav className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
       <div
         className={cn(
-          'glass-nav flex h-14 items-stretch rounded-2xl border shadow-xl shadow-slate-900/10',
-          isDark && 'border-white/20 bg-slate-900/80',
+          'flex h-14 items-stretch rounded-2xl border shadow-xl shadow-slate-900/15',
+          isDark
+            ? 'border-slate-700 bg-slate-900'
+            : 'border-slate-200 bg-white',
         )}
       >
         {items.map((item) => {

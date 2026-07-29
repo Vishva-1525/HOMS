@@ -27,11 +27,11 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
         role="dialog"
         aria-modal="true"
         className={cn(
-          'relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-white/55 bg-card shadow-2xl shadow-slate-900/20 backdrop-blur-2xl',
+          'relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/25 dark:border-slate-700 dark:bg-slate-900',
           className,
         )}
       >
-        <div className="flex items-center justify-between border-b px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button
             type="button"
@@ -43,7 +43,7 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
           </button>
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="border-t px-5 py-4">{footer}</div>}
+        {footer && <div className="border-t border-slate-200 px-5 py-4 dark:border-slate-700">{footer}</div>}
       </div>
     </div>
   )

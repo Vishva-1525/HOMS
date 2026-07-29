@@ -1,4 +1,4 @@
-import { Bell, CheckCircle, FileText, QrCode } from 'lucide-react'
+import { CheckCircle, FileText, QrCode } from 'lucide-react'
 import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { SVCE_APP_NAME, SVCE_COLLEGE_NAME } from '@/lib/branding'
 import { cn } from '@/lib/utils'
@@ -7,7 +7,6 @@ const FEATURES = [
   { icon: FileText, text: 'Digital outpass requests' },
   { icon: CheckCircle, text: 'Real-time warden approval' },
   { icon: QrCode, text: 'QR-verified gate entry' },
-  { icon: Bell, text: 'Instant parent notifications' },
 ] as const
 
 interface LoginBrandPanelProps {
