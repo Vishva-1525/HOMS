@@ -6,6 +6,7 @@ import {
   isIosDevice,
   isPushSupported,
   isStandalonePwa,
+  refreshPushSubscription,
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/lib/push-notifications'
@@ -37,13 +38,26 @@ export function usePushNotifications() {
     refreshState()
   }, [refreshState])
 
+  // Subscribe on login and keep subscription fresh when app returns to foreground.
   useEffect(() => {
     if (!user || !isPushSupported() || !getVapidPublicKey()) return
     if (Notification.permission !== 'granted') return
 
-    void subscribeToPush(user.id).then((ok) => {
+    void refreshPushSubscription(user.id).then((ok) => {
       if (ok) setState('granted')
     })
+
+    function onVisible() {
+      if (document.visibilityState !== 'visible') return
+      void refreshPushSubscription(user.id)
+    }
+
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [user, standalone])
 
   async function enablePush(): Promise<boolean> {

@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/spinner'
 import { useStudentDataContext } from '@/contexts/StudentDataContext'
 import { useAuth } from '@/contexts/AuthProvider'
+import { usePassDeepLink } from '@/hooks/usePassDeepLink'
 import { filterPasses, isQrEligibleStatus, type PassFilter } from '@/lib/pass-filters'
 import type { OutpassRequest } from '@/lib/types'
 
@@ -43,6 +44,8 @@ export function StudentPassesPage() {
     const updated = passes.find((p) => p.id === selectedPass.id)
     if (updated) setSelectedPass(updated)
   }, [passes, selectedPass])
+
+  usePassDeepLink(passes, loading, setSelectedPass)
 
   async function handleRetry() {
     setRetrying(true)

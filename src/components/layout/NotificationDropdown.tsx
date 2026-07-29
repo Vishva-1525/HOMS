@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Bell, X } from 'lucide-react'
-import { getNotificationDotColor } from '@/lib/notifications'
+import { useAuth } from '@/contexts/AuthProvider'
+import { getNotificationDotColor, getNotificationTitle, getNotificationUrl } from '@/lib/notifications'
 import { formatRelativeTime } from '@/lib/relative-time'
 import type { NotificationLog } from '@/lib/notifications'
 import { cn } from '@/lib/utils'
@@ -9,13 +11,16 @@ interface NotificationDropdownProps {
   notifications: NotificationLog[]
   unreadCount: number
   onMarkAllRead: () => void
+  onMarkOneRead?: (id: string) => void
 }
 
 export function NotificationDropdown({
   notifications,
   unreadCount,
   onMarkAllRead,
+  onMarkOneRead,
 }: NotificationDropdownProps) {
+  const { role } = useAuth()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -31,6 +36,11 @@ export function NotificationDropdown({
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
+
+  function handleItemClick(item: NotificationLog) {
+    if (!item.read_at) onMarkOneRead?.(item.id)
+    setOpen(false)
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -92,25 +102,31 @@ export function NotificationDropdown({
                 </li>
               ) : (
                 notifications.map((item) => (
-                  <li
-                    key={item.id}
-                    className={cn(
-                      'border-b border-[var(--svce-border-default)] px-4 py-3 last:border-0',
-                      !item.read_at && 'bg-[#EBF3FF]',
-                    )}
-                  >
-                    <div className="flex gap-3">
-                      <span
-                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: getNotificationDotColor(item.type) }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-[#1A1A2E]">{item.message}</p>
-                        <p className="mt-0.5 text-xs text-[var(--svce-text-muted)]">
-                          {formatRelativeTime(item.created_at)}
-                        </p>
+                  <li key={item.id} className="last:border-0">
+                    <Link
+                      to={getNotificationUrl(role, item)}
+                      onClick={() => handleItemClick(item)}
+                      className={cn(
+                        'block border-b border-[var(--svce-border-default)] px-4 py-3 transition-colors hover:bg-white/50',
+                        !item.read_at && 'bg-[#EBF3FF]',
+                      )}
+                    >
+                      <div className="flex gap-3">
+                        <span
+                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: getNotificationDotColor(item.type) }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-[#1A5CA0]">
+                            {getNotificationTitle(item.type)}
+                          </p>
+                          <p className="mt-0.5 text-sm text-[#1A1A2E]">{item.message}</p>
+                          <p className="mt-0.5 text-xs text-[var(--svce-text-muted)]">
+                            {formatRelativeTime(item.created_at)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   </li>
                 ))
               )}

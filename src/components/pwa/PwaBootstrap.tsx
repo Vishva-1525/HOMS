@@ -1,31 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { registerSW } from 'virtual:pwa-register'
 
-/** Defer SW registration until after first paint so it doesn’t contend with boot. */
+/** Register the service worker early so push works when the app is backgrounded or closed. */
 export function PwaBootstrap() {
+  const registeredRef = useRef(false)
+
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return
+    if (!('serviceWorker' in navigator) || registeredRef.current) return
 
-    let cancelled = false
-    let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
-
-    const timer = window.setTimeout(() => {
-      if (cancelled) return
-      updateSW = registerSW({
-        immediate: false,
-        onRegistered(registration) {
-          if (registration) {
-            console.info('HOMS service worker registered')
-          }
-        },
-      })
-    }, 2500)
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(timer)
-      void updateSW
-    }
+    registeredRef.current = true
+    registerSW({
+      immediate: true,
+      onRegistered(registration) {
+        if (registration) {
+          console.info('HOMS service worker registered')
+        }
+      },
+    })
   }, [])
 
   return null

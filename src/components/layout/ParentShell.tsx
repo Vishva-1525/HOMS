@@ -3,7 +3,7 @@ import { NotificationDropdown } from '@/components/layout/NotificationDropdown'
 import { useNotifications } from '@/hooks/useNotifications'
 
 export function ParentShell() {
-  const { notifications, unreadCount, markAllRead } = useNotifications()
+  const { notifications, unreadCount, markAllRead, markOneRead } = useNotifications()
 
   return (
     <AppShell
@@ -13,6 +13,7 @@ export function ParentShell() {
           notifications={notifications}
           unreadCount={unreadCount}
           onMarkAllRead={markAllRead}
+          onMarkOneRead={markOneRead}
         />
       }
     />

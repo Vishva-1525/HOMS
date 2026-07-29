@@ -15,7 +15,6 @@ export function isIosDevice(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
   if (/iPad|iPhone|iPod/.test(ua)) return true
-  // iPadOS 13+ reports as Mac
   return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
 }
 
@@ -58,6 +57,30 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   return navigator.serviceWorker.ready
 }
 
+async function upsertPushSubscription(
+  userId: string,
+  subscription: PushSubscription,
+): Promise<boolean> {
+  const json = subscription.toJSON()
+  if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false
+
+  const now = new Date().toISOString()
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: userId,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+      device_label: navigator.userAgent.slice(0, 120),
+      last_seen_at: now,
+      updated_at: now,
+    },
+    { onConflict: 'user_id,endpoint' },
+  )
+
+  return !error
+}
+
 export async function subscribeToPush(userId: string): Promise<boolean> {
   if (!isPushSupported()) return false
 
@@ -78,21 +101,23 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
     })
   }
 
-  const json = subscription.toJSON()
-  if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false
+  return upsertPushSubscription(userId, subscription)
+}
 
-  const { error } = await supabase.from('push_subscriptions').upsert(
-    {
-      user_id: userId,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-      device_label: navigator.userAgent.slice(0, 120),
-    },
-    { onConflict: 'user_id,endpoint' },
-  )
+/** Re-sync an existing subscription and refresh last_seen_at (call on login / app focus). */
+export async function refreshPushSubscription(userId: string): Promise<boolean> {
+  if (!isPushSupported() || Notification.permission !== 'granted') return false
+  if (!getVapidPublicKey()) return false
 
-  return !error
+  const registration = await registerServiceWorker()
+  if (!registration) return false
+
+  let subscription = await registration.pushManager.getSubscription()
+  if (!subscription) {
+    return subscribeToPush(userId)
+  }
+
+  return upsertPushSubscription(userId, subscription)
 }
 
 export async function unsubscribeFromPush(userId: string): Promise<void> {
@@ -107,8 +132,15 @@ export async function unsubscribeFromPush(userId: string): Promise<void> {
   await supabase.from('push_subscriptions').delete().eq('user_id', userId).eq('endpoint', endpoint)
 }
 
-export function showLocalNotification(title: string, body: string, url = '/'): void {
+export function showLocalNotification(
+  title: string,
+  body: string,
+  url = '/',
+  notificationId?: string,
+): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
+
+  const tag = notificationId ? `homs-${notificationId}` : `homs-local-${url}`
 
   if ('serviceWorker' in navigator) {
     void navigator.serviceWorker.ready.then((registration) => {
@@ -117,7 +149,8 @@ export function showLocalNotification(title: string, body: string, url = '/'): v
         icon: '/pwa-icon-192.png',
         badge: '/pwa-icon-192.png',
         data: { url },
-        tag: `homs-local-${url}`,
+        tag,
+        renotify: true,
       })
     })
     return
@@ -136,7 +169,7 @@ export async function requestNotificationDispatch(notificationId: string): Promi
   }
 }
 
-/** Flush pending outbox so the other party's push (RT ↔ student) is sent immediately. */
+/** Flush pending outbox so push is sent immediately after approve/reject. */
 export async function flushNotificationOutbox(): Promise<void> {
   try {
     await supabase.functions.invoke('notification-dispatch', {

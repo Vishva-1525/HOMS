@@ -30,16 +30,20 @@ function getNotificationTitle(type: string): string {
   }
 }
 
-function getNotificationUrl(role: string, type: string): string {
+function getNotificationUrl(
+  role: string,
+  type: string,
+  outpassId?: string | null,
+): string {
+  if (role === 'student' && outpassId) {
+    return `/student/passes?pass=${outpassId}`
+  }
   if (role === 'warden') {
     if (type === 'extension') return '/warden/extensions'
     if (type === 'pending') return '/warden/pending'
     return '/warden/dashboard'
   }
-  if (role === 'student') {
-    if (type === 'approved') return '/student/passes'
-    return '/student/passes'
-  }
+  if (role === 'student') return '/student/passes'
   if (role === 'parent') return '/parent/dashboard'
   return '/'
 }
@@ -83,7 +87,7 @@ async function dispatchOne(
 ): Promise<{ push_sent: number; sms_sent: boolean }> {
   const { data: notification, error: notifError } = await admin
     .from('notifications_log')
-    .select('id, user_id, type, message')
+    .select('id, user_id, type, message, outpass_id')
     .eq('id', notificationId)
     .maybeSingle()
 
@@ -98,7 +102,11 @@ async function dispatchOne(
     .maybeSingle()
 
   const title = getNotificationTitle(notification.type)
-  const url = getNotificationUrl(profile?.role ?? 'student', notification.type)
+  const url = getNotificationUrl(
+    profile?.role ?? 'student',
+    notification.type,
+    notification.outpass_id,
+  )
 
   const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY')
   const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY')

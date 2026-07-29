@@ -1,41 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
-import type { NotificationLog } from '@/lib/notifications'
 import {
-  flushNotificationOutbox,
-  requestNotificationDispatch,
-  showLocalNotification,
-} from '@/lib/push-notifications'
+  getNotificationTitle,
+  getNotificationUrl,
+  type NotificationLog,
+} from '@/lib/notifications'
+import { flushNotificationOutbox, showLocalNotification } from '@/lib/push-notifications'
 import { supabase } from '@/lib/supabase'
-
-function notificationTitle(item: NotificationLog): string {
-  switch (item.type) {
-    case 'pending':
-      return 'New outpass request'
-    case 'approved':
-      return 'Request approved'
-    case 'rejected':
-      return 'Request rejected'
-    case 'extension':
-      return 'Extension request'
-    case 'overdue':
-      return 'Overdue alert'
-    default:
-      return 'HOMS notification'
-  }
-}
-
-function notificationUrl(role: string | null, type: string): string {
-  if (role === 'warden') {
-    if (type === 'extension') return '/warden/extensions'
-    if (type === 'pending') return '/warden/pending'
-    return '/warden/dashboard'
-  }
-  if (role === 'student') {
-    return '/student/passes'
-  }
-  return '/'
-}
 
 export function useNotifications() {
   const { user, role } = useAuth()
@@ -73,13 +44,18 @@ export function useNotifications() {
         return [item, ...prev].slice(0, 30)
       })
 
-      showLocalNotification(
-        notificationTitle(item),
-        item.message,
-        notificationUrl(role, item.type),
-      )
-      void requestNotificationDispatch(item.id)
-      void flushNotificationOutbox()
+      const url = getNotificationUrl(role, item)
+
+      // Foreground: instant alert via service worker (Realtime is faster than server push).
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        showLocalNotification(
+          getNotificationTitle(item.type),
+          item.message,
+          url,
+          item.id,
+        )
+      }
+      // Background / closed: server push from outbox dispatch reaches the device.
     },
     [role],
   )
@@ -88,7 +64,7 @@ export function useNotifications() {
     fetchNotifications()
   }, [fetchNotifications])
 
-  // Recover any stuck outbox rows when the dashboard opens
+  // Recover stuck outbox rows when the app opens.
   useEffect(() => {
     if (!user) return
     void flushNotificationOutbox()
@@ -126,13 +102,37 @@ export function useNotifications() {
     const unreadIds = notifications.filter((n) => !n.read_at).map((n) => n.id)
     if (unreadIds.length === 0) return
 
+    const readAt = new Date().toISOString()
     await supabase
       .from('notifications_log')
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: readAt })
       .in('id', unreadIds)
 
-    fetchNotifications()
+    setNotifications((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: readAt })))
   }
 
-  return { notifications, unreadCount, loading, markAllRead, refetch: fetchNotifications }
+  async function markOneRead(id: string) {
+    if (!user) return
+
+    const readAt = new Date().toISOString()
+    await supabase.from('notifications_log').update({ read_at: readAt }).eq('id', id)
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read_at: readAt } : n)),
+    )
+  }
+
+  function getUrlForNotification(notification: NotificationLog): string {
+    return getNotificationUrl(role, notification)
+  }
+
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    markAllRead,
+    markOneRead,
+    getUrlForNotification,
+    refetch: fetchNotifications,
+  }
 }

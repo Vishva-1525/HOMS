@@ -42,13 +42,15 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clientList) => {
       for (const client of clientList) {
-        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+        if (!client.url.startsWith(self.location.origin)) continue
+        if ('focus' in client) {
           const focused = await client.focus()
           if (focused && 'navigate' in focused) {
             try {
               await (focused as WindowClient).navigate(targetUrl)
+              return focused
             } catch {
-              /* navigate may be unsupported */
+              /* navigate may be unsupported on older browsers */
             }
           }
           return focused

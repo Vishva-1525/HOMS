@@ -5,7 +5,7 @@ import { useWardenDataContext } from '@/contexts/WardenDataContext'
 
 export function WardenShell() {
   const { pendingCount, pendingExtensionsCount } = useWardenDataContext()
-  const { notifications, unreadCount, markAllRead } = useNotifications()
+  const { notifications, unreadCount, markAllRead, markOneRead } = useNotifications()
 
   function getNavBadgeCount(path: string): number {
     if (path === '/warden/pending') return pendingCount
@@ -22,6 +22,7 @@ export function WardenShell() {
           notifications={notifications}
           unreadCount={unreadCount}
           onMarkAllRead={markAllRead}
+          onMarkOneRead={markOneRead}
         />
       }
     />

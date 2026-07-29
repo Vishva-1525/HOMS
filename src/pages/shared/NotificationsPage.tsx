@@ -1,12 +1,15 @@
+import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
+import { useAuth } from '@/contexts/AuthProvider'
 import { useNotifications } from '@/hooks/useNotifications'
-import { getNotificationDotColor } from '@/lib/notifications'
+import { getNotificationDotColor, getNotificationTitle, getNotificationUrl } from '@/lib/notifications'
 import { formatRelativeTime } from '@/lib/relative-time'
 import { cn } from '@/lib/utils'
 
 export function NotificationsPage() {
-  const { notifications, unreadCount, loading, markAllRead } = useNotifications()
+  const { role } = useAuth()
+  const { notifications, unreadCount, loading, markAllRead, markOneRead } = useNotifications()
 
   return (
     <div className="space-y-6">
@@ -36,25 +39,33 @@ export function NotificationsPage() {
         ) : (
           <ul>
             {notifications.map((item) => (
-              <li
-                key={item.id}
-                className={cn(
-                  'border-b border-white/50 px-4 py-4 last:border-0',
-                  !item.read_at && 'bg-[#EBF3FF]/60',
-                )}
-              >
-                <div className="flex gap-3">
-                  <span
-                    className="mt-2 h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: getNotificationDotColor(item.type) }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-[#1A1A2E]">{item.message}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {formatRelativeTime(item.created_at)}
-                    </p>
+              <li key={item.id} className="last:border-0">
+                <Link
+                  to={getNotificationUrl(role, item)}
+                  onClick={() => {
+                    if (!item.read_at) void markOneRead(item.id)
+                  }}
+                  className={cn(
+                    'block border-b border-white/50 px-4 py-4 transition-colors hover:bg-white/40',
+                    !item.read_at && 'bg-[#EBF3FF]/60',
+                  )}
+                >
+                  <div className="flex gap-3">
+                    <span
+                      className="mt-2 h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: getNotificationDotColor(item.type) }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[#1A5CA0]">
+                        {getNotificationTitle(item.type)}
+                      </p>
+                      <p className="mt-0.5 text-sm text-[#1A1A2E]">{item.message}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatRelativeTime(item.created_at)}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </Link>
               </li>
             ))}
           </ul>
