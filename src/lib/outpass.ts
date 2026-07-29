@@ -33,10 +33,10 @@ export function getStatusChipClass(status: OutpassStatus): string {
   }
 }
 
-export function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good Morning'
-  if (hour < 17) return 'Good Afternoon'
+export function getGreeting(at: Date = new Date()): string {
+  const hour = at.getHours()
+  if (hour >= 5 && hour < 12) return 'Good Morning'
+  if (hour >= 12 && hour < 17) return 'Good Afternoon'
   return 'Good Evening'
 }
 

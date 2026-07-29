@@ -89,10 +89,10 @@ export function TimeScrollPicker({
             data-selected={isSelected ? 'true' : 'false'}
             onClick={() => selectTime(slot.hours, slot.minutes)}
             className={cn(
-              'flex w-full items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+              'flex w-full items-center justify-center rounded-full px-3 py-2.5 text-sm font-medium transition-colors',
               isSelected
                 ? 'bg-[#1A5CA0] text-white shadow-sm ring-2 ring-[#1A5CA0]/30'
-                : 'text-slate-700 hover:bg-[#EBF3FF]/80',
+                : 'text-slate-900 hover:bg-[#EBF3FF]/80',
             )}
           >
             {formatTimeLabel(slot.hours, slot.minutes)}

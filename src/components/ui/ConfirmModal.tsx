@@ -41,7 +41,7 @@ export function ConfirmModal({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/50"
         aria-label="Close dialog"
         onClick={onCancel}
       />
@@ -51,7 +51,7 @@ export function ConfirmModal({
         aria-labelledby="confirm-modal-title"
         aria-describedby="confirm-modal-description"
         className={cn(
-          'relative z-10 w-full max-w-[440px] glass-panel-strong p-6',
+          'relative z-10 w-full max-w-[440px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/25 dark:border-slate-700 dark:bg-slate-900',
         )}
       >
         <h2

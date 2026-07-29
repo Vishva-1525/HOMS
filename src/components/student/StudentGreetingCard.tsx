@@ -1,4 +1,5 @@
-import { getGreeting, formatReturnTime } from '@/lib/outpass'
+import { useGreeting } from '@/hooks/useGreeting'
+import { formatReturnTime } from '@/lib/outpass'
 import type { ActiveCheckedOutPass } from '@/hooks/useStudentDashboardData'
 import type { Student } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -16,11 +17,13 @@ export function StudentGreetingCard({
   checkedOutPass,
   variant = 'card',
 }: StudentGreetingCardProps) {
+  const greeting = useGreeting()
+
   if (variant === 'hero') {
     return (
       <div className="text-white">
         <p className="mt-1 text-[22px] font-semibold leading-snug tracking-tight sm:text-2xl">
-          {getGreeting()}, {firstName}
+          {greeting}, {firstName}
         </p>
         <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-[#E4EEF8]">
           <span>{student?.reg_number ?? '—'}</span>
@@ -47,7 +50,7 @@ export function StudentGreetingCard({
   return (
     <div className={cn('rounded-xl bg-[#0D3F72] p-4 text-white shadow-md')}>
       <p className="text-[20px] font-semibold leading-snug tracking-tight">
-        {getGreeting()}, {firstName}
+        {greeting}, {firstName}
       </p>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-[#E4EEF8]">
         <span>{student?.reg_number ?? '—'}</span>

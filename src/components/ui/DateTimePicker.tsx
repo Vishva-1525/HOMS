@@ -244,7 +244,7 @@ export function DateTimePicker({
               {WEEKDAYS.map((d, i) => (
                 <span
                   key={`${d}-${i}`}
-                  className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400"
+                  className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500"
                 >
                   {d}
                 </span>
@@ -271,7 +271,7 @@ export function DateTimePicker({
                       'flex h-8 items-center justify-center rounded-md text-xs font-medium transition-colors',
                       isSelected && 'bg-[#1A5CA0] text-white shadow-sm',
                       !isSelected && selectable && 'text-slate-900 hover:bg-[#EBF3FF]',
-                      !isSelected && !selectable && 'cursor-not-allowed text-slate-400',
+                      !isSelected && !selectable && 'cursor-not-allowed text-slate-500/80',
                       isToday && !isSelected && selectable && 'font-bold ring-1 ring-[#1A5CA0]/60',
                     )}
                   >
@@ -331,7 +331,7 @@ export function DateTimePicker({
               id={id}
               role="listbox"
               aria-label="Select time"
-              className="flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="-mx-0.5 flex gap-1.5 overflow-x-auto px-1 py-1 scroll-px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {timeSlots.map((slot) => {
                 const isSelected =
@@ -344,10 +344,10 @@ export function DateTimePicker({
                     aria-selected={isSelected}
                     onClick={() => handleTimeSelect(slot.hours, slot.minutes)}
                     className={cn(
-                      'shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                      'shrink-0 rounded-full px-3 py-2 text-xs font-medium transition-colors',
                       isSelected
-                        ? 'bg-[#1A5CA0] text-white shadow-sm'
-                        : 'bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-[#EBF3FF] hover:ring-[#1A5CA0]/40',
+                        ? 'bg-[#1A5CA0] text-white shadow-sm ring-2 ring-[#1A5CA0]/25'
+                        : 'bg-white text-slate-900 ring-1 ring-slate-300 hover:bg-[#EBF3FF] hover:ring-[#1A5CA0]/40',
                     )}
                   >
                     {formatTimeLabel(slot.hours, slot.minutes)}

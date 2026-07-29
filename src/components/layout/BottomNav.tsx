@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import type { NavItem } from '@/components/layout/nav'
+import { useTheme } from '@/contexts/ThemeProvider'
 import { cn } from '@/lib/utils'
 
 interface BottomNavProps {
@@ -8,9 +9,10 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ items, variant = 'light' }: BottomNavProps) {
+  const { isDark: themeDark } = useTheme()
   if (items.length === 0) return null
 
-  const isDark = variant === 'dark'
+  const isDark = variant === 'dark' || themeDark
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
@@ -38,8 +40,8 @@ export function BottomNav({ items, variant = 'light' }: BottomNavProps) {
                       ? 'text-[#93C5FD]'
                       : 'text-[#1A5CA0]'
                     : isDark
-                      ? 'text-[#6B7280]'
-                      : 'text-[#9CA3AF]',
+                      ? 'text-slate-400'
+                      : 'text-slate-500',
                 )
               }
             >

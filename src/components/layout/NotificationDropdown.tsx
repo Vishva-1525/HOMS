@@ -47,7 +47,7 @@ export function NotificationDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-md p-2 text-[var(--svce-text-secondary)] hover:bg-white/40 dark:hover:bg-white/10"
+        className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--svce-text-secondary)] hover:bg-white/40 dark:hover:bg-white/10"
         aria-label="Notifications"
         aria-expanded={open}
       >

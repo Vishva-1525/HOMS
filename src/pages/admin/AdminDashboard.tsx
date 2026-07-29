@@ -30,7 +30,7 @@ export function AdminDashboard() {
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-2xl md:text-3xl">Admin Dashboard</h1>
         <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
-          Live operations and pass analytics
+          Real-time operations and historical analytics
         </p>
       </div>
 
@@ -43,7 +43,7 @@ export function AdminDashboard() {
       <section className="dashboard-section">
         <h2 className="dashboard-section-heading">
           <span className="dashboard-section-accent" aria-hidden />
-          Live operations
+          Real-Time
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
@@ -83,7 +83,7 @@ export function AdminDashboard() {
       </section>
 
       <PassPeriodStatsPanel
-        title="Pass analytics"
+        title="Analytics"
         variant="analytics"
       />
 
