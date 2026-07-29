@@ -1,4 +1,8 @@
 import type { ExtensionRequest, GateLog, OutpassRequest, OutpassStatus } from '@/lib/types'
+import {
+  getLatestGateEvent,
+  isMultiDailyScanPass,
+} from '@/lib/pass-multi-scan'
 
 export type PassFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'completed'
 
@@ -19,8 +23,15 @@ export function hasEntryLog(passId: string, gateLogs: GateLog[]): boolean {
 
 export function isPassOverdue(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
+  if (getReturnOverdueMs(pass) <= 0) return false
+
+  if (isMultiDailyScanPass(pass)) {
+    const latest = getLatestGateEvent(gateLogs)
+    return latest?.event_type === 'exit'
+  }
+
   if (hasEntryLog(pass.id, gateLogs)) return false
-  return getReturnOverdueMs(pass) > 0
+  return true
 }
 
 export function getReturnOverdueMs(pass: OutpassRequest, at = Date.now()): number {
@@ -87,6 +98,9 @@ export function evaluateEntryScan(
 
 export function isPassCompleted(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (pass.status === 'cancelled') return true
+  if (isMultiDailyScanPass(pass)) {
+    return Date.now() > new Date(pass.return_by).getTime()
+  }
   return hasEntryLog(pass.id, gateLogs)
 }
 
@@ -114,6 +128,7 @@ export function canRequestExtension(
   gateLogs: GateLog[] = [],
 ): boolean {
   if (pass.status !== 'approved') return false
+  if (isMultiDailyScanPass(pass)) return false
   if (hasEntryLog(pass.id, gateLogs)) return false
   return Date.now() < new Date(pass.return_by).getTime()
 }

@@ -32,7 +32,7 @@ function getVerificationResult(result: ScanValidationResult): {
   if (result.kind === 'duplicate-exit') {
     return {
       label: 'Duplicate exit',
-      detail: 'Student already exited.',
+      detail: result.reason ?? 'Student already exited.',
       tone: 'warning',
     }
   }
@@ -40,7 +40,7 @@ function getVerificationResult(result: ScanValidationResult): {
   if (result.kind === 'duplicate-entry') {
     return {
       label: 'Duplicate entry',
-      detail: 'Student already entered.',
+      detail: result.reason ?? 'Student already entered.',
       tone: 'warning',
     }
   }

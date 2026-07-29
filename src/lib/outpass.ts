@@ -2,10 +2,13 @@ import type { OutpassStatus, PassType } from '@/lib/types'
 
 export const PASS_TYPE_LABELS: Record<PassType, string> = {
   outpass: 'Outpass',
-  staypass: 'Staypass',
+  staypass: 'Stay Pass',
   night_pass: 'Night Pass',
   special_pass: 'Special Pass',
 }
+
+/** Pass types students can request. */
+export const CREATABLE_PASS_TYPES: PassType[] = ['outpass', 'staypass', 'special_pass']
 
 export const STATUS_LABELS: Record<OutpassStatus, string> = {
   pending: 'Pending',

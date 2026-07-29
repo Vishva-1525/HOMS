@@ -128,7 +128,7 @@ export function ComponentGalleryPage() {
           <div className="flex flex-wrap gap-2">
             <PassTypeBadge type="outpass" />
             <PassTypeBadge type="staypass" />
-            <PassTypeBadge type="night_pass" />
+            <PassTypeBadge type="special_pass" />
           </div>
         </Section>
 

@@ -46,7 +46,7 @@ const PERIOD_TABS: { id: ReportTab; label: string }[] = [
 
 const AGGREGATE_TAB: { id: ReportTab; label: string } = { id: 'aggregate', label: 'Aggregate' }
 
-const PASS_TYPES: PassType[] = ['outpass', 'staypass', 'night_pass']
+const PASS_TYPES: PassType[] = ['outpass', 'staypass', 'special_pass']
 
 function reportRowStatus(row: ReportRow): StatusBadgeStatus {
   if (row.is_overdue) return 'overdue'

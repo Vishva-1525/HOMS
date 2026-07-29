@@ -40,10 +40,10 @@ export function StudentNewRequestPage() {
 
   const departureMin = useMemo(() => toDatetimeLocalNow(), [])
   const returnBounds = useMemo(
-    () => getReturnDatetimeBounds(form.passType, form.departureAt),
-    [form.passType, form.departureAt],
+    () => getReturnDatetimeBounds(form.passType, form.departureAt, form.specialPurpose),
+    [form.passType, form.departureAt, form.specialPurpose],
   )
-  const durationHint = getPassTypeDurationHint(form.passType)
+  const durationHint = getPassTypeDurationHint(form.passType, form.specialPurpose)
 
   function updateField<K extends keyof NewRequestFormValues>(
     key: K,
@@ -56,10 +56,13 @@ export function StudentNewRequestPage() {
         next.specialRemarks = ''
         next.documentFile = null
       }
-      if (key === 'passType' || key === 'departureAt') {
+      if (key === 'passType' || key === 'departureAt' || key === 'specialPurpose') {
         const bounds = getReturnDatetimeBounds(
           key === 'passType' ? (value as NewRequestFormValues['passType']) : next.passType,
           key === 'departureAt' ? (value as string) : next.departureAt,
+          key === 'specialPurpose'
+            ? (value as NewRequestFormValues['specialPurpose'])
+            : next.specialPurpose,
         )
         if (
           next.returnBy &&

@@ -4,6 +4,12 @@ import {
   hasEntryLog,
   isQrEligibleStatus,
 } from '@/lib/pass-filters'
+import {
+  getLatestGateEvent,
+  hasGateEventOnIstDay,
+  isMultiDailyScanPass,
+  isPassWithinValidityWindow,
+} from '@/lib/pass-multi-scan'
 import { parseScanInput } from '@/lib/pass-qr'
 import { supabase } from '@/lib/supabase'
 import { getStudentName, getStudentReg } from '@/lib/warden'
@@ -39,9 +45,11 @@ export interface ScanValidationResult {
   scannerNames?: Record<string, string>
 }
 
+/** Next gate action from the latest log (supports internship multi-daily cycles). */
 export function getNextGateAction(gateLogs: GateLog[]): GateEventType {
-  const hasExit = gateLogs.some((log) => log.event_type === 'exit')
-  return hasExit ? 'entry' : 'exit'
+  const latest = getLatestGateEvent(gateLogs)
+  if (!latest || latest.event_type === 'entry') return 'exit'
+  return 'entry'
 }
 
 export function hasExitLog(passId: string, gateLogs: GateLog[]): boolean {
@@ -186,6 +194,54 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
     }
   }
 
+  const multi = isMultiDailyScanPass(pass)
+
+  if (multi) {
+    if (!isPassWithinValidityWindow(pass)) {
+      const now = Date.now()
+      const reason =
+        now < new Date(pass.departure_at).getTime()
+          ? 'Internship QR is not valid before departure.'
+          : 'Internship QR has expired. Student must renew the pass.'
+      return { ...base, kind: 'invalid', scanPhase: 'exit', reason }
+    }
+
+    const nextAction = getNextGateAction(gateLogs)
+
+    if (nextAction === 'exit' && hasGateEventOnIstDay(gateLogs, 'exit')) {
+      return {
+        ...base,
+        kind: 'duplicate-exit',
+        scanPhase: 'exit',
+        nextAction,
+        reason: 'Exit already recorded for today.',
+      }
+    }
+
+    if (nextAction === 'entry' && hasGateEventOnIstDay(gateLogs, 'entry')) {
+      return {
+        ...base,
+        kind: 'duplicate-entry',
+        scanPhase: 'entry',
+        nextAction,
+        reason: 'Entry already recorded for today.',
+      }
+    }
+
+    if (nextAction === 'exit') {
+      return { ...base, kind: 'valid', scanPhase: 'exit', nextAction }
+    }
+
+    return {
+      ...base,
+      kind: 'valid',
+      scanPhase: 'entry',
+      nextAction,
+      overdueMs: 0,
+      requiresWardenAlert: false,
+    }
+  }
+
   if (hasEntryLog(pass.id, gateLogs)) {
     return {
       ...base,
@@ -198,6 +254,14 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
   const nextAction = getNextGateAction(gateLogs)
 
   if (nextAction === 'exit') {
+    if (Date.now() > new Date(pass.return_by).getTime()) {
+      return {
+        ...base,
+        kind: 'invalid',
+        scanPhase: 'exit',
+        reason: 'This pass has expired.',
+      }
+    }
     return {
       ...base,
       kind: 'valid',
@@ -248,60 +312,21 @@ export async function recordGateEvent(
   scannedBy: string,
   eventType: GateEventType,
 ): Promise<{ error?: string; gateLogs?: GateLog[] }> {
-  const { pass, gateLogs, error: fetchError } = await fetchPassWithLogs(outpassId)
-  if (fetchError) {
-    return { error: fetchError }
-  }
+  void scannedBy
 
-  if (!pass) {
-    return { error: 'Pass not found or not approved.' }
-  }
-
-  if (!isQrEligibleStatus(pass.status)) {
-    return { error: 'This pass is no longer active.' }
-  }
-
-  if (hasEntryLog(pass.id, gateLogs)) {
-    return { error: 'Student already entered.' }
-  }
-
-  const exitRecorded = hasExitLog(pass.id, gateLogs)
-  const expectedAction = getNextGateAction(gateLogs)
-
-  if (eventType === 'exit' && exitRecorded) {
-    return { error: 'Student already exited.' }
-  }
-
-  if (eventType === 'entry' && !exitRecorded) {
-    return { error: 'Record exit before allowing entry.' }
-  }
-
-  if (eventType !== expectedAction) {
-    return {
-      error:
-        expectedAction === 'exit'
-          ? 'This student must exit first.'
-          : 'Student already exited — record entry on return.',
-    }
-  }
-
-  const { error } = await supabase.from('gate_logs').insert({
-    outpass_id: outpassId,
-    scanned_by: scannedBy,
-    event_type: eventType,
+  const { error } = await supabase.rpc('record_gate_scan', {
+    p_outpass_id: outpassId,
+    p_event_type: eventType,
   })
 
   if (error) {
-    if (error.code === '23505') {
-      return {
-        error:
-          eventType === 'exit' ? 'Student already exited.' : 'Student already entered.',
-      }
-    }
     return { error: error.message }
   }
 
-  const { gateLogs: updatedLogs } = await fetchPassWithLogs(outpassId)
+  const { gateLogs: updatedLogs, error: fetchError } = await fetchPassWithLogs(outpassId)
+  if (fetchError) {
+    return { gateLogs: updatedLogs, error: fetchError }
+  }
   return { gateLogs: updatedLogs }
 }
 

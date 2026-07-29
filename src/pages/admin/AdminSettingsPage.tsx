@@ -6,8 +6,9 @@ import { useSystemSettings } from '@/hooks/admin/useSystemSettings'
 
 const SETTING_LABELS: Record<string, { label: string; type?: 'boolean' }> = {
   max_outpass_hours: { label: 'Max outpass hours' },
-  max_staypass_days: { label: 'Max staypass days' },
-  max_night_pass_hours: { label: 'Max night pass hours' },
+  max_staypass_days: { label: 'Max stay pass days (0 = unlimited)' },
+  max_special_pass_days: { label: 'Max special pass days (non-internship)' },
+  max_internship_days: { label: 'Max internship QR days' },
   max_weekly_passes: { label: 'Max weekly passes per student' },
   max_monthly_passes: { label: 'Max monthly passes per student' },
   qr_availability_minutes: {

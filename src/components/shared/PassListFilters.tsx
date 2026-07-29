@@ -11,7 +11,6 @@ export const PASS_TYPE_FILTER_OPTIONS: (PassType | 'all')[] = [
   'all',
   'outpass',
   'staypass',
-  'night_pass',
   'special_pass',
 ]
 

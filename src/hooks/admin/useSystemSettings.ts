@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 const DEFAULT_KEYS = [
   'max_outpass_hours',
   'max_staypass_days',
-  'max_night_pass_hours',
+  'max_special_pass_days',
+  'max_internship_days',
   'max_weekly_passes',
   'max_monthly_passes',
   'qr_availability_minutes',
@@ -66,8 +67,7 @@ export function useSystemSettings() {
     for (const { key, value } of updates) {
       const { error: updateError } = await supabase
         .from('system_settings')
-        .update({ value })
-        .eq('key', key)
+        .upsert({ key, value }, { onConflict: 'key' })
 
       if (updateError) {
         setError(updateError.message)

@@ -1,14 +1,14 @@
 import type { SpecialPassPurpose } from '@/lib/types'
 
+/** Selectable special-pass purposes (Industrial Visit removed). */
 export const SPECIAL_PASS_PURPOSES: {
-  value: SpecialPassPurpose
+  value: Exclude<SpecialPassPurpose, 'industrial_visit'>
   label: string
   requiresDocument: boolean
 }[] = [
   { value: 'internship', label: 'Internship', requiresDocument: true },
   { value: 'hackathon', label: 'Hackathon', requiresDocument: true },
   { value: 'sports_event', label: 'Sports Event', requiresDocument: true },
-  { value: 'industrial_visit', label: 'Industrial Visit', requiresDocument: true },
   { value: 'other', label: 'Other', requiresDocument: false },
 ]
 

@@ -1,4 +1,5 @@
 import type { OutpassRequest } from '@/lib/types'
+import { isMultiDailyScanPass, isPassWithinValidityWindow } from '@/lib/pass-multi-scan'
 
 export const DEFAULT_QR_AVAILABILITY_MINUTES = 30
 
@@ -15,6 +16,13 @@ export function getQrAvailabilityOpensAt(pass: OutpassRequest, windowMinutes: nu
 
 export function isQrAvailable(pass: OutpassRequest, windowMinutes: number, now = Date.now()): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
+  if (now > new Date(pass.return_by).getTime()) return false
+
+  if (isMultiDailyScanPass(pass)) {
+    // Internship QR is usable for the full validity window once approved.
+    return now <= new Date(pass.return_by).getTime()
+  }
+
   return now >= getQrAvailabilityOpensAt(pass, windowMinutes).getTime()
 }
 
@@ -32,5 +40,8 @@ export function formatQrOpensAt(pass: OutpassRequest, windowMinutes: number): st
 }
 
 export function isWithinDepartureWindow(pass: OutpassRequest, now = Date.now()): boolean {
+  if (isMultiDailyScanPass(pass)) {
+    return isPassWithinValidityWindow(pass, now)
+  }
   return now >= new Date(pass.departure_at).getTime()
 }

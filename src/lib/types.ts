@@ -5,8 +5,10 @@ export type UserRole =
   | 'parent'
   | 'admin'
 
+/** `night_pass` retained for historical rows only — no longer creatable. */
 export type PassType = 'outpass' | 'staypass' | 'night_pass' | 'special_pass'
 
+/** `industrial_visit` retained for historical rows only — no longer selectable. */
 export type SpecialPassPurpose =
   | 'internship'
   | 'hackathon'
@@ -72,6 +74,8 @@ export interface OutpassRequest {
   special_remarks?: string | null
   document_url?: string | null
   requires_hod_approval?: boolean
+  /** Internship passes: same QR for daily exit/entry until return_by. */
+  allows_multi_daily_scan?: boolean
 }
 
 export interface StudentProfile {
@@ -296,6 +300,10 @@ export interface Database {
       }
       get_pass_limit_violations: {
         Args: Record<string, never>
+        Returns: Json
+      }
+      record_gate_scan: {
+        Args: { p_outpass_id: string; p_event_type: GateEventType }
         Returns: Json
       }
     }

@@ -14,6 +14,7 @@ import {
   isQrAvailable,
   DEFAULT_QR_AVAILABILITY_MINUTES,
 } from '@/lib/qr-availability'
+import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { buildPassQrValue } from '@/lib/pass-qr'
 import type { OutpassRequest, StudentPassQuotas } from '@/lib/types'
 
@@ -43,6 +44,10 @@ export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProp
     return <PassQrPlaceholder status={pass.status} />
   }
 
+  if (Date.now() > new Date(pass.return_by).getTime()) {
+    return <PassQrPlaceholder status={pass.status} variant="expired" />
+  }
+
   if (!qrReady) {
     return (
       <PassQrPlaceholder
@@ -60,6 +65,7 @@ export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProp
     : { weekly: null, monthly: null }
   const weeklyLabel = formatPassSequenceLabel(sequence.weekly, 'Weekly')
   const monthlyLabel = formatPassSequenceLabel(sequence.monthly, 'Monthly')
+  const multiDaily = isMultiDailyScanPass(pass)
 
   async function getQrBlob(): Promise<Blob | null> {
     const canvas = canvasRef.current
@@ -118,6 +124,16 @@ export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProp
               <p className="text-sm font-semibold text-[#0D3F72]">{monthlyLabel}</p>
             )}
           </div>
+        )}
+        {multiDaily && (
+          <p className="max-w-[220px] text-center text-xs text-slate-600">
+            Valid for daily exit & entry until {new Date(pass.return_by).toLocaleString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
         )}
       </div>
 

@@ -232,6 +232,12 @@ export function PassDetailSheet({
                   value={SPECIAL_PASS_PURPOSE_LABELS[pass.special_purpose]}
                 />
               )}
+              {pass.special_purpose === 'internship' && (
+                <DetailRow
+                  label="QR access"
+                  value="Reusable for daily exit & entry until return time — renew after expiry"
+                />
+              )}
               {pass.special_remarks && (
                 <DetailRow label="Remarks" value={pass.special_remarks} />
               )}

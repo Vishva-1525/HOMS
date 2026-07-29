@@ -12,14 +12,14 @@ type Story = StoryObj<typeof meta>
 
 export const Outpass: Story = { args: { type: 'outpass' } }
 export const Staypass: Story = { args: { type: 'staypass' } }
-export const NightPass: Story = { args: { type: 'night_pass' } }
+export const SpecialPass: Story = { args: { type: 'special_pass' } }
 
 export const AllTypes: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
       <PassTypeBadge type="outpass" />
       <PassTypeBadge type="staypass" />
-      <PassTypeBadge type="night_pass" />
+      <PassTypeBadge type="special_pass" />
     </div>
   ),
 }

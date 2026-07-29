@@ -1,32 +1,27 @@
-import { Briefcase, Moon, MoonStar, Sun } from 'lucide-react'
+import { Briefcase, Moon, Sun } from 'lucide-react'
 import { PASS_TYPE_LABELS } from '@/lib/outpass'
 import type { PassType } from '@/lib/types'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 const PASS_OPTIONS: {
-  type: PassType
+  type: Exclude<PassType, 'night_pass'>
   description: string
   icon: typeof Sun
 }[] = [
   {
     type: 'outpass',
-    description: 'Day trip — same day, within 8 hours',
+    description: 'Day trip — within 24 hours',
     icon: Sun,
   },
   {
     type: 'staypass',
-    description: 'Overnight — return within 10 days',
+    description: 'Overnight or longer — no max duration',
     icon: Moon,
   },
   {
-    type: 'night_pass',
-    description: 'Extended leave — up to 78 hours',
-    icon: MoonStar,
-  },
-  {
     type: 'special_pass',
-    description: 'Internship / events — up to 7 days',
+    description: 'Internship / events — purpose-based',
     icon: Briefcase,
   },
 ]
@@ -66,7 +61,7 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-2">
         {PASS_OPTIONS.map((option) => {
           const Icon = option.icon
           const isSelected = value === option.type
