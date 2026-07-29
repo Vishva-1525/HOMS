@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
+  CheckCircle,
   Clock,
-  FileText,
   LogOut,
-  Users,
 } from 'lucide-react'
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
@@ -31,7 +30,7 @@ export function AdminDashboard() {
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-2xl md:text-3xl">Admin Dashboard</h1>
         <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
-          System overview and live activity
+          Live operations and pass analytics
         </p>
       </div>
 
@@ -44,24 +43,31 @@ export function AdminDashboard() {
       <section className="dashboard-section">
         <h2 className="dashboard-section-heading">
           <span className="dashboard-section-accent" aria-hidden />
-          Overview
+          Live operations
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <StatCard label="Total students" value={stats.total_students} icon={Users} iconTone="blue" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Active outpasses now"
-            value={stats.active_outpasses}
-            icon={FileText}
-            iconTone="green"
+            label="Pending review"
+            value={stats.pending_approval}
+            icon={Clock}
+            iconTone="amber"
+            iconPulse={stats.pending_approval > 0}
+            valueClassName={stats.pending_approval > 0 ? 'text-[#D97706]' : undefined}
           />
           <StatCard
-            label="Currently outside hostel"
+            label="Currently out"
             value={stats.currently_outside}
             icon={LogOut}
             iconTone="blue"
           />
           <StatCard
-            label="Overdue returns"
+            label="Approved today"
+            value={stats.approved_today}
+            icon={CheckCircle}
+            iconTone="green"
+          />
+          <StatCard
+            label="Overdue"
             value={stats.overdue_returns}
             icon={AlertTriangle}
             iconTone="red"
@@ -73,24 +79,13 @@ export function AdminDashboard() {
                 : undefined
             }
           />
-          <StatCard
-            label="Pending warden approval"
-            value={stats.pending_approval}
-            icon={Clock}
-            iconTone="amber"
-            iconPulse={stats.pending_approval > 0}
-            valueClassName={stats.pending_approval > 0 ? 'text-[#D97706]' : undefined}
-          />
-          <StatCard
-            label="Total passes this month"
-            value={stats.passes_this_month}
-            icon={FileText}
-            iconTone="default"
-          />
         </div>
       </section>
 
-      <PassPeriodStatsPanel title="Pass statistics" />
+      <PassPeriodStatsPanel
+        title="Pass analytics"
+        variant="analytics"
+      />
 
       {!violationsLoading && violations.length > 0 && (
         <section className="dashboard-surface-muted space-y-4 p-4 sm:p-5">

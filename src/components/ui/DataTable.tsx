@@ -26,6 +26,8 @@ export interface DataTableProps<T> {
   onRowClick?: (row: T, index: number) => void
   /** Renders card rows on viewports below md; table is used from md upward. */
   mobileCardRender?: (row: T, index: number) => ReactNode
+  /** Stick table header while scrolling inside a max-height container. */
+  stickyHeader?: boolean
 }
 
 function getCellValue<T extends object>(row: T, accessor: keyof T | string): unknown {
@@ -62,6 +64,7 @@ export function DataTable<T extends object>({
   getRowClassName,
   onRowClick,
   mobileCardRender,
+  stickyHeader = false,
 }: DataTableProps<T>) {
   const showMobileCards = Boolean(mobileCardRender)
 
@@ -106,6 +109,7 @@ export function DataTable<T extends object>({
                   style={column.width ? { width: column.width, minWidth: column.width } : undefined}
                   className={cn(
                     'px-4 py-3 text-[length:var(--svce-text-small)] font-bold uppercase tracking-wider text-slate-900',
+                    stickyHeader && 'sticky top-0 z-10 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95',
                     column.headerClassName,
                   )}
                 >

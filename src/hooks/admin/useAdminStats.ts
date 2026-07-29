@@ -9,6 +9,7 @@ const EMPTY_STATS: AdminStats = {
   currently_outside: 0,
   overdue_returns: 0,
   pending_approval: 0,
+  approved_today: 0,
   passes_this_month: 0,
 }
 
@@ -27,14 +28,22 @@ export function useAdminStats() {
         ? await (async () => {
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_stats')
             if (rpcError) throw new Error(rpcError.message)
-            const next = (rpcData as AdminStats) ?? EMPTY_STATS
+            const next = {
+              ...EMPTY_STATS,
+              ...((rpcData as AdminStats) ?? {}),
+              approved_today: Number((rpcData as AdminStats)?.approved_today) || 0,
+            }
             setCachedQuery(STATS_CACHE_KEY, next, STATS_TTL_MS)
             return next
           })()
         : await cachedQuery(STATS_CACHE_KEY, STATS_TTL_MS, async () => {
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_stats')
             if (rpcError) throw new Error(rpcError.message)
-            return (rpcData as AdminStats) ?? EMPTY_STATS
+            return {
+              ...EMPTY_STATS,
+              ...((rpcData as AdminStats) ?? {}),
+              approved_today: Number((rpcData as AdminStats)?.approved_today) || 0,
+            }
           })
 
       setStats(data)

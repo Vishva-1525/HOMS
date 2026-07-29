@@ -5,6 +5,7 @@ export type PassStatsPeriod = 'weekly' | 'monthly' | 'yearly'
 
 export interface PassPeriodStats {
   period: PassStatsPeriod
+  total: number
   pending: number
   approved: number
   rejected: number
@@ -14,6 +15,7 @@ export interface PassPeriodStats {
 export interface PassPeriodStatsRpc {
   period: string
   period_start: string
+  total?: number
   pending: number
   approved: number
   rejected: number
@@ -45,6 +47,7 @@ export function computePassPeriodStats(
 
   return {
     period,
+    total: inPeriod.length,
     pending: inPeriod.filter((p) => classifyPass(p, gateLogs) === 'pending').length,
     approved: inPeriod.filter((p) => {
       const c = classifyPass(p, gateLogs)

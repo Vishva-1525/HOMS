@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, FileText, XCircle } from 'lucide-react'
 import { DashboardFilterChip } from '@/components/ui/DashboardFilterChip'
 import { StatCard } from '@/components/ui/StatCard'
 import { Spinner } from '@/components/ui/spinner'
@@ -16,11 +16,17 @@ const PERIOD_TABS: { id: PassStatsPeriod; label: string }[] = [
 interface PassPeriodStatsPanelProps {
   title?: string
   className?: string
+  /**
+   * `analytics` — total / approved / rejected (admin dashboard; no overlap with live ops).
+   * `operations` — pending / approved / rejected / overdue (warden home).
+   */
+  variant?: 'analytics' | 'operations'
 }
 
 export function PassPeriodStatsPanel({
   title = 'Pass statistics',
   className,
+  variant = 'operations',
 }: PassPeriodStatsPanelProps) {
   const [period, setPeriod] = useState<PassStatsPeriod>('weekly')
   const { stats, loading, error } = usePassPeriodStats(period)
@@ -55,6 +61,12 @@ export function PassPeriodStatsPanel({
       {loading ? (
         <div className="dashboard-loading-panel min-h-[120px]">
           <Spinner label="Loading statistics…" />
+        </div>
+      ) : variant === 'analytics' ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <StatCard label="Total requests" value={stats.total} icon={FileText} iconTone="blue" />
+          <StatCard label="Approved" value={stats.approved} icon={CheckCircle} iconTone="green" />
+          <StatCard label="Rejected" value={stats.rejected} icon={XCircle} iconTone="red" />
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 
 const EMPTY: PassPeriodStats = {
   period: 'weekly',
+  total: 0,
   pending: 0,
   approved: 0,
   rejected: 0,
@@ -30,6 +31,7 @@ export function usePassPeriodStats(period: PassStatsPeriod) {
       const row = data as PassPeriodStatsRpc
       setStats({
         period,
+        total: row.total ?? (row.pending ?? 0) + (row.approved ?? 0) + (row.rejected ?? 0),
         pending: row.pending ?? 0,
         approved: row.approved ?? 0,
         rejected: row.rejected ?? 0,

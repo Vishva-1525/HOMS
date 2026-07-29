@@ -9,8 +9,13 @@ import {
 import { DashboardFilterChip } from '@/components/ui/DashboardFilterChip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
-import { useAdminStudents } from '@/hooks/admin/useAdminStudents'
+import {
+  STUDENT_PAGE_SIZE_OPTIONS,
+  useAdminStudents,
+  type StudentPageSize,
+} from '@/hooks/admin/useAdminStudents'
 import type { AdminStudentRow } from '@/lib/admin-types'
 import type { BulkImportResult } from '@/lib/bulk-student-import'
 import { formatBlockLabel } from '@/lib/block-display'
@@ -34,6 +39,7 @@ export function AdminStudentsPage() {
     pageSize,
     totalPages,
     setPage,
+    setPageSize,
     blocks,
     departments,
     summary,
@@ -257,6 +263,7 @@ export function AdminStudentsPage() {
               key={group.year}
               year={group.year}
               students={group.students}
+              showHeading={yearFilter === 'all'}
               onSelectStudent={openStudent}
               onDeactivateStudent={deactivateStudent}
               onRefetch={refetch}
@@ -265,30 +272,49 @@ export function AdminStudentsPage() {
         </div>
       )}
 
-      <div className="dashboard-on-photo-muted flex items-center justify-between gap-4 text-sm">
+      <div className="dashboard-on-photo-muted flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
         <p>
           Showing {rangeStart}–{rangeEnd} of {totalCount}
           {totalPages > 1 ? ` · Page ${page} of ${totalPages}` : ''}
         </p>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage(Math.max(1, page - 1))}
-          >
-            Previous
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={page >= totalPages || loading || totalCount === 0}
-            onClick={() => setPage(Math.min(totalPages, page + 1))}
-          >
-            Next
-          </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="students-page-size" className="whitespace-nowrap text-xs font-medium text-slate-600">
+              Rows per page
+            </Label>
+            <select
+              id="students-page-size"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value) as StudentPageSize)}
+              className="h-9 rounded-xl border border-white/60 bg-white/70 px-2.5 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            >
+              {STUDENT_PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage(Math.max(1, page - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={page >= totalPages || loading || totalCount === 0}
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
 

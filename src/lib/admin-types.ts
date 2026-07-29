@@ -4,6 +4,7 @@ export interface AdminStats {
   currently_outside: number
   overdue_returns: number
   pending_approval: number
+  approved_today: number
   passes_this_month: number
 }
 

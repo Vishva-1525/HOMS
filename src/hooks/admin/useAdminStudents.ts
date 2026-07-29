@@ -11,7 +11,9 @@ import {
 import { supabase } from '@/lib/supabase'
 import type { OutpassRequest } from '@/lib/types'
 
-const PAGE_SIZE = 25
+export const STUDENT_PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500] as const
+export type StudentPageSize = (typeof STUDENT_PAGE_SIZE_OPTIONS)[number]
+const DEFAULT_PAGE_SIZE: StudentPageSize = 25
 const FILTER_TTL_MS = 60_000
 const PAGE_TTL_MS = 30_000
 
@@ -64,12 +66,13 @@ function normalizeYear(value: number | null | undefined): number {
 
 function pageCacheKey(
   page: number,
+  pageSize: number,
   search: string,
   block: string,
   department: string,
   year: number | 'all',
 ) {
-  return `admin-students:page:${page}:${search}:${block}:${department}:${year}`
+  return `admin-students:page:${page}:${pageSize}:${search}:${block}:${department}:${year}`
 }
 
 async function loadFilterOptions(): Promise<FilterOptionsPayload> {
@@ -127,14 +130,19 @@ export function useAdminStudents() {
   const [departmentFilter, setDepartmentFilter] = useState('all')
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSizeState] = useState<StudentPageSize>(DEFAULT_PAGE_SIZE)
   const debouncedSearch = useDebouncedValue(search, 300)
 
   const [blocks, setBlocks] = useState<string[]>([])
   const [departments, setDepartments] = useState<string[]>([])
   const [summary, setSummary] = useState({ active: 0, outside: 0, overdue: 0 })
 
-  const pageSize = PAGE_SIZE
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  const setPageSize = useCallback((size: StudentPageSize) => {
+    setPageSizeState(size)
+    setPage(1)
+  }, [])
 
   const fetchFilterOptions = useCallback(async () => {
     const payload = await cachedQuery('admin-students:filters', FILTER_TTL_MS, loadFilterOptions)
@@ -146,6 +154,7 @@ export function useAdminStudents() {
   const fetchData = useCallback(async (opts?: { force?: boolean }) => {
     const cacheKey = pageCacheKey(
       page,
+      pageSize,
       debouncedSearch.trim(),
       blockFilter,
       departmentFilter,
@@ -168,8 +177,8 @@ export function useAdminStudents() {
     setError(null)
 
     try {
-      const from = (page - 1) * PAGE_SIZE
-      const to = from + PAGE_SIZE - 1
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
       const q = debouncedSearch.trim()
 
       let nameMatchedIds: string[] | null = null
@@ -297,7 +306,7 @@ export function useAdminStudents() {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, blockFilter, departmentFilter, yearFilter])
+  }, [page, pageSize, debouncedSearch, blockFilter, departmentFilter, yearFilter])
 
   useEffect(() => {
     setPage(1)
@@ -369,6 +378,7 @@ export function useAdminStudents() {
     pageSize,
     totalPages,
     setPage,
+    setPageSize,
     blocks,
     departments,
     summary,
