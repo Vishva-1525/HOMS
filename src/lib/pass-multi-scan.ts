@@ -1,4 +1,6 @@
 import type { GateLog, OutpassRequest } from '@/lib/types'
+import { hasEntryLog } from '@/lib/pass-filters'
+import { isPassActive } from '@/lib/outpass'
 
 /** Internship (and any pass flagged in DB) allows repeated exit/entry until return_by. */
 export function isMultiDailyScanPass(
@@ -6,6 +8,10 @@ export function isMultiDailyScanPass(
 ): boolean {
   if (pass.allows_multi_daily_scan === true) return true
   return pass.special_purpose === 'internship'
+}
+
+export function getPassGateLogs(passId: string, gateLogs: GateLog[]): GateLog[] {
+  return gateLogs.filter((log) => log.outpass_id === passId)
 }
 
 export function getLatestGateEvent(gateLogs: GateLog[]): GateLog | null {
@@ -51,4 +57,60 @@ export function isInternshipQrExpired(
 ): boolean {
   if (!isMultiDailyScanPass(pass)) return false
   return now > new Date(pass.return_by).getTime()
+}
+
+/** Single-use pass: completed after entry. Internship: completed after return_by. */
+export function isPassTripComplete(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
+  if (isMultiDailyScanPass(pass)) {
+    return Date.now() > new Date(pass.return_by).getTime()
+  }
+  return hasEntryLog(pass.id, gateLogs)
+}
+
+/** Latest gate event is exit while the pass is still active. */
+export function isStudentCurrentlyOutside(
+  pass: OutpassRequest,
+  gateLogs: GateLog[],
+): boolean {
+  if (!isPassActive(pass) && pass.status !== 'approved' && pass.status !== 'extended') {
+    return false
+  }
+  if (pass.status !== 'approved' && pass.status !== 'extended') return false
+
+  const latest = getLatestGateEvent(getPassGateLogs(pass.id, gateLogs))
+  if (latest?.event_type !== 'exit') return false
+
+  if (isMultiDailyScanPass(pass)) {
+    return isPassWithinValidityWindow(pass)
+  }
+
+  return !hasEntryLog(pass.id, gateLogs)
+}
+
+/** Active pass banner: show QR until trip completes (or internship expires). */
+export function findActivePassForBanner(
+  passes: OutpassRequest[],
+  gateLogs: GateLog[],
+): OutpassRequest | null {
+  const active = passes.find(isPassActive) ?? null
+  if (!active) return null
+  if (isPassTripComplete(active, gateLogs)) return null
+  return active
+}
+
+export interface ActiveCheckedOutPass extends OutpassRequest {
+  isCheckedOut: true
+}
+
+export function findCheckedOutPass(
+  passes: OutpassRequest[],
+  gateLogs: GateLog[],
+): ActiveCheckedOutPass | null {
+  for (const pass of passes.filter(isPassActive)) {
+    if (!isMultiDailyScanPass(pass) && hasEntryLog(pass.id, gateLogs)) continue
+    if (isStudentCurrentlyOutside(pass, gateLogs)) {
+      return { ...pass, isCheckedOut: true }
+    }
+  }
+  return null
 }

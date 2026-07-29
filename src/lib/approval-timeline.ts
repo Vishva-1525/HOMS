@@ -1,4 +1,8 @@
 import type { GateLog, OutpassRequest } from '@/lib/types'
+import {
+  isMultiDailyScanPass,
+  isStudentCurrentlyOutside,
+} from '@/lib/pass-multi-scan'
 
 export type TimelineStageState = 'completed' | 'current' | 'pending'
 
@@ -15,13 +19,14 @@ export function buildApprovalTimeline(
   options?: { cancelledByName?: string | null },
 ): ApprovalTimelineStage[] {
   const isSpecial = pass.pass_type === 'special_pass' || pass.requires_hod_approval
+  const isInternship = isMultiDailyScanPass(pass)
   const submitted = true
   const isPending = pass.status === 'pending'
   const isRejected = pass.status === 'rejected'
   const isCancelled = pass.status === 'cancelled'
   const isApproved = pass.status === 'approved' || pass.status === 'extended'
   const hasQr = Boolean(pass.qr_code_data)
-  const hasExit = gateLogs.some((l) => l.event_type === 'exit')
+  const isCheckedOut = isApproved && isStudentCurrentlyOutside(pass, gateLogs)
   const cancelledBy =
     options?.cancelledByName?.trim() ||
     (pass.warden_remark?.startsWith('Cancelled by ')
@@ -120,16 +125,24 @@ export function buildApprovalTimeline(
       id: 'qr_generated',
       label: 'QR Generated',
       state: hasQr ? 'completed' : isApproved ? 'current' : 'pending',
-      detail: hasQr ? 'Ready for gate scan' : isApproved ? 'Generating QR…' : undefined,
+      detail: hasQr
+        ? isInternship
+          ? 'Internship QR — reusable for daily exit and entry'
+          : 'Ready for gate scan'
+        : isApproved
+          ? 'Generating QR…'
+          : undefined,
     },
   )
 
-  if (hasExit && isApproved) {
+  if (isCheckedOut) {
     stages.push({
       id: 'checked_out',
       label: 'Checked out',
-      state: 'completed',
-      detail: 'Exit scan recorded at gate',
+      state: 'current',
+      detail: isInternship
+        ? 'Outside campus — same QR for return entry today'
+        : 'Exit scan recorded at gate',
     })
   }
 

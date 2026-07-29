@@ -7,6 +7,7 @@ export async function approveOutpassRequest(
   request: OutpassWithStudent,
   wardenId: string,
   remarks: string,
+  options?: { skipNotificationFlush?: boolean },
 ): Promise<{ error: string | null }> {
   const qrCodeData = buildPassQrValue(request)
   const entryCode = generateEntryCode()
@@ -23,7 +24,7 @@ export async function approveOutpassRequest(
     })
     .eq('id', request.id)
 
-  if (!error) {
+  if (!error && !options?.skipNotificationFlush) {
     void flushNotificationOutbox()
   }
 
@@ -34,6 +35,7 @@ export async function rejectOutpassRequest(
   request: OutpassWithStudent,
   wardenId: string,
   remarks: string,
+  options?: { skipNotificationFlush?: boolean },
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('outpass_requests')
@@ -44,7 +46,7 @@ export async function rejectOutpassRequest(
     })
     .eq('id', request.id)
 
-  if (!error) {
+  if (!error && !options?.skipNotificationFlush) {
     void flushNotificationOutbox()
   }
 

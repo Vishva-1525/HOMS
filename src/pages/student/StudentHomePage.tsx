@@ -13,10 +13,12 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { useStudentDataContext } from '@/contexts/StudentDataContext'
 import {
   computeSemesterStats,
-  findCheckedOutPass,
 } from '@/hooks/useStudentDashboardData'
-import { isPassActive } from '@/lib/outpass'
-import { canRequestExtension, hasEntryLog } from '@/lib/pass-filters'
+import {
+  findActivePassForBanner,
+  findCheckedOutPass,
+} from '@/lib/pass-multi-scan'
+import { canRequestExtension } from '@/lib/pass-filters'
 import { isWithinSemester } from '@/lib/semester'
 import type { OutpassRequest } from '@/lib/types'
 
@@ -49,13 +51,10 @@ export function StudentHomePage() {
   )
 
   const recentPasses = useMemo(() => passes.slice(0, 5), [passes])
-  // Hide active-pass timer once the student has returned through the gate.
-  const activePass = useMemo(() => {
-    const pass = passes.find(isPassActive) ?? null
-    if (!pass) return null
-    if (hasEntryLog(pass.id, gateLogs)) return null
-    return pass
-  }, [passes, gateLogs])
+  const activePass = useMemo(
+    () => findActivePassForBanner(passes, gateLogs),
+    [passes, gateLogs],
+  )
   const stats = useMemo(() => computeSemesterStats(semesterPasses), [semesterPasses])
   const activeCheckedOutPass = useMemo(
     () => findCheckedOutPass(passes, gateLogs),

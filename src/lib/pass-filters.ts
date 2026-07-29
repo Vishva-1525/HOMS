@@ -2,6 +2,7 @@ import type { ExtensionRequest, GateLog, OutpassRequest, OutpassStatus } from '@
 import {
   getLatestGateEvent,
   isMultiDailyScanPass,
+  isPassTripComplete,
 } from '@/lib/pass-multi-scan'
 
 export type PassFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'completed'
@@ -98,10 +99,7 @@ export function evaluateEntryScan(
 
 export function isPassCompleted(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (pass.status === 'cancelled') return true
-  if (isMultiDailyScanPass(pass)) {
-    return Date.now() > new Date(pass.return_by).getTime()
-  }
-  return hasEntryLog(pass.id, gateLogs)
+  return isPassTripComplete(pass, gateLogs)
 }
 
 export function filterPasses(

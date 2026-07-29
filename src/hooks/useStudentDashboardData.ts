@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { formatNetworkError } from '@/lib/network-error'
 import { isPassActive } from '@/lib/outpass'
-import { hasEntryLog } from '@/lib/pass-filters'
+import {
+  findActivePassForBanner,
+  findCheckedOutPass,
+  type ActiveCheckedOutPass,
+} from '@/lib/pass-multi-scan'
 import { isWithinSemester } from '@/lib/semester'
 import { fetchStudentRecord } from '@/lib/student-data'
 import { supabase } from '@/lib/supabase'
@@ -15,9 +19,8 @@ export interface SemesterStats {
   rejected: number
 }
 
-export interface ActiveCheckedOutPass extends OutpassRequest {
-  isCheckedOut: true
-}
+export type { ActiveCheckedOutPass } from '@/lib/pass-multi-scan'
+export { findCheckedOutPass } from '@/lib/pass-multi-scan'
 
 interface DashboardData {
   student: Student | null
@@ -38,27 +41,6 @@ export function computeSemesterStats(passes: OutpassRequest[]): SemesterStats {
     pending: passes.filter((p) => p.status === 'pending').length,
     rejected: passes.filter((p) => p.status === 'rejected').length,
   }
-}
-
-export function findCheckedOutPass(
-  passes: OutpassRequest[],
-  gateLogs: GateLog[],
-): ActiveCheckedOutPass | null {
-  const activePasses = passes.filter(isPassActive)
-
-  for (const pass of activePasses) {
-    if (hasEntryLog(pass.id, gateLogs)) continue
-
-    const passLogs = gateLogs
-      .filter((log) => log.outpass_id === pass.id)
-      .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())
-
-    if (passLogs.length > 0 && passLogs[0].event_type === 'exit') {
-      return { ...pass, isCheckedOut: true }
-    }
-  }
-
-  return null
 }
 
 export function useStudentDashboardData(): DashboardData {
@@ -177,11 +159,10 @@ export function useStudentDashboardData(): DashboardData {
 
   const recentPasses = useMemo(() => passes.slice(0, 5), [passes])
 
-  const activePass = useMemo(() => {
-    const pass = passes.find(isPassActive) ?? null
-    if (!pass || hasEntryLog(pass.id, gateLogs)) return null
-    return pass
-  }, [passes, gateLogs])
+  const activePass = useMemo(
+    () => findActivePassForBanner(passes, gateLogs),
+    [passes, gateLogs],
+  )
 
   const stats = useMemo(() => computeSemesterStats(semesterPasses), [semesterPasses])
 

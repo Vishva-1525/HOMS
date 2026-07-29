@@ -12,6 +12,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAcademicCalendar } from '@/hooks/useAcademicCalendar'
+import { useStudentPassLimits } from '@/hooks/useStudentPassLimits'
 import {
   INITIAL_NEW_REQUEST_FORM,
   getPassTypeDurationHint,
@@ -37,13 +38,14 @@ export function StudentNewRequestPage() {
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
   const [showPassRequiredDialog, setShowPassRequiredDialog] = useState(false)
   const { calendarMap, loading: calendarLoading } = useAcademicCalendar()
+  const passLimits = useStudentPassLimits()
 
   const departureMin = useMemo(() => toDatetimeLocalNow(), [])
   const returnBounds = useMemo(
-    () => getReturnDatetimeBounds(form.passType, form.departureAt, form.specialPurpose),
-    [form.passType, form.departureAt, form.specialPurpose],
+    () => getReturnDatetimeBounds(form.passType, form.departureAt, form.specialPurpose, passLimits),
+    [form.passType, form.departureAt, form.specialPurpose, passLimits],
   )
-  const durationHint = getPassTypeDurationHint(form.passType, form.specialPurpose)
+  const durationHint = getPassTypeDurationHint(form.passType, form.specialPurpose, passLimits)
 
   function updateField<K extends keyof NewRequestFormValues>(
     key: K,
@@ -63,6 +65,7 @@ export function StudentNewRequestPage() {
           key === 'specialPurpose'
             ? (value as NewRequestFormValues['specialPurpose'])
             : next.specialPurpose,
+          passLimits,
         )
         if (
           next.returnBy &&
@@ -73,7 +76,7 @@ export function StudentNewRequestPage() {
         }
       }
       if (Object.keys(errors).length > 0) {
-        setErrors(validateNewRequestForm(next, calendarMap))
+        setErrors(validateNewRequestForm(next, calendarMap, passLimits))
       }
       return next
     })
@@ -90,7 +93,7 @@ export function StudentNewRequestPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const validationErrors = validateNewRequestForm(form, calendarMap)
+    const validationErrors = validateNewRequestForm(form, calendarMap, passLimits)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return

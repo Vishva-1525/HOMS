@@ -1,4 +1,8 @@
 import type { PassType, SpecialPassPurpose, AcademicCalendarDay } from '@/lib/types'
+import {
+  DEFAULT_PASS_LIMITS,
+  type PassValidationLimits,
+} from '@/lib/pass-limits'
 import { specialPassPurposeRequiresDocument } from '@/lib/special-pass'
 
 export interface NewRequestFormValues {
@@ -17,15 +21,11 @@ export type NewRequestFormErrors = Partial<Record<keyof NewRequestFormValues | '
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
 
-/** Outpass maximum validity. */
-export const OUTPASS_MAX_HOURS = 24
-/** Non-internship special passes. */
-export const SPECIAL_PASS_MAX_DAYS = 7
-/** Internship QR validity window. */
-export const INTERNSHIP_MAX_DAYS = 15
-/** Stay pass has no max; picker uses this practical horizon only. */
+/** Default limits — overridden by `get_student_pass_limits` when available. */
+export const OUTPASS_MAX_HOURS = DEFAULT_PASS_LIMITS.maxOutpassHours
+export const SPECIAL_PASS_MAX_DAYS = DEFAULT_PASS_LIMITS.maxSpecialPassDays
+export const INTERNSHIP_MAX_DAYS = DEFAULT_PASS_LIMITS.maxInternshipDays
 export const STAYPASS_PICKER_MAX_DAYS = 365
-export const STAYPASS_MIN_DAYS = 0
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -36,24 +36,28 @@ function calendarDaysBetween(departure: Date, returnDate: Date): number {
   return Math.round(diff / DAY_MS)
 }
 
-function maxDaysForSpecialPurpose(purpose: SpecialPassPurpose | null): number {
-  return purpose === 'internship' ? INTERNSHIP_MAX_DAYS : SPECIAL_PASS_MAX_DAYS
+function maxDaysForSpecialPurpose(
+  purpose: SpecialPassPurpose | null,
+  limits: PassValidationLimits,
+): number {
+  return purpose === 'internship' ? limits.maxInternshipDays : limits.maxSpecialPassDays
 }
 
 export function getPassTypeDurationHint(
   passType: PassType | null,
   specialPurpose: SpecialPassPurpose | null = null,
+  limits: PassValidationLimits = DEFAULT_PASS_LIMITS,
 ): string | null {
   switch (passType) {
     case 'outpass':
-      return `Outpass: return within ${OUTPASS_MAX_HOURS} hours of departure.`
+      return `Outpass: return within ${limits.maxOutpassHours} hours of departure.`
     case 'staypass':
       return 'Stay Pass: no maximum duration — set any return after departure.'
     case 'special_pass':
       if (specialPurpose === 'internship') {
-        return `Internship: QR valid up to ${INTERNSHIP_MAX_DAYS} days — reusable for daily exit and entry.`
+        return `Internship: QR valid up to ${limits.maxInternshipDays} days — reusable for daily exit and entry.`
       }
-      return `Special Pass: return within ${SPECIAL_PASS_MAX_DAYS} days of departure.`
+      return `Special Pass: return within ${limits.maxSpecialPassDays} days of departure.`
     case 'night_pass':
       return 'Night Pass is no longer available.'
     default:
@@ -64,6 +68,7 @@ export function getPassTypeDurationHint(
 export function validateNewRequestForm(
   values: NewRequestFormValues,
   _calendarMap?: Map<string, AcademicCalendarDay>,
+  limits: PassValidationLimits = DEFAULT_PASS_LIMITS,
 ): NewRequestFormErrors {
   const errors: NewRequestFormErrors = {}
 
@@ -138,18 +143,17 @@ export function validateNewRequestForm(
 
   switch (values.passType) {
     case 'outpass':
-      if (hoursApart > OUTPASS_MAX_HOURS) {
-        errors.returnBy = `Outpass: return must be within ${OUTPASS_MAX_HOURS} hours of departure.`
+      if (hoursApart > limits.maxOutpassHours) {
+        errors.returnBy = `Outpass: return must be within ${limits.maxOutpassHours} hours of departure.`
       }
       break
     case 'staypass':
-      // Unlimited duration — only return-after-departure is required (checked above).
       break
     case 'night_pass':
       errors.passType = 'Night Pass is no longer available.'
       break
     case 'special_pass': {
-      const maxDays = maxDaysForSpecialPurpose(values.specialPurpose)
+      const maxDays = maxDaysForSpecialPurpose(values.specialPurpose, limits)
       if (daysApart < 0 || daysApart > maxDays) {
         const label = values.specialPurpose === 'internship' ? 'Internship' : 'Special Pass'
         errors.returnBy = `${label}: return must be within ${maxDays} days of departure.`
@@ -194,6 +198,7 @@ export function getReturnDatetimeBounds(
   passType: PassType | null,
   departureAt: string,
   specialPurpose: SpecialPassPurpose | null = null,
+  limits: PassValidationLimits = DEFAULT_PASS_LIMITS,
 ): { min?: string; max?: string } {
   if (!passType || !departureAt) return {}
 
@@ -204,7 +209,7 @@ export function getReturnDatetimeBounds(
 
   switch (passType) {
     case 'outpass': {
-      const max = new Date(departure.getTime() + OUTPASS_MAX_HOURS * HOUR_MS)
+      const max = new Date(departure.getTime() + limits.maxOutpassHours * HOUR_MS)
       return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
     }
     case 'staypass': {
@@ -214,7 +219,7 @@ export function getReturnDatetimeBounds(
       return { min: toDatetimeLocalValue(min), max: toDatetimeLocalValue(max) }
     }
     case 'special_pass': {
-      const maxDays = maxDaysForSpecialPurpose(specialPurpose)
+      const maxDays = maxDaysForSpecialPurpose(specialPurpose, limits)
       const max = new Date(departure)
       max.setDate(max.getDate() + maxDays)
       max.setHours(23, 59, 0, 0)

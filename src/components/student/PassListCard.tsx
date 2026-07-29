@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { formatPassDate, formatReturnTime } from '@/lib/outpass'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
+import { isPassTripComplete } from '@/lib/pass-multi-scan'
 import type { GateLog, OutpassRequest } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -29,10 +30,7 @@ function getCardTone(pass: OutpassRequest, gateLogs: GateLog[]): PassCardTone {
   if (pass.status === 'pending') return 'pending'
   if (pass.status === 'rejected' || pass.status === 'cancelled') return 'rejected'
   if (isQrEligibleStatus(pass.status)) {
-    const hasReturned = gateLogs.some(
-      (log) => log.outpass_id === pass.id && log.event_type === 'entry',
-    )
-    return hasReturned ? 'completed' : 'approved'
+    return isPassTripComplete(pass, gateLogs) ? 'completed' : 'approved'
   }
   return 'neutral'
 }

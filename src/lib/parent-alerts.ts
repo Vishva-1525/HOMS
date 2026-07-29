@@ -1,4 +1,5 @@
-import { formatOverdueDuration, hasEntryLog, isPassOverdue } from '@/lib/pass-filters'
+import { formatOverdueDuration, isPassOverdue } from '@/lib/pass-filters'
+import { isPassTripComplete } from '@/lib/pass-multi-scan'
 import { PASS_TYPE_LABELS, formatReturnTime, formatTableDateTime } from '@/lib/outpass'
 import type { ExtensionRequest, GateLog, OutpassRequest } from '@/lib/types'
 import { getExitTime, getEntryTime, isStudentCurrentlyOut } from '@/lib/warden'
@@ -61,7 +62,9 @@ export function getWardStatusSummary(
     }
   }
 
-  const upcomingActive = activePasses.find((pass) => !hasEntryLog(pass.id, gateLogs))
+  const upcomingActive = activePasses.find(
+    (pass) => !isPassTripComplete(pass, gateLogs) && !isStudentCurrentlyOut(pass, gateLogs),
+  )
 
   if (upcomingActive) {
     return {

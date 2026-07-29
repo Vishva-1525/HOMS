@@ -1,5 +1,11 @@
 import type { GateLog, OutpassRequest, StudentProfile } from '@/lib/types'
 import { hasEntryLog } from '@/lib/pass-filters'
+import {
+  getLatestGateEvent,
+  getPassGateLogs,
+  isMultiDailyScanPass,
+  isStudentCurrentlyOutside,
+} from '@/lib/pass-multi-scan'
 
 export function getStudentName(student: StudentProfile | null | undefined): string {
   const name = student?.profiles?.full_name?.trim()
@@ -49,17 +55,20 @@ export function isStudentCurrentlyOut(
   pass: OutpassRequest,
   gateLogs: GateLog[],
 ): boolean {
-  if (pass.status !== 'approved' && pass.status !== 'extended') return false
-
-  const passLogs = gateLogs
-    .filter((log) => log.outpass_id === pass.id)
-    .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())
-
-  return passLogs.length > 0 && passLogs[0].event_type === 'exit' && !hasEntryLog(pass.id, gateLogs)
+  return isStudentCurrentlyOutside(pass, gateLogs)
 }
 
 export function isOverdueReturn(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
+
+  const passLogs = getPassGateLogs(pass.id, gateLogs)
+
+  if (isMultiDailyScanPass(pass)) {
+    const latest = getLatestGateEvent(passLogs)
+    if (latest?.event_type !== 'exit') return false
+    return Date.now() > new Date(pass.return_by).getTime()
+  }
+
   if (hasEntryLog(pass.id, gateLogs)) return false
   return Date.now() > new Date(pass.return_by).getTime()
 }

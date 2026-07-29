@@ -27,7 +27,7 @@ interface SampleRow {
 const SAMPLE_ROWS: SampleRow[] = [
   { id: '1', student: '21CS001', type: 'Outpass', status: 'Pending' },
   { id: '2', student: '21CS014', type: 'Staypass', status: 'Approved' },
-  { id: '3', student: '21ME007', type: 'Night Pass', status: 'Rejected' },
+  { id: '3', student: '21ME007', type: 'Special Pass', status: 'Rejected' },
 ]
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
