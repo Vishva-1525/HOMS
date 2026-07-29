@@ -144,14 +144,15 @@ export function showLocalNotification(
 
   if ('serviceWorker' in navigator) {
     void navigator.serviceWorker.ready.then((registration) => {
-      void registration.showNotification(title, {
+      const options: NotificationOptions & { renotify?: boolean } = {
         body,
         icon: '/pwa-icon-192.png',
         badge: '/pwa-icon-192.png',
         data: { url },
         tag,
         renotify: true,
-      })
+      }
+      void registration.showNotification(title, options)
     })
     return
   }

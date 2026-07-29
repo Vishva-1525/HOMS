@@ -43,13 +43,15 @@ export function usePushNotifications() {
     if (!user || !isPushSupported() || !getVapidPublicKey()) return
     if (Notification.permission !== 'granted') return
 
-    void refreshPushSubscription(user.id).then((ok) => {
+    const userId = user.id
+
+    void refreshPushSubscription(userId).then((ok) => {
       if (ok) setState('granted')
     })
 
     function onVisible() {
       if (document.visibilityState !== 'visible') return
-      void refreshPushSubscription(user.id)
+      void refreshPushSubscription(userId)
     }
 
     window.addEventListener('focus', onVisible)
