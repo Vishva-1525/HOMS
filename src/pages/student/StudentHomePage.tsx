@@ -4,7 +4,6 @@ import { ExtensionRequestBanner } from '@/components/student/ExtensionRequestBan
 import { PassDetailSheet } from '@/components/student/PassDetailSheet'
 import { StudentDashboardHero } from '@/components/student/StudentDashboardHero'
 import { StudentDashboardStats } from '@/components/student/StudentDashboardStats'
-import { StudentPassQuotaStats } from '@/components/student/StudentPassQuotaStats'
 import { StudentRecentRequestsTable } from '@/components/student/StudentRecentRequestsTable'
 import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
 import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
@@ -157,14 +156,6 @@ export function StudentHomePage() {
           }}
         />
       )}
-
-      <section className="dashboard-section">
-        <h2 className="dashboard-section-heading">
-          <span className="dashboard-section-accent" aria-hidden />
-          Pass usage
-        </h2>
-        <StudentPassQuotaStats quotas={quotas} />
-      </section>
 
       <section className="dashboard-section">
         <h2 className="dashboard-section-heading">
