@@ -1,16 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Copy, Share2 } from 'lucide-react'
 import { GateCheckpointProgress } from '@/components/shared/GateCheckpointProgress'
 import { PassQrPlaceholder } from '@/components/student/PassQrPlaceholder'
 import { Button } from '@/components/ui/button'
-import { fetchQrAvailabilityMinutes } from '@/hooks/useQrAvailabilityMinutes'
+import { useQrUnlockCountdown } from '@/hooks/useQrUnlockCountdown'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
-import {
-  formatQrOpensAt,
-  isQrAvailable,
-  DEFAULT_QR_AVAILABILITY_MINUTES,
-} from '@/lib/qr-availability'
 import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { buildPassQrValue } from '@/lib/pass-qr'
 import type { GateLog, OutpassRequest } from '@/lib/types'
@@ -22,19 +17,7 @@ interface PassQrCodeProps {
 
 export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [windowMinutes, setWindowMinutes] = useState(DEFAULT_QR_AVAILABILITY_MINUTES)
-  const [qrReady, setQrReady] = useState(() => isQrAvailable(pass, DEFAULT_QR_AVAILABILITY_MINUTES))
-
-  useEffect(() => {
-    fetchQrAvailabilityMinutes().then(setWindowMinutes)
-  }, [])
-
-  useEffect(() => {
-    const update = () => setQrReady(isQrAvailable(pass, windowMinutes))
-    update()
-    const timer = window.setInterval(update, 30_000)
-    return () => window.clearInterval(timer)
-  }, [pass, windowMinutes])
+  const unlock = useQrUnlockCountdown(pass)
 
   if (!isQrEligibleStatus(pass.status)) {
     return <PassQrPlaceholder status={pass.status} />
@@ -44,12 +27,14 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
     return <PassQrPlaceholder status={pass.status} variant="expired" />
   }
 
-  if (!qrReady) {
+  if (!unlock.ready) {
     return (
       <PassQrPlaceholder
         status={pass.status}
         variant="before-departure"
-        opensAt={formatQrOpensAt(pass, windowMinutes)}
+        opensAt={unlock.opensAtLabel}
+        countdownLabel={unlock.remainingLabel}
+        windowMinutes={unlock.windowMinutes}
       />
     )
   }

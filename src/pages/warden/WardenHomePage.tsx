@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react'
 import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
 import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
+import { HolidayCalendarPanel } from '@/components/warden/HolidayCalendarPanel'
 import { WardenAvailabilityPanel } from '@/components/warden/WardenAvailabilityPanel'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
@@ -164,7 +165,7 @@ export function WardenHomePage() {
         title={scope?.tier === 'superior' ? 'Warden pass statistics' : 'RT pass statistics'}
       />
 
-      <section className="flex w-full flex-col gap-6">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
         <div className="w-full min-w-0">
           <div className="dashboard-section-bar">
             <h2 className="dashboard-section-heading text-base">
@@ -254,6 +255,8 @@ export function WardenHomePage() {
             />
           </div>
         </div>
+
+        <HolidayCalendarPanel className="h-fit lg:sticky lg:top-20" />
       </section>
 
       <WardenReviewDrawer

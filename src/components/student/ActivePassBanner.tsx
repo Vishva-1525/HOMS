@@ -3,6 +3,7 @@ import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { Button } from '@/components/ui/button'
 import { PassQrSheet } from '@/components/student/PassQrSheet'
 import { useCountdown } from '@/hooks/useCountdown'
+import { useQrUnlockCountdown } from '@/hooks/useQrUnlockCountdown'
 import { formatReturnTime } from '@/lib/outpass'
 import type { OutpassRequest, Student, GateLog } from '@/lib/types'
 
@@ -14,6 +15,7 @@ interface ActivePassBannerProps {
 
 export function ActivePassBanner({ pass, student, gateLogs = [] }: ActivePassBannerProps) {
   const countdown = useCountdown(pass.return_by)
+  const unlock = useQrUnlockCountdown(pass)
   const [qrOpen, setQrOpen] = useState(false)
 
   return (
@@ -37,6 +39,20 @@ export function ActivePassBanner({ pass, student, gateLogs = [] }: ActivePassBan
           </p>
         </div>
 
+        {!unlock.ready && unlock.msRemaining > 0 && (
+          <div className="mt-3 rounded-xl border border-[#BFDBFE] bg-[#EBF3FF] px-3.5 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#0D3F72]/70">
+              QR available in
+            </p>
+            <p className="mt-0.5 font-mono text-xl font-bold tabular-nums text-[#0D3F72]">
+              {unlock.remainingLabel}
+            </p>
+            <p className="mt-1 text-xs text-[#0D3F72]/80">
+              Unlocks at {unlock.opensAtLabel} ({unlock.windowMinutes} min before departure)
+            </p>
+          </div>
+        )}
+
         {student && (
           <Button
             type="button"
@@ -45,7 +61,7 @@ export function ActivePassBanner({ pass, student, gateLogs = [] }: ActivePassBan
             className="mt-3 w-full sm:w-auto"
             onClick={() => setQrOpen(true)}
           >
-            View QR
+            {unlock.ready ? 'View QR' : 'Preview QR status'}
           </Button>
         )}
       </div>

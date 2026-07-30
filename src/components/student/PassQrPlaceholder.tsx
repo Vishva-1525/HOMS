@@ -19,12 +19,17 @@ interface PassQrPlaceholderProps {
   status: OutpassStatus
   variant?: 'approval' | 'before-departure' | 'expired'
   opensAt?: string
+  /** Live countdown until unlock, e.g. "29:58" */
+  countdownLabel?: string
+  windowMinutes?: number
 }
 
 export function PassQrPlaceholder({
   status,
   variant = 'approval',
   opensAt,
+  countdownLabel,
+  windowMinutes,
 }: PassQrPlaceholderProps) {
   const isBeforeDeparture = variant === 'before-departure'
   const isExpired = variant === 'expired'
@@ -38,7 +43,7 @@ export function PassQrPlaceholder({
             {isExpired
               ? 'QR expired'
               : isBeforeDeparture
-                ? 'Before departure window'
+                ? 'QR unlocking soon'
                 : 'Awaiting approval'}
           </p>
         </div>
@@ -50,11 +55,21 @@ export function PassQrPlaceholder({
         {isExpired
           ? 'This pass QR has expired. Submit a new request to renew access.'
           : isBeforeDeparture
-            ? formatQrAvailabilityMessage()
+            ? formatQrAvailabilityMessage(windowMinutes)
             : getPlaceholderMessage(status)}
       </p>
+      {isBeforeDeparture && countdownLabel && (
+        <div className="rounded-xl border border-[#BFDBFE] bg-[#EBF3FF] px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#0D3F72]/70">
+            QR available in
+          </p>
+          <p className="mt-0.5 font-mono text-2xl font-bold tabular-nums text-[#0D3F72]">
+            {countdownLabel}
+          </p>
+        </div>
+      )}
       {isBeforeDeparture && opensAt && (
-        <p className="text-xs font-medium text-[#1A5CA0]">Available from {opensAt}</p>
+        <p className="text-xs font-medium text-[#1A5CA0]">Unlocks at {opensAt}</p>
       )}
     </div>
   )
