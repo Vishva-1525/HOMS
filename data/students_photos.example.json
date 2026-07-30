@@ -1,0 +1,11 @@
+[
+  {
+    "email": "student1@svce.ac.in",
+    "reg_number": "2127210501001",
+    "photo_url": "https://drive.google.com/file/d/FILE_ID/view?usp=sharing"
+  },
+  {
+    "reg_number": "2127210501002",
+    "path": "./photos/2127210501002.jpg"
+  }
+]

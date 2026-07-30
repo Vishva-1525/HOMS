@@ -38,6 +38,7 @@ export interface Profile {
   full_name: string
   phone: string
   password_changed: boolean
+  avatar_url?: string | null
   gender?: HostelGender | null
   warden_tier?: 'rt' | 'superior' | null
   is_available?: boolean | null
@@ -153,6 +154,7 @@ export interface Database {
           full_name: string
           phone: string
           password_changed: boolean
+          avatar_url: string | null
           created_at: string
         }
         Insert: {
@@ -161,6 +163,7 @@ export interface Database {
           full_name?: string
           phone?: string
           password_changed?: boolean
+          avatar_url?: string | null
           created_at?: string
         }
         Update: {
@@ -168,6 +171,7 @@ export interface Database {
           full_name?: string
           phone?: string
           password_changed?: boolean
+          avatar_url?: string | null
           created_at?: string
         }
         Relationships: []
