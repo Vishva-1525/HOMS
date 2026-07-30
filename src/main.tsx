@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { EnvSetupScreen } from '@/components/EnvSetupScreen'
 import { AppErrorBoundary } from '@/components/layout/AppErrorBoundary'
+import { ThemeProvider } from '@/contexts/ThemeProvider'
 import { isSupabaseConfigured } from '@/lib/env'
 import App from './App.tsx'
 
@@ -17,9 +18,11 @@ if (!isSupabaseConfigured()) {
 } else {
   createRoot(root).render(
     <StrictMode>
-      <AppErrorBoundary>
-        <App />
-      </AppErrorBoundary>
+      <ThemeProvider>
+        <AppErrorBoundary>
+          <App />
+        </AppErrorBoundary>
+      </ThemeProvider>
     </StrictMode>,
   )
 }

@@ -19,7 +19,12 @@ interface ThemeContextValue {
   toggleTheme: () => void
 }
 
-const ThemeContext = createContext<ThemeContextValue | null>(null)
+export const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+/** Safe when ThemeProvider is missing (e.g. error-boundary fallback). */
+export function useOptionalTheme(): ThemeContextValue | null {
+  return useContext(ThemeContext)
+}
 
 function readStoredTheme(): ThemeMode {
   if (typeof window === 'undefined') return 'light'

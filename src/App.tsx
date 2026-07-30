@@ -1,7 +1,6 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthProvider'
-import { ThemeProvider } from '@/contexts/ThemeProvider'
 import { StudentDataProvider } from '@/contexts/StudentDataContext'
 import { WardenDataProvider } from '@/contexts/WardenDataContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -109,7 +108,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ThemeProvider>
           <PwaBootstrap />
           <InstallPrompt />
           <RoutePrefetch />
@@ -185,7 +183,6 @@ export default function App() {
               <Route path="*" element={<SafeRouteFallback />} />
             </Routes>
           </Suspense>
-        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -1,5 +1,5 @@
-import { useEffect, type ReactNode } from 'react'
-import { useTheme } from '@/contexts/ThemeProvider'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useOptionalTheme } from '@/contexts/ThemeProvider'
 import { SVCE_CAMPUS_DAY_URL, SVCE_CAMPUS_NIGHT_URL } from '@/lib/branding'
 import { cn } from '@/lib/utils'
 
@@ -8,8 +8,27 @@ interface AuthBackgroundProps {
   className?: string
 }
 
+function readDomDark(): boolean {
+  if (typeof document === 'undefined') return false
+  return document.documentElement.classList.contains('dark')
+}
+
 export function AuthBackground({ children, className }: AuthBackgroundProps) {
-  const { isDark } = useTheme()
+  const theme = useOptionalTheme()
+  const [domDark, setDomDark] = useState(readDomDark)
+  const isDark = theme?.isDark ?? domDark
+
+  useEffect(() => {
+    if (theme) return
+    const sync = () => setDomDark(readDomDark())
+    sync()
+    const observer = new MutationObserver(sync)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+    return () => observer.disconnect()
+  }, [theme])
 
   useEffect(() => {
     ;[SVCE_CAMPUS_DAY_URL, SVCE_CAMPUS_NIGHT_URL].forEach((url) => {

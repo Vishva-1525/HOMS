@@ -68,8 +68,9 @@ export default defineConfig({
         ],
       },
       injectManifest: {
-        // Keep precache lean — large screenshots/campus photo stay network-first.
-        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}', 'pwa-icon-*.png'],
+        // Keep precache lean — never precache index.html (stale HTML → blank page after deploys).
+        globPatterns: ['**/*.{js,css,ico,svg,woff2}', 'pwa-icon-*.png'],
+        globIgnores: ['**/index.html'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       devOptions: {

@@ -1,13 +1,27 @@
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core'
-import { precacheAndRoute } from 'workbox-precaching'
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
+import { NavigationRoute, registerRoute } from 'workbox-routing'
+import { NetworkFirst } from 'workbox-strategies'
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>
 }
 
 clientsClaim()
+cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
+
+// Prefer fresh HTML after deploys so users are not stuck on a blank page from
+// stale precached index.html pointing at deleted hashed assets.
+registerRoute(
+  new NavigationRoute(
+    new NetworkFirst({
+      cacheName: 'homs-navigations',
+      networkTimeoutSeconds: 4,
+    }),
+  ),
+)
 
 self.skipWaiting()
 
