@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // Immediate session restore — do NOT await profile inside onAuthStateChange
+    // Immediate session restore - do NOT await profile inside onAuthStateChange
     // (that blocks the Supabase client and freezes "Loading your account...").
     void supabase.auth.getSession().then(({ data: { session: initial } }) => {
       if (!mounted) return

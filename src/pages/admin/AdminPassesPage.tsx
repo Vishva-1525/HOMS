@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { QrCode, Settings2 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { BulkActionBar } from '@/components/shared/BulkActionBar'
-import { PassLimitBadge } from '@/components/shared/PassLimitBadge'
 import { PassListFilters, ALL_PASS_FILTER_DEFAULTS } from '@/components/shared/PassListFilters'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -15,7 +14,6 @@ import { Modal, ModalFooter } from '@/components/ui/modal'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useAdminPasses } from '@/hooks/admin/useAdminPasses'
-import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
 import type { AdminPassRow } from '@/lib/admin-types'
 import { bulkApproveOutpassRequests, bulkRejectOutpassRequests } from '@/lib/bulk-approval'
 import { formatReturnTime, formatTableDateTime } from '@/lib/outpass'
@@ -36,9 +34,9 @@ function toOutpassWithStudent(row: AdminPassRow): OutpassWithStudent {
 }
 
 function formatDurationOutside(exitAt: string | null, entryAt: string | null): string {
-  if (!exitAt || !entryAt) return '—'
+  if (!exitAt || !entryAt) return '-'
   const ms = new Date(entryAt).getTime() - new Date(exitAt).getTime()
-  if (ms <= 0) return '—'
+  if (ms <= 0) return '-'
   const hours = Math.floor(ms / 3_600_000)
   const minutes = Math.floor((ms % 3_600_000) / 60_000)
   return `${hours}h ${minutes}m`
@@ -70,7 +68,6 @@ export function AdminPassesPage() {
     overridePassStatus,
     refetch,
   } = useAdminPasses()
-  const { violationByStudentId } = usePassLimitViolations()
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [overrideRow, setOverrideRow] = useState<AdminPassRow | null>(null)
@@ -237,18 +234,7 @@ export function AdminPassesPage() {
             {
               header: 'Student',
               accessor: 'student_name',
-              render: (row) => {
-                const violation = violationByStudentId(row.student_id)
-                return (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span>{row.student_name}</span>
-                    <PassLimitBadge
-                      weeklyExceeded={violation?.weekly_exceeded}
-                      monthlyExceeded={violation?.monthly_exceeded}
-                    />
-                  </div>
-                )
-              },
+              render: (row) => row.student_name,
             },
             { header: 'Reg No', accessor: 'reg_number' },
             {
@@ -285,17 +271,17 @@ export function AdminPassesPage() {
             {
               header: 'Warden remark',
               accessor: 'pass',
-              render: (row) => row.pass.warden_remark ?? '—',
+              render: (row) => row.pass.warden_remark ?? '-',
             },
             {
               header: 'Exit',
               accessor: 'exit_at',
-              render: (row) => (row.exit_at ? formatReturnTime(row.exit_at) : '—'),
+              render: (row) => (row.exit_at ? formatReturnTime(row.exit_at) : '-'),
             },
             {
               header: 'Entry',
               accessor: 'entry_at',
-              render: (row) => (row.entry_at ? formatReturnTime(row.entry_at) : '—'),
+              render: (row) => (row.entry_at ? formatReturnTime(row.entry_at) : '-'),
             },
             {
               header: 'Duration outside',
@@ -338,7 +324,7 @@ export function AdminPassesPage() {
 
       <div className="dashboard-on-photo-muted flex items-center justify-between gap-4 text-sm">
         <p>
-          Showing {rangeStart}–{rangeEnd} of {total}
+          Showing {rangeStart}-{rangeEnd} of {total}
         </p>
         <div className="flex gap-2">
           <Button

@@ -90,7 +90,7 @@ async function loadFilterOptions(): Promise<FilterOptionsPayload> {
     }
   }
 
-  // Fallback if RPC not deployed yet — still bounded.
+  // Fallback if RPC not deployed yet - still bounded.
   const [blocksResult, deptsResult, activeResult, outsideResult, overdueResult] =
     await Promise.all([
       supabase.from('students').select('hostel_block').eq('is_active', true).limit(500),

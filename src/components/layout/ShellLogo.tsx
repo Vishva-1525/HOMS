@@ -8,7 +8,7 @@ interface ShellLogoProps {
   showLabel?: boolean
   /** `dark` for navy sidebar; `light` for the top header bar. */
   tone?: 'light' | 'dark'
-  /** Hide long college name on very narrow headers — keeps emblem + app short name only. */
+  /** Hide long college name on very narrow headers - keeps emblem + app short name only. */
   compact?: boolean
 }
 

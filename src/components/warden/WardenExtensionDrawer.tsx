@@ -78,7 +78,7 @@ export function WardenExtensionDrawer({
             <div className="flex justify-between gap-4">
               <span className="text-[var(--svce-text-secondary)]">Current return</span>
               <span className="font-medium text-[var(--svce-text-primary)]">
-                {outpass ? formatReturnTime(outpass.return_by) : '—'}
+                {outpass ? formatReturnTime(outpass.return_by) : '-'}
               </span>
             </div>
             <div className="flex justify-between gap-4">

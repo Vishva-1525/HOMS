@@ -115,10 +115,10 @@ async function enrichGateLogs(
       event_type: log.event_type,
       scanned_at: log.scanned_at,
       studentName: getStudentName(student ?? null),
-      admissionNo: admissionNo ?? '—',
+      admissionNo: admissionNo ?? '-',
       room: formatStudentRoomDisplay(student ?? null),
       passType: (pass?.pass_type as PassType | undefined) ?? null,
-      destination: pass?.destination ?? '—',
+      destination: pass?.destination ?? '-',
       scannerName: scannerMap[log.scanned_by] ?? 'Unknown guard',
     }
   })

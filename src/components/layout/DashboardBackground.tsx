@@ -27,7 +27,7 @@ export function DashboardBackground({ children, className, style }: DashboardBac
       className={cn('dashboard-shell relative min-h-[100dvh] overflow-x-hidden bg-[#0B3664]', className)}
       style={style}
     >
-      {/* Day / night campus photos — cross-fade on theme toggle */}
+      {/* Day / night campus photos - cross-fade on theme toggle */}
       <div
         className={cn(PHOTO_TRANSITION, isDark ? 'opacity-0' : 'opacity-100')}
         style={{ backgroundImage: `url('${SVCE_CAMPUS_DAY_URL}')` }}
@@ -39,7 +39,7 @@ export function DashboardBackground({ children, className, style }: DashboardBac
         aria-hidden
       />
 
-      {/* Light wash only — keeps photo visible while UI cards stay readable */}
+      {/* Light wash only - keeps photo visible while UI cards stay readable */}
       <div
         className={cn(
           'dashboard-bg-wash pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
@@ -67,7 +67,7 @@ export function DashboardBackground({ children, className, style }: DashboardBac
         aria-hidden
       />
 
-      {/* Soft edge vignette (both themes) — depth without flat blue cast */}
+      {/* Soft edge vignette (both themes) - depth without flat blue cast */}
       <div
         className="pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]"
         style={{

@@ -6,25 +6,19 @@ import { Button } from '@/components/ui/button'
 import { fetchQrAvailabilityMinutes } from '@/hooks/useQrAvailabilityMinutes'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
 import {
-  formatPassSequenceLabel,
-  getPassSequenceInfo,
-} from '@/lib/pass-sequence'
-import {
   formatQrOpensAt,
   isQrAvailable,
   DEFAULT_QR_AVAILABILITY_MINUTES,
 } from '@/lib/qr-availability'
 import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { buildPassQrValue } from '@/lib/pass-qr'
-import type { OutpassRequest, StudentPassQuotas } from '@/lib/types'
+import type { OutpassRequest } from '@/lib/types'
 
 interface PassQrCodeProps {
   pass: OutpassRequest
-  quotas?: StudentPassQuotas
-  approvedPasses?: OutpassRequest[]
 }
 
-export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProps) {
+export function PassQrCode({ pass }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [windowMinutes, setWindowMinutes] = useState(DEFAULT_QR_AVAILABILITY_MINUTES)
   const [qrReady, setQrReady] = useState(() => isQrAvailable(pass, DEFAULT_QR_AVAILABILITY_MINUTES))
@@ -60,11 +54,6 @@ export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProp
 
   const qrValue = buildPassQrValue(pass)
   const entryCode = pass.entry_code
-  const sequence = quotas
-    ? getPassSequenceInfo(pass, approvedPasses, quotas)
-    : { weekly: null, monthly: null }
-  const weeklyLabel = formatPassSequenceLabel(sequence.weekly, 'Weekly')
-  const monthlyLabel = formatPassSequenceLabel(sequence.monthly, 'Monthly')
   const multiDaily = isMultiDailyScanPass(pass)
 
   async function getQrBlob(): Promise<Blob | null> {
@@ -115,16 +104,6 @@ export function PassQrCode({ pass, quotas, approvedPasses = [] }: PassQrCodeProp
           fgColor="#1A5CA0"
           bgColor="#FFFFFF"
         />
-        {(weeklyLabel || monthlyLabel) && (
-          <div className="w-full space-y-1 rounded-lg bg-[#EBF3FF]/80 px-3 py-2 text-center">
-            {weeklyLabel && (
-              <p className="text-sm font-semibold text-[#0D3F72]">{weeklyLabel}</p>
-            )}
-            {monthlyLabel && (
-              <p className="text-sm font-semibold text-[#0D3F72]">{monthlyLabel}</p>
-            )}
-          </div>
-        )}
         {multiDaily && (
           <p className="max-w-[220px] text-center text-xs text-slate-600">
             Valid for daily exit & entry until {new Date(pass.return_by).toLocaleString('en-IN', {

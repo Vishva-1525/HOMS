@@ -30,7 +30,7 @@ interface DateTimePickerProps {
   calendarLoading?: boolean
   /**
    * When true, only working days / study holidays are selectable.
-   * Defaults to false — all pass types may use any calendar day.
+   * Defaults to false - all pass types may use any calendar day.
    */
   requireAcademicDay?: boolean
 }
@@ -54,7 +54,7 @@ function formatRangeLabel(min?: string, max?: string): string | null {
     const d = parseDateKey(iso.slice(0, 10))
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
   }
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`
+  if (min && max) return `${fmt(min)} - ${fmt(max)}`
   if (min) return `from ${fmt(min)}`
   return `until ${fmt(max!)}`
 }
@@ -283,7 +283,7 @@ export function DateTimePicker({
             <p className="mt-2 text-[11px] text-slate-500">
               {requireAcademicDay
                 ? 'Working days and study holidays only.'
-                : 'All days available, including weekends and holidays.'}
+                : 'Any date can be selected.'}
             </p>
             {rangeLabel && (
               <p className="mt-1 text-[11px] font-medium text-[#0D3F72]">
@@ -303,7 +303,7 @@ export function DateTimePicker({
               <p className="mt-1.5 rounded-lg border border-amber-300/70 bg-amber-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-amber-900">
                 No dates in this month are selectable
                 {nextMonthHasSelectable
-                  ? ' — tap the arrow above or “More dates” to open the next month.'
+                  ? ' - tap the arrow above or "More dates" to open the next month.'
                   : requireAcademicDay
                     ? ' (weekends/holidays are blocked). Try a different departure date.'
                     : '. Try a different departure date.'}

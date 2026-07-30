@@ -20,7 +20,7 @@ const ICON_SIZES: Record<StudentAvatarSize, string> = {
 
 export interface StudentAvatarProps {
   name: string
-  /** When profile photos are added, pass the URL here — UI stays the same. */
+  /** When profile photos are added, pass the URL here - UI stays the same. */
   photoUrl?: string | null
   size?: StudentAvatarSize
   className?: string
@@ -28,7 +28,7 @@ export interface StudentAvatarProps {
 
 /**
  * Consistent student profile placeholder across dashboards.
- * Replace `photoUrl` when real photos are available — no layout changes needed.
+ * Replace `photoUrl` when real photos are available - no layout changes needed.
  */
 export function StudentAvatar({
   name,

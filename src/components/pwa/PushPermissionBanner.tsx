@@ -73,7 +73,7 @@ export function PushPermissionBanner({ compact = false }: { compact?: boolean })
         <div>
           <p className="text-sm font-medium text-[#1A1A2E]">Enable push notifications</p>
           <p className="text-xs text-slate-600">
-            Instant alerts for new QR requests, approvals, and rejections — works in the background on
+            Instant alerts for new QR requests, approvals, and rejections - works in the background on
             Android and installed iOS apps.
           </p>
         </div>

@@ -31,7 +31,7 @@ function formatLogTime(iso: string): string {
 }
 
 function formatScanCell(iso: string | null, scanner: string | null): string {
-  if (!iso) return '—'
+  if (!iso) return '-'
   const time = `${formatLogTime(iso)} · ${formatLogDate(iso)}`
   return scanner ? `${time} · ${scanner}` : time
 }
@@ -146,7 +146,7 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
                               <StatusBadge status={row.status} />
                             </td>
                             <td className="px-4 py-3 sm:px-5">
-                              {row.passType ? <PassTypeBadge type={row.passType} /> : '—'}
+                              {row.passType ? <PassTypeBadge type={row.passType} /> : '-'}
                             </td>
                             <td className="dashboard-muted max-w-[140px] truncate px-4 py-3 sm:px-5">
                               {row.destination}
@@ -181,7 +181,7 @@ function PassHistoryMobileCard({ row }: { row: PassScanHistoryRow }) {
         <MobileDataCardRow label="Entry scan" value={formatScanCell(row.entryAt, row.entryScanner)} />
         <MobileDataCardRow
           label="Pass"
-          value={row.passType ? <PassTypeBadge type={row.passType} /> : '—'}
+          value={row.passType ? <PassTypeBadge type={row.passType} /> : '-'}
         />
         <MobileDataCardRow label="Destination" value={row.destination} />
       </div>

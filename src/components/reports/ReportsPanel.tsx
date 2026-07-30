@@ -130,20 +130,20 @@ const REPORT_COLUMNS: DataTableColumn<ReportRow>[] = [
     header: 'Actual Exit Time',
     accessor: 'actual_exit_time',
     width: '120px',
-    render: (row) => (row.actual_exit_time ? formatTime(row.actual_exit_time) : '—'),
+    render: (row) => (row.actual_exit_time ? formatTime(row.actual_exit_time) : '-'),
   },
   {
     header: 'Actual Entry Time',
     accessor: 'actual_entry_time',
     width: '120px',
-    render: (row) => (row.actual_entry_time ? formatTime(row.actual_entry_time) : '—'),
+    render: (row) => (row.actual_entry_time ? formatTime(row.actual_entry_time) : '-'),
   },
   {
     header: 'Hours Outside',
     accessor: 'hours_outside',
     width: '110px',
     render: (row) =>
-      row.hours_outside != null ? formatDuration(row.hours_outside) : '—',
+      row.hours_outside != null ? formatDuration(row.hours_outside) : '-',
   },
   {
     header: 'Status',
@@ -167,13 +167,13 @@ const REPORT_COLUMNS: DataTableColumn<ReportRow>[] = [
     header: 'Approved By',
     accessor: 'approved_by_name',
     width: '130px',
-    render: (row) => row.approved_by_name ?? '—',
+    render: (row) => row.approved_by_name ?? '-',
   },
   {
     header: 'Warden Remark',
     accessor: 'warden_remark',
     width: '180px',
-    render: (row) => row.warden_remark ?? '—',
+    render: (row) => row.warden_remark ?? '-',
   },
 ]
 

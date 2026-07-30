@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { BulkActionBar } from '@/components/shared/BulkActionBar'
-import { PassLimitBadge } from '@/components/shared/PassLimitBadge'
 import { PassListFilters, PENDING_PAGE_FILTER_DEFAULTS } from '@/components/shared/PassListFilters'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -14,7 +13,6 @@ import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
-import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
 import { bulkApproveOutpassRequests, bulkRejectOutpassRequests } from '@/lib/bulk-approval'
 import { classifyPass } from '@/lib/pass-classification'
 import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
@@ -26,7 +24,6 @@ import type { PassClassificationFilter } from '@/components/shared/PassListFilte
 export function PendingRequestsPage() {
   const { user } = useAuth()
   const { passes, gateLogs, loading, error, scopeError, scope, refetch } = useWardenDataContext()
-  const { violationByStudentId } = usePassLimitViolations(scope)
 
   const [nameSearch, setNameSearch] = useState('')
   const [regSearch, setRegSearch] = useState('')
@@ -111,7 +108,7 @@ export function PendingRequestsPage() {
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedRequest || !user) return
     if (scope && !scope.canApprove) {
-      setActionError('You are Away — approvals are handled by superior wardens.')
+      setActionError('You are Away - approvals are handled by superior wardens.')
       return
     }
 
@@ -209,7 +206,7 @@ export function PendingRequestsPage() {
 
       {scope && !scope.canApprove && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          You are Away — this queue is read-only. Superior wardens are handling approvals for your block.
+          You are Away - this queue is read-only. Superior wardens are handling approvals for your block.
         </div>
       )}
 
@@ -256,18 +253,7 @@ export function PendingRequestsPage() {
             {
               header: 'Student',
               accessor: 'id',
-              render: (row) => {
-                const violation = violationByStudentId(row.student_id)
-                return (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span>{getStudentName(row.students)}</span>
-                    <PassLimitBadge
-                      weeklyExceeded={violation?.weekly_exceeded}
-                      monthlyExceeded={violation?.monthly_exceeded}
-                    />
-                  </div>
-                )
-              },
+              render: (row) => getStudentName(row.students),
             },
             { header: 'Reg No', accessor: 'id', render: (row) => getStudentReg(row.students) },
             { header: 'Room', accessor: 'id', render: (row) => getStudentRoom(row.students) },
@@ -314,7 +300,7 @@ export function PendingRequestsPage() {
                     </Button>
                   </div>
                 ) : (
-                  '—'
+                  '-'
                 ),
             },
           ]}

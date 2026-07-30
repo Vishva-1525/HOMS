@@ -3,7 +3,7 @@ export function getCurrentSemesterRange(): { start: Date; end: Date } {
   const year = now.getFullYear()
   const month = now.getMonth()
 
-  // SVCE academic calendar: Sem 1 (Jul–Dec), Sem 2 (Jan–Jun)
+  // SVCE academic calendar: Sem 1 (Jul-Dec), Sem 2 (Jan-Jun)
   if (month >= 6) {
     return {
       start: new Date(year, 6, 1),

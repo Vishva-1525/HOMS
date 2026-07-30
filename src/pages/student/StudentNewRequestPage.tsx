@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAcademicCalendar } from '@/hooks/useAcademicCalendar'
 import { useStudentPassLimits } from '@/hooks/useStudentPassLimits'
 import {
   INITIAL_NEW_REQUEST_FORM,
@@ -27,6 +26,8 @@ import { flushNotificationOutbox } from '@/lib/push-notifications'
 import { supabase } from '@/lib/supabase'
 import { uploadSpecialPassDocument } from '@/lib/upload-special-pass-document'
 
+const EMPTY_CALENDAR = new Map()
+
 export function StudentNewRequestPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -37,7 +38,6 @@ export function StudentNewRequestPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
   const [showPassRequiredDialog, setShowPassRequiredDialog] = useState(false)
-  const { calendarMap, loading: calendarLoading } = useAcademicCalendar()
   const passLimits = useStudentPassLimits()
 
   const departureMin = useMemo(() => toDatetimeLocalNow(), [])
@@ -76,7 +76,7 @@ export function StudentNewRequestPage() {
         }
       }
       if (Object.keys(errors).length > 0) {
-        setErrors(validateNewRequestForm(next, calendarMap, passLimits))
+        setErrors(validateNewRequestForm(next, undefined, passLimits))
       }
       return next
     })
@@ -93,7 +93,7 @@ export function StudentNewRequestPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const validationErrors = validateNewRequestForm(form, calendarMap, passLimits)
+    const validationErrors = validateNewRequestForm(form, undefined, passLimits)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
@@ -117,6 +117,7 @@ export function StudentNewRequestPage() {
     }
 
     const isSpecial = form.passType === 'special_pass'
+    const isInternship = isSpecial && form.specialPurpose === 'internship'
     const reason =
       isSpecial && form.specialPurpose === 'other'
         ? form.specialRemarks.trim()
@@ -134,6 +135,7 @@ export function StudentNewRequestPage() {
       special_remarks: isSpecial && form.specialPurpose === 'other' ? form.specialRemarks.trim() : null,
       document_url: documentUrl,
       requires_hod_approval: isSpecial,
+      allows_multi_daily_scan: isInternship,
     })
 
     setSubmitting(false)
@@ -248,8 +250,7 @@ export function StudentNewRequestPage() {
             disabled={submitting || !form.passType}
             error={errors.departureAt}
             hint={!form.passType ? 'Select a pass type first.' : undefined}
-            calendarMap={calendarMap}
-            calendarLoading={calendarLoading}
+            calendarMap={EMPTY_CALENDAR}
             requireAcademicDay={false}
           />
           {!form.passType && !submitting && (
@@ -279,8 +280,7 @@ export function StudentNewRequestPage() {
                   ? 'Select departure first.'
                   : (durationHint ?? undefined)
             }
-            calendarMap={calendarMap}
-            calendarLoading={calendarLoading}
+            calendarMap={EMPTY_CALENDAR}
             requireAcademicDay={false}
           />
           {!form.passType && !submitting && (

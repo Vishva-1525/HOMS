@@ -8,8 +8,6 @@ const DEFAULT_KEYS = [
   'max_staypass_days',
   'max_special_pass_days',
   'max_internship_days',
-  'max_weekly_passes',
-  'max_monthly_passes',
   'qr_availability_minutes',
   'sms_notifications_enabled',
   'email_notifications_enabled',

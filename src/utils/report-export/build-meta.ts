@@ -4,7 +4,7 @@ import { formatGeneratedTimestamp } from '@/utils/report-export/formatters'
 const COLLEGE_NAME = 'Sri Venkateswara College of Engineering'
 
 export function buildReportTitle(filters: ReportExportFilters): string {
-  return `Hostel Outpass Report — ${filters.reportType} — ${filters.dateLabel}`
+  return `Hostel Outpass Report - ${filters.reportType} - ${filters.dateLabel}`
 }
 
 export function buildExportFilename(

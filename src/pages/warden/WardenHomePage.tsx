@@ -5,7 +5,6 @@ import { OverdueAlertBanner } from '@/components/warden/OverdueAlertBanner'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
 import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
 import { WardenAvailabilityPanel } from '@/components/warden/WardenAvailabilityPanel'
-import { WardenCalendarPanel } from '@/components/warden/WardenCalendarPanel'
 import { WardenReviewDrawer } from '@/components/warden/WardenReviewDrawer'
 import { WardenPendingMobileCard } from '@/components/warden/WardenMobileCards'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
@@ -16,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
-import { usePassLimitViolations } from '@/hooks/usePassLimitViolations'
 import { getGreeting } from '@/lib/outpass'
 import { formatPassDuration, formatRelativeTime, formatTodayDate } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
@@ -35,7 +33,6 @@ export function WardenHomePage() {
     setAvailability,
     refetch,
   } = useWardenDataContext()
-  const { violations, loading: violationsLoading } = usePassLimitViolations(scope)
   const [drawerMode, setDrawerMode] = useState<'approve' | 'reject' | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<OutpassWithStudent | null>(null)
   const [remarks, setRemarks] = useState('')
@@ -66,7 +63,7 @@ export function WardenHomePage() {
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedRequest || !user) return
     if (scope && !scope.canApprove) {
-      setActionError('You are Away — approvals are handled by superior wardens. Switch back to Working to approve.')
+      setActionError('You are Away - approvals are handled by superior wardens. Switch back to Working to approve.')
       return
     }
 
@@ -167,40 +164,6 @@ export function WardenHomePage() {
         title={scope?.tier === 'superior' ? 'Warden pass statistics' : 'RT pass statistics'}
       />
 
-      {!violationsLoading && violations.length > 0 && (
-        <section className="dashboard-surface-muted space-y-4 p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="dashboard-section-heading text-sm sm:text-base">
-              <span className="dashboard-section-accent" aria-hidden />
-              Pass limit warnings
-            </h2>
-            <span className="rounded-full bg-[#FEF2F2] px-2.5 py-0.5 text-xs font-semibold text-[#991B1B]">
-              {violations.length} student{violations.length === 1 ? '' : 's'}
-            </span>
-          </div>
-          <ul className="divide-y divide-slate-200/60 overflow-hidden rounded-xl border border-white/55 bg-white/40">
-            {violations.slice(0, 5).map((v) => (
-              <li
-                key={v.student_id}
-                className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <span className="text-sm font-medium text-slate-900">
-                  {v.student_name} · {v.reg_number}
-                </span>
-                <span className="text-xs text-slate-600">
-                  <span className="font-medium text-slate-700">Weekly</span>{' '}
-                  {v.weekly_used}/{v.weekly_limit}
-                  <span className="mx-2 text-slate-400">·</span>
-                  <span className="font-medium text-slate-700">Monthly</span>{' '}
-                  {v.monthly_used}/{v.monthly_limit}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Vertical stack only — calendar always under pending requests */}
       <section className="flex w-full flex-col gap-6">
         <div className="w-full min-w-0">
           <div className="dashboard-section-bar">
@@ -290,10 +253,6 @@ export function WardenHomePage() {
               )}
             />
           </div>
-        </div>
-
-        <div className="w-full min-w-0">
-          <WardenCalendarPanel />
         </div>
       </section>
 

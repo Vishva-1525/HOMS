@@ -274,7 +274,7 @@ export function AdminStudentsPage() {
 
       <div className="dashboard-on-photo-muted flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
         <p>
-          Showing {rangeStart}–{rangeEnd} of {totalCount}
+          Showing {rangeStart}-{rangeEnd} of {totalCount}
           {totalPages > 1 ? ` · Page ${page} of ${totalPages}` : ''}
         </p>
         <div className="flex flex-wrap items-center gap-3">

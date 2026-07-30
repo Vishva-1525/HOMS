@@ -18,7 +18,7 @@ import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import { canRequestExtension } from '@/lib/pass-filters'
 import { SPECIAL_PASS_PURPOSE_LABELS } from '@/lib/special-pass'
 import { supabase } from '@/lib/supabase'
-import type { ExtensionRequest, ExtensionStatus, GateLog, OutpassRequest, Student, StudentPassQuotas } from '@/lib/types'
+import type { ExtensionRequest, ExtensionStatus, GateLog, OutpassRequest, Student } from '@/lib/types'
 import { useAuth } from '@/contexts/AuthProvider'
 import { cn } from '@/lib/utils'
 
@@ -27,8 +27,6 @@ interface PassDetailSheetProps {
   student: Student | null
   extensions: ExtensionRequest[]
   gateLogs?: GateLog[]
-  quotas?: StudentPassQuotas
-  approvedPasses?: OutpassRequest[]
   initialAction?: 'extension'
   onClose: () => void
   onUpdated: () => void
@@ -60,8 +58,6 @@ export function PassDetailSheet({
   student,
   extensions,
   gateLogs = [],
-  quotas,
-  approvedPasses,
   initialAction,
   onClose,
   onUpdated,
@@ -215,7 +211,7 @@ export function PassDetailSheet({
             <div className="rounded-xl border border-[var(--svce-border-default)] bg-[var(--svce-page-bg)] p-4">
               <p className="font-semibold text-[#1A1A2E]">{profile?.full_name ?? 'Student'}</p>
               <p className="mt-1 text-sm text-[#4B5563]">
-                {student?.reg_number ?? '—'} · Room {student?.room_number ?? '—'}
+                {student?.reg_number ?? '-'} · Room {student?.room_number ?? '-'}
               </p>
               {student?.department && (
                 <p className="mt-0.5 text-sm text-[#4B5563]">{student.department}</p>
@@ -235,7 +231,7 @@ export function PassDetailSheet({
               {pass.special_purpose === 'internship' && (
                 <DetailRow
                   label="QR access"
-                  value="Reusable for daily exit & entry until return time — renew after expiry"
+                  value="Reusable for daily exit & entry until return time - renew after expiry"
                 />
               )}
               {pass.special_remarks && (
@@ -275,7 +271,7 @@ export function PassDetailSheet({
                 <p className="mb-3 text-center text-sm font-medium text-[#1A1A2E]">
                   Scan at gate
                 </p>
-                <PassQrCode pass={pass} quotas={quotas} approvedPasses={approvedPasses} />
+                <PassQrCode pass={pass} />
               </div>
             ) : null}
 

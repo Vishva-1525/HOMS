@@ -52,7 +52,7 @@ export function exportReportToExcel(options: ReportExportOptions): string {
   XLSX.utils.book_append_sheet(wb, ws, `${filters.reportType} Report`)
 
   const summaryWs = XLSX.utils.aoa_to_sheet([
-    ['SVCE Hostel — Report Summary'],
+    ['SVCE Hostel - Report Summary'],
     ...filterLines.map((line) => [line]),
     [],
     ['Metric', 'Count'],

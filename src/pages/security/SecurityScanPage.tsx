@@ -67,8 +67,8 @@ export function SecurityScanPage() {
 
   const successMessage =
     lastRecordedEvent === 'exit'
-      ? 'Exit recorded — student may leave'
-      : 'Entry recorded — student may enter'
+      ? 'Exit recorded - student may leave'
+      : 'Entry recorded - student may enter'
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -4,7 +4,7 @@ import { DashboardBackground } from '@/components/layout/DashboardBackground'
 import { SuspenseOutlet } from '@/components/layout/SuspenseOutlet'
 import { getMobileNavForRole } from '@/components/layout/nav'
 
-/** Full-screen layout for security guards — campus background, mobile bottom nav. */
+/** Full-screen layout for security guards - campus background, mobile bottom nav. */
 export function SecurityShell() {
   const mobileNav = getMobileNavForRole('security_guard')
 

@@ -28,7 +28,7 @@ function lazyPage<T extends Record<string, unknown>>(
   )
 }
 
-/* Role shells — split so student clients never download admin/warden page graphs */
+/* Role shells - split so student clients never download admin/warden page graphs */
 const StudentShell = lazyPage(() => import('@/components/layout/StudentShell'), 'StudentShell')
 const WardenShell = lazyPage(() => import('@/components/layout/WardenShell'), 'WardenShell')
 const SecurityShell = lazyPage(() => import('@/components/layout/SecurityShell'), 'SecurityShell')

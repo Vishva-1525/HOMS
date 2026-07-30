@@ -146,7 +146,7 @@ function wardenColumns(onEdit: (row: AdminStaffRow) => void) {
       header: 'Block assigned',
       accessor: 'assignment_value' as const,
       render: (row: AdminStaffRow) =>
-        row.assignment_value ? formatBlockLabel(row.assignment_value) : '—',
+        row.assignment_value ? formatBlockLabel(row.assignment_value) : '-',
     },
     { header: 'Phone', accessor: 'phone' as const },
     {
@@ -179,7 +179,7 @@ function guardColumns(onEdit: (row: AdminStaffRow) => void) {
     {
       header: 'Gate assigned',
       accessor: 'assignment_value' as const,
-      render: (row: AdminStaffRow) => row.assignment_value || '—',
+      render: (row: AdminStaffRow) => row.assignment_value || '-',
     },
     { header: 'Phone', accessor: 'phone' as const },
     {

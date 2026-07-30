@@ -25,7 +25,7 @@ export function buildPassQrPayload(
   }
 }
 
-/** QR encodes only the outpass UUID — gate lookup loads full pass details from the DB. */
+/** QR encodes only the outpass UUID - gate lookup loads full pass details from the DB. */
 export function buildPassQrValue(pass: OutpassRequest): string {
   return pass.id
 }
@@ -92,7 +92,7 @@ export function parseScanInput(
       }
     }
   } catch {
-    // not JSON — try UUID or entry code below
+    // not JSON - try UUID or entry code below
   }
 
   if (UUID_PATTERN.test(trimmed)) {

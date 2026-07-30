@@ -120,8 +120,8 @@ export function AdminStudentDrawer({
               <Row label="Room" value={`${student.room_number} · ${student.hostel_block}`} />
               <Row label="Department" value={student.department} />
               <Row label="Year" value={formatStudentYearLabel(student.year_of_study)} />
-              <Row label="Parent phone" value={student.parent_phone || '—'} />
-              <Row label="Parent email" value={student.parent_email || '—'} />
+              <Row label="Parent phone" value={student.parent_phone || '-'} />
+              <Row label="Parent email" value={student.parent_email || '-'} />
             </dl>
           )}
 

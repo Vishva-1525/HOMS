@@ -44,7 +44,7 @@ function formatRequestStatus(status: string): string {
 export function reportRowToExportRow(row: ReportRow, index: number): (string | number)[] {
   return [
     index + 1,
-    row.outpass_id ?? '—',
+    row.outpass_id ?? '-',
     row.student_name,
     row.reg_number,
     row.room_number,
@@ -58,14 +58,14 @@ export function reportRowToExportRow(row: ReportRow, index: number): (string | n
     formatDate(row.departure_at),
     formatTime(row.departure_at),
     formatDateTime(row.return_by),
-    row.actual_exit_time ? formatDateTime(row.actual_exit_time) : '—',
-    row.actual_entry_time ? formatDateTime(row.actual_entry_time) : '—',
-    row.hours_outside != null ? formatDuration(row.hours_outside) : '—',
+    row.actual_exit_time ? formatDateTime(row.actual_exit_time) : '-',
+    row.actual_entry_time ? formatDateTime(row.actual_entry_time) : '-',
+    row.hours_outside != null ? formatDuration(row.hours_outside) : '-',
     formatRequestStatus(row.status),
     formatReportStatus(row),
     formatOverdueLabel(row.is_overdue),
-    row.approved_by_name ?? '—',
-    row.warden_remark ?? '—',
+    row.approved_by_name ?? '-',
+    row.warden_remark ?? '-',
   ]
 }
 

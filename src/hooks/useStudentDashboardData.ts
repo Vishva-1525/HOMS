@@ -92,7 +92,7 @@ export function useStudentDashboardData(): DashboardData {
           .order('scanned_at', { ascending: false })
 
         if (logsError) {
-          // Soft-fail — dashboard still usable without gate status
+          // Soft-fail - dashboard still usable without gate status
           console.warn('gate_logs fetch soft-failed:', logsError.message)
           setGateLogs([])
         } else {

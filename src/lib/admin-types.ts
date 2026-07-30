@@ -67,7 +67,7 @@ export function getAdminStudentName(student: {
   if (fromProfile) return fromProfile
   const fromRow = student.full_name?.trim()
   if (fromRow) return fromRow
-  return student.reg_number?.trim() || '—'
+  return student.reg_number?.trim() || '-'
 }
 
 export interface AdminPassRow {

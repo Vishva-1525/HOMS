@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-/** 2 retries, short backoff — resilient without making normal loads feel slow. */
+/** 2 retries, short backoff - resilient without making normal loads feel slow. */
 const resilientFetch = createResilientFetch(2, 250)
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

@@ -19,7 +19,6 @@ export function StudentPassesPage() {
     gateLogs,
     extensions,
     student,
-    quotas,
     loading,
     error,
     refetch,
@@ -28,11 +27,6 @@ export function StudentPassesPage() {
   const [selectedPass, setSelectedPass] = useState<OutpassRequest | null>(null)
   const [qrPass, setQrPass] = useState<OutpassRequest | null>(null)
   const [retrying, setRetrying] = useState(false)
-
-  const approvedPasses = useMemo(
-    () => passes.filter((pass) => pass.status === 'approved' || pass.status === 'extended'),
-    [passes],
-  )
 
   const filteredPasses = useMemo(
     () => filterPasses(passes, filter, gateLogs),
@@ -112,8 +106,6 @@ export function StudentPassesPage() {
         student={student}
         extensions={extensions}
         gateLogs={gateLogs}
-        quotas={quotas}
-        approvedPasses={approvedPasses}
         onClose={() => setSelectedPass(null)}
         onUpdated={() => {
           void refetch()
@@ -124,8 +116,6 @@ export function StudentPassesPage() {
         <PassQrSheet
           open={Boolean(qrPass)}
           pass={qrPass}
-          quotas={quotas}
-          approvedPasses={approvedPasses}
           onClose={() => setQrPass(null)}
         />
       )}

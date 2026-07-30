@@ -5,10 +5,10 @@ export type UserRole =
   | 'parent'
   | 'admin'
 
-/** `night_pass` retained for historical rows only — no longer creatable. */
+/** `night_pass` retained for historical rows only - no longer creatable. */
 export type PassType = 'outpass' | 'staypass' | 'night_pass' | 'special_pass'
 
-/** `industrial_visit` retained for historical rows only — no longer selectable. */
+/** `industrial_visit` retained for historical rows only - no longer selectable. */
 export type SpecialPassPurpose =
   | 'internship'
   | 'hackathon'
@@ -193,6 +193,11 @@ export interface Database {
           approved_by?: string | null
           qr_code_data?: string | null
           created_at?: string
+          allows_multi_daily_scan?: boolean
+          special_purpose?: SpecialPassPurpose | null
+          special_remarks?: string | null
+          document_url?: string | null
+          requires_hod_approval?: boolean
         }
         Update: {
           student_id?: string

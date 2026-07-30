@@ -17,8 +17,8 @@ interface PassPeriodStatsPanelProps {
   title?: string
   className?: string
   /**
-   * `analytics` — total / approved / rejected (admin dashboard; no overlap with live ops).
-   * `operations` — pending / approved / rejected / overdue (warden home).
+   * `analytics` - total / approved / rejected (admin dashboard; no overlap with live ops).
+   * `operations` - pending / approved / rejected / overdue (warden home).
    */
   variant?: 'analytics' | 'operations'
 }

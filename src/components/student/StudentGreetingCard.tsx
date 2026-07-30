@@ -26,9 +26,9 @@ export function StudentGreetingCard({
           {greeting}, {firstName}
         </p>
         <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-[#E4EEF8]">
-          <span>{student?.reg_number ?? '—'}</span>
+          <span>{student?.reg_number ?? '-'}</span>
           <span>
-            Room {student?.room_number ?? '—'}
+            Room {student?.room_number ?? '-'}
             {student?.hostel_block ? ` · ${student.hostel_block}` : ''}
           </span>
         </div>
@@ -53,9 +53,9 @@ export function StudentGreetingCard({
         {greeting}, {firstName}
       </p>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-[#E4EEF8]">
-        <span>{student?.reg_number ?? '—'}</span>
+        <span>{student?.reg_number ?? '-'}</span>
         <span>
-          Room {student?.room_number ?? '—'}
+          Room {student?.room_number ?? '-'}
           {student?.hostel_block ? ` · ${student.hostel_block}` : ''}
         </span>
       </div>

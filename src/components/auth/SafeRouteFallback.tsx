@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { getPostLoginPath, LOGIN_PATH } from '@/lib/routes'
 
 /**
- * Catch-all for unknown client routes — never shows a 404 page.
+ * Catch-all for unknown client routes - never shows a 404 page.
  * Sends users to login or their role dashboard instead.
  */
 export function SafeRouteFallback() {

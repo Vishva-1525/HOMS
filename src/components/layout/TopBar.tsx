@@ -33,7 +33,7 @@ export function TopBar({
 
   return (
     <header className="glass-nav sticky top-0 z-30 flex h-[60px] shrink-0 items-center border-b px-3 pt-[max(0px,env(safe-area-inset-top))] sm:px-4 md:px-6">
-      {/* Mobile: fixed 3-column grid — menu | college name | controls */}
+      {/* Mobile: fixed 3-column grid - menu | college name | controls */}
       <div className="grid w-full min-w-0 grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 md:hidden">
         <button
           type="button"

@@ -140,7 +140,7 @@ export function WardenReviewDrawer({
             {student?.parent_phone?.trim() ? (
               <ParentPhoneRow phone={student.parent_phone.trim()} />
             ) : (
-              <DetailRow label="Parent phone" value="—" />
+              <DetailRow label="Parent phone" value="-" />
             )}
             <DetailRow label="Destination" value={request.destination} />
             <DetailRow label="Reason" value={request.reason} />

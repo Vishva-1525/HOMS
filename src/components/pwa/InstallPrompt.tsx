@@ -37,7 +37,7 @@ export function InstallPrompt() {
 
   if (isStandalone || dismissed) return null
 
-  // iOS has no beforeinstallprompt — show Share → Add to Home Screen guidance.
+  // iOS has no beforeinstallprompt - show Share → Add to Home Screen guidance.
   if (isIos) {
     return (
       <div className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-lg rounded-xl border border-[#BFDBFE] bg-white p-4 shadow-lg md:bottom-6 md:left-auto">

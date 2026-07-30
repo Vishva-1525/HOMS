@@ -4,18 +4,7 @@ import { debounce } from '@/lib/debounce'
 import { formatNetworkError } from '@/lib/network-error'
 import { fetchStudentRecord } from '@/lib/student-data'
 import { supabase } from '@/lib/supabase'
-import type { ExtensionRequest, GateLog, OutpassRequest, Student, StudentPassQuotas } from '@/lib/types'
-
-const DEFAULT_QUOTAS: StudentPassQuotas = {
-  weekly_limit: 2,
-  monthly_limit: 15,
-  weekly_used: 0,
-  monthly_used: 0,
-  weekly_remaining: 2,
-  monthly_remaining: 15,
-  week_start: '',
-  month_start: '',
-}
+import type { ExtensionRequest, GateLog, OutpassRequest, Student } from '@/lib/types'
 
 const REALTIME_DEBOUNCE_MS = 600
 const PASS_LIMIT = 150
@@ -25,7 +14,6 @@ export interface StudentDataValue {
   passes: OutpassRequest[]
   gateLogs: GateLog[]
   extensions: ExtensionRequest[]
-  quotas: StudentPassQuotas
   /** True only until the first load attempt finishes. */
   loading: boolean
   /** True while a background refresh is in flight. */
@@ -35,7 +23,7 @@ export interface StudentDataValue {
 }
 
 /**
- * Shared student data loader — one request set for the whole student shell.
+ * Shared student data loader - one request set for the whole student shell.
  * Stale-while-revalidate: navigating Home ↔ Passes keeps cached data on screen.
  */
 export function useStudentData(): StudentDataValue {
@@ -44,7 +32,6 @@ export function useStudentData(): StudentDataValue {
   const [passes, setPasses] = useState<OutpassRequest[]>([])
   const [gateLogs, setGateLogs] = useState<GateLog[]>([])
   const [extensions, setExtensions] = useState<ExtensionRequest[]>([])
-  const [quotas, setQuotas] = useState<StudentPassQuotas>(DEFAULT_QUOTAS)
   const [hasLoaded, setHasLoaded] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,17 +55,16 @@ export function useStudentData(): StudentDataValue {
       if (hasLoadedRef.current) setRefreshing(true)
 
       try {
-        const [studentResult, passesResult, quotasResult] = await Promise.all([
+        const [studentResult, passesResult] = await Promise.all([
           fetchStudentRecord(userId),
           supabase
             .from('outpass_requests')
             .select(
-              'id, student_id, pass_type, destination, reason, departure_at, return_by, status, warden_remark, approved_by, approved_at, is_overdue, qr_code_data, created_at, special_purpose, special_remarks, document_url, requires_hod_approval, entry_code',
+              'id, student_id, pass_type, destination, reason, departure_at, return_by, status, warden_remark, approved_by, approved_at, is_overdue, qr_code_data, created_at, special_purpose, special_remarks, document_url, requires_hod_approval, entry_code, allows_multi_daily_scan',
             )
             .eq('student_id', userId)
             .order('created_at', { ascending: false })
             .limit(PASS_LIMIT),
-          supabase.rpc('get_student_pass_quotas', { p_student_id: userId }),
         ])
 
         if (studentResult.error) {
@@ -95,13 +81,6 @@ export function useStudentData(): StudentDataValue {
         setStudent(studentResult.student)
         setPasses(allPasses)
         passIdsRef.current = new Set(allPasses.map((p) => p.id))
-
-        if (quotasResult.error) {
-          console.warn('pass quotas soft-failed:', quotasResult.error.message)
-          setQuotas(DEFAULT_QUOTAS)
-        } else {
-          setQuotas({ ...DEFAULT_QUOTAS, ...(quotasResult.data as StudentPassQuotas) })
-        }
 
         const passIds = allPasses.map((p) => p.id)
         if (passIds.length === 0) {
@@ -158,7 +137,6 @@ export function useStudentData(): StudentDataValue {
       setPasses([])
       setGateLogs([])
       setExtensions([])
-      setQuotas(DEFAULT_QUOTAS)
       setHasLoaded(false)
       setRefreshing(false)
       setError(null)
@@ -230,12 +208,11 @@ export function useStudentData(): StudentDataValue {
       passes,
       gateLogs,
       extensions,
-      quotas,
       loading: Boolean(user) && !hasLoaded,
       refreshing,
       error,
       refetch: fetchData,
     }),
-    [student, passes, gateLogs, extensions, quotas, user, hasLoaded, refreshing, error, fetchData],
+    [student, passes, gateLogs, extensions, user, hasLoaded, refreshing, error, fetchData],
   )
 }

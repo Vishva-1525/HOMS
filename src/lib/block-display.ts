@@ -38,7 +38,7 @@ export function normalizeHostelBlock(input: string | null | undefined): string {
 /** Display label for hostel block (stored value e.g. "BLOCK 1"). */
 export function formatBlockLabel(block: string | null | undefined): string {
   const value = normalizeHostelBlock(block)
-  if (!value) return '—'
+  if (!value) return '-'
   const numeric = value.match(/^BLOCK\s+(\d+)$/i)
   if (numeric) return `Block ${numeric[1]}`
   return value

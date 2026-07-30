@@ -76,19 +76,19 @@ export function WardenAvailabilityPanel({
             {scope.isAvailable ? (
               <>
                 <Sun className="h-4 w-4 text-emerald-700" strokeWidth={1.75} />
-                Working — you can approve requests
+                Working - you can approve requests
               </>
             ) : (
               <>
                 <Moon className="h-4 w-4 text-amber-800" strokeWidth={1.75} />
-                Away — approvals are read-only
+                Away - approvals are read-only
               </>
             )}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-slate-700">
             {scope.isAvailable
               ? 'Turn on Away when you are on leave. Superior wardens of your gender will handle new requests for your block.'
-              : `Superior wardens are covering your block. Reason: ${scope.unavailableReason ?? '—'}`}
+              : `Superior wardens are covering your block. Reason: ${scope.unavailableReason ?? '-'}`}
           </p>
         </div>
 

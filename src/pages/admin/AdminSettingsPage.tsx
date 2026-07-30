@@ -9,8 +9,6 @@ const SETTING_LABELS: Record<string, { label: string; type?: 'boolean' }> = {
   max_staypass_days: { label: 'Max stay pass days (0 = unlimited)' },
   max_special_pass_days: { label: 'Max special pass days (non-internship)' },
   max_internship_days: { label: 'Max internship QR days' },
-  max_weekly_passes: { label: 'Max weekly passes per student' },
-  max_monthly_passes: { label: 'Max monthly passes per student' },
   qr_availability_minutes: {
     label: 'QR availability window (minutes before departure)',
   },

@@ -58,7 +58,7 @@ export function WardenPendingMobileCard({
 
       {actionsDisabled ? (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-900">
-          Read-only while Away — superior wardens can approve
+          Read-only while Away - superior wardens can approve
         </p>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -107,7 +107,7 @@ export function WardenStudentOutMobileCard({
       <p className="mt-2 text-sm font-medium text-slate-900">{pass.destination}</p>
 
       <div className="mt-2 space-y-1">
-        <MobileDataCardRow label="Exit" value={exit ? formatReturnTime(exit) : '—'} />
+        <MobileDataCardRow label="Exit" value={exit ? formatReturnTime(exit) : '-'} />
         <MobileDataCardRow label="Return by" value={formatReturnTime(pass.return_by)} />
         <MobileDataCardRow label="Remaining" value={timeRemaining} />
       </div>
@@ -143,7 +143,7 @@ export function WardenExtensionMobileCard({
           value={
             extension.outpass_requests
               ? formatReturnTime(extension.outpass_requests.return_by)
-              : '—'
+              : '-'
           }
         />
         <MobileDataCardRow
@@ -205,7 +205,7 @@ export function WardenReportMobileCard({
       <div className="mt-2 space-y-1">
         <MobileDataCardRow label="Departure" value={formatReturnTime(pass.departure_at)} />
         <MobileDataCardRow label="Return by" value={formatReturnTime(pass.return_by)} />
-        <MobileDataCardRow label="Entry" value={entryTime ? formatReturnTime(entryTime) : '—'} />
+        <MobileDataCardRow label="Entry" value={entryTime ? formatReturnTime(entryTime) : '-'} />
         {pass.warden_remark && (
           <MobileDataCardRow label="Remark" value={pass.warden_remark} />
         )}

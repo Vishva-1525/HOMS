@@ -11,17 +11,17 @@ const PASS_OPTIONS: {
 }[] = [
   {
     type: 'outpass',
-    description: 'Day trip — within 24 hours',
+    description: 'Day trip - within 24 hours',
     icon: Sun,
   },
   {
     type: 'staypass',
-    description: 'Overnight or longer — no max duration',
+    description: 'Overnight or longer - no max duration',
     icon: Moon,
   },
   {
     type: 'special_pass',
-    description: 'Internship / events — purpose-based',
+    description: 'Internship / events - purpose-based',
     icon: Briefcase,
   },
 ]

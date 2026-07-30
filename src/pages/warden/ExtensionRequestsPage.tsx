@@ -104,7 +104,7 @@ export function ExtensionRequestsPage() {
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedExtension) return
     if (scope && !scope.canApprove) {
-      setActionError('You are Away — superior wardens handle approvals while you are Away.')
+      setActionError('You are Away - superior wardens handle approvals while you are Away.')
       return
     }
 
@@ -212,7 +212,7 @@ export function ExtensionRequestsPage() {
               render: (row) =>
                 row.outpass_requests
                   ? formatReturnTime(row.outpass_requests.return_by)
-                  : '—',
+                  : '-',
             },
             {
               header: 'Requested return',

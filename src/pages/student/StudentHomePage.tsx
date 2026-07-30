@@ -28,7 +28,6 @@ export function StudentHomePage() {
     extensions,
     gateLogs,
     student,
-    quotas,
     loading,
     error,
     refetch,
@@ -38,11 +37,6 @@ export function StudentHomePage() {
   const [retrying, setRetrying] = useState(false)
 
   const firstName = profile?.full_name?.split(/\s+/)[0] ?? 'Student'
-
-  const approvedPasses = useMemo(
-    () => passes.filter((pass) => pass.status === 'approved' || pass.status === 'extended'),
-    [passes],
-  )
 
   const semesterPasses = useMemo(
     () => passes.filter((p) => isWithinSemester(p.created_at)),
@@ -112,7 +106,7 @@ export function StudentHomePage() {
     <div className="space-y-6 sm:space-y-8">
       {error && passes.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span>Connection issue — showing last loaded data.</span>
+          <span>Connection issue - showing last loaded data.</span>
           <button
             type="button"
             onClick={handleRetry}
@@ -139,12 +133,7 @@ export function StudentHomePage() {
       />
 
       {activePass && (
-        <ActivePassBanner
-          pass={activePass}
-          student={student}
-          quotas={quotas}
-          approvedPasses={approvedPasses}
-        />
+        <ActivePassBanner pass={activePass} student={student} />
       )}
 
       {extensionEligiblePass && (
@@ -184,8 +173,6 @@ export function StudentHomePage() {
         student={student}
         extensions={extensions}
         gateLogs={gateLogs}
-        quotas={quotas}
-        approvedPasses={approvedPasses}
         initialAction={detailInitialAction}
         onClose={() => {
           setSelectedPass(null)

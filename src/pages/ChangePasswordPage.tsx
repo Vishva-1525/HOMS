@@ -41,7 +41,7 @@ export function ChangePasswordPage() {
 
     const strength = getPasswordStrength(password)
     if (strength.level === 'weak') {
-      setError('Choose a stronger password — at least 8 characters with mixed case and numbers.')
+      setError('Choose a stronger password - at least 8 characters with mixed case and numbers.')
       return
     }
 

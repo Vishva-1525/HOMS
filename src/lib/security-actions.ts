@@ -341,7 +341,7 @@ function buildWardenAlertDetail(
   }
 
   if (extensionPending) {
-    parts.push('extension pending — not yet approved')
+    parts.push('extension pending - not yet approved')
   } else {
     parts.push('no approved extension on file')
   }

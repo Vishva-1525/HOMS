@@ -60,7 +60,7 @@ export function WardenCalendarPanel() {
           mode="browse"
           variant="glass"
           title="Academic calendar"
-          helperText="Working days, holidays, and exam days — same view students use when picking dates."
+          helperText="Working days, holidays, and exam days - same view students use when picking dates."
         />
       </div>
 

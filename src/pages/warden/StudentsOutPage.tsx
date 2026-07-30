@@ -74,7 +74,7 @@ export function StudentsOutPage() {
               accessor: 'id',
               render: (row) => {
                 const exit = getExitTime(row.id, gateLogs)
-                return exit ? formatReturnTime(exit) : '—'
+                return exit ? formatReturnTime(exit) : '-'
               },
             },
             {

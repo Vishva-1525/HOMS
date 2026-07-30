@@ -134,9 +134,9 @@ export function AdminStudentsYearGroup({
                   <CampusBadge status={row.campus_status} />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                  <span>Room {row.room_number || '—'}</span>
+                  <span>Room {row.room_number || '-'}</span>
                   <span>{formatBlockLabel(row.hostel_block)}</span>
-                  <span className="col-span-2">{row.department || '—'}</span>
+                  <span className="col-span-2">{row.department || '-'}</span>
                 </div>
                 <AdminStudentRowActions
                   student={row}

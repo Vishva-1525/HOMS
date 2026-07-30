@@ -13,11 +13,11 @@ export function getStudentName(student: StudentProfile | null | undefined): stri
 }
 
 export function getStudentReg(student: StudentProfile | null | undefined): string {
-  return student?.reg_number ?? '—'
+  return student?.reg_number ?? '-'
 }
 
 export function getStudentRoom(student: StudentProfile | null | undefined): string {
-  if (!student) return '—'
+  if (!student) return '-'
   const block = student.hostel_block ? ` · ${student.hostel_block}` : ''
   return `${student.room_number}${block}`
 }
@@ -46,7 +46,7 @@ export function formatStudentVerificationLabel(
 }
 
 export function formatStudentRoomDisplay(student: StudentProfile | null | undefined): string {
-  if (!student?.room_number) return '—'
+  if (!student?.room_number) return '-'
   const block = student.hostel_block ? ` · ${student.hostel_block}` : ''
   return `Room ${student.room_number}${block}`
 }

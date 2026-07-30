@@ -184,7 +184,7 @@ export function BulkStudentUploadModal({
     const { error: refreshError } = await supabase.auth.refreshSession()
     if (refreshError) {
       throw new Error(
-        `Session expired — sign out and sign back in as admin, then retry. (${refreshError.message})`,
+        `Session expired - sign out and sign back in as admin, then retry. (${refreshError.message})`,
       )
     }
 
@@ -221,7 +221,7 @@ export function BulkStudentUploadModal({
 
       // Gateway / wall-clock timeouts often hide the real cause.
       if (/non-2xx|failed to (send|fetch)|timeout|timed out|546|504|542/i.test(detail)) {
-        detail = `${detail}. The batch may have timed out — retry this chunk (smaller batches of ${CHUNK_SIZE} are used).`
+        detail = `${detail}. The batch may have timed out - retry this chunk (smaller batches of ${CHUNK_SIZE} are used).`
       }
 
       throw new Error(detail)

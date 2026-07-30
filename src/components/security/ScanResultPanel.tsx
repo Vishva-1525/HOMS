@@ -82,8 +82,8 @@ function getVerificationResult(result: ScanValidationResult): {
   return {
     label: 'Overdue entry',
     detail: result.wardenNotified
-      ? 'Severely overdue — warden notified.'
-      : 'Severely overdue — notify warden if needed.',
+      ? 'Severely overdue - warden notified.'
+      : 'Severely overdue - notify warden if needed.',
     tone: 'danger',
   }
 }
@@ -144,7 +144,7 @@ export function ScanResultPanel({
                   {getStudentName(pass.students)}
                 </p>
                 <p className="font-mono text-sm text-[#1A5CA0]">
-                  {result.studentAdmissionNo ?? '—'}
+                  {result.studentAdmissionNo ?? '-'}
                 </p>
               </div>
             </div>
@@ -172,8 +172,8 @@ export function ScanResultPanel({
   if (!pass) return null
 
   const studentName = getStudentName(pass.students)
-  const admissionNo = result.studentAdmissionNo ?? '—'
-  const displayName = studentName !== 'Unknown' ? studentName : '—'
+  const admissionNo = result.studentAdmissionNo ?? '-'
+  const displayName = studentName !== 'Unknown' ? studentName : '-'
   const hasExit = hasExitLog(pass.id, gateLogs)
   const nextAction = result.nextAction ?? 'exit'
   const isExitScan = result.scanPhase === 'exit'
@@ -190,7 +190,7 @@ export function ScanResultPanel({
           isExitScan ? bannerStyles.neutral : bannerStyles[verification.tone],
         )}
       >
-        {isExitScan ? 'College exit — verify and allow departure' : verification.label}
+        {isExitScan ? 'College exit - verify and allow departure' : verification.label}
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
@@ -282,10 +282,10 @@ export function ScanResultPanel({
           {submitting
             ? 'Recording…'
             : nextAction === 'exit'
-              ? 'Record exit — allow student to leave'
+              ? 'Record exit - allow student to leave'
               : result.kind === 'overdue-entry'
-                ? 'Record entry — warden notified'
-                : 'Record entry — allow student to return'}
+                ? 'Record entry - warden notified'
+                : 'Record entry - allow student to return'}
         </button>
 
         {result.kind === 'overdue-entry' && !result.wardenNotified && (

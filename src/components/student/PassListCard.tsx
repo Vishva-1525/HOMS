@@ -49,7 +49,7 @@ const CARD_TONE_STYLES: Record<
     container: 'liquid-glass border-emerald-300/45 ring-1 ring-emerald-400/20',
     icon: CheckCircle2,
     iconWrap: 'bg-[var(--svce-green-tint)] text-[var(--svce-accent-green)] ring-emerald-300/40',
-    statusHint: 'Approved — QR ready at gate',
+    statusHint: 'Approved - QR ready at gate',
   },
   rejected: {
     container: 'liquid-glass border-red-300/40 ring-1 ring-red-400/15',

@@ -60,10 +60,10 @@ export function getDateRestrictionMessage(
     return null
   }
   if (entry.day_type === 'holiday') {
-    return entry.label ? `${entry.label} — holidays are blocked.` : 'This date is a holiday.'
+    return entry.label ? `${entry.label} - holidays are blocked.` : 'This date is a holiday.'
   }
   if (entry.day_type === 'exam_day') {
-    return entry.label ? `${entry.label} — exam days are blocked.` : 'This date is an exam day.'
+    return entry.label ? `${entry.label} - exam days are blocked.` : 'This date is an exam day.'
   }
   return null
 }

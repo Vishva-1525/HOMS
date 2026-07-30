@@ -21,7 +21,7 @@ export type NewRequestFormErrors = Partial<Record<keyof NewRequestFormValues | '
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
 
-/** Default limits — overridden by `get_student_pass_limits` when available. */
+/** Default limits - overridden by `get_student_pass_limits` when available. */
 export const OUTPASS_MAX_HOURS = DEFAULT_PASS_LIMITS.maxOutpassHours
 export const SPECIAL_PASS_MAX_DAYS = DEFAULT_PASS_LIMITS.maxSpecialPassDays
 export const INTERNSHIP_MAX_DAYS = DEFAULT_PASS_LIMITS.maxInternshipDays
@@ -52,10 +52,10 @@ export function getPassTypeDurationHint(
     case 'outpass':
       return `Outpass: return within ${limits.maxOutpassHours} hours of departure.`
     case 'staypass':
-      return 'Stay Pass: no maximum duration — set any return after departure.'
+      return 'Stay Pass: no maximum duration - set any return after departure.'
     case 'special_pass':
       if (specialPurpose === 'internship') {
-        return `Internship: QR valid up to ${limits.maxInternshipDays} days — reusable for daily exit and entry.`
+        return `Internship: QR valid up to ${limits.maxInternshipDays} days - reusable for daily exit and entry.`
       }
       return `Special Pass: return within ${limits.maxSpecialPassDays} days of departure.`
     case 'night_pass':

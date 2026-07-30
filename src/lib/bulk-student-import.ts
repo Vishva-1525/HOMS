@@ -41,7 +41,7 @@ const REQUIRED_HEADERS = [
   'year',
 ] as const
 
-/** Optional columns — accepted when present, default to empty when absent. */
+/** Optional columns - accepted when present, default to empty when absent. */
 const OPTIONAL_HEADER_HINT = 'Optional: Room, Block, Department'
 
 /** Map flexible spreadsheet headers → canonical field names. */
@@ -187,7 +187,7 @@ function mapRecordsToStudents(
     if (!full_name) missingFields.push('Full Name')
     if (missingFields.length > 0) {
       warnings.push(
-        `${rowLabel}: skipped — missing ${missingFields.join(', ')}${
+        `${rowLabel}: skipped - missing ${missingFields.join(', ')}${
           full_name ? ` (${full_name})` : ''
         }.`,
       )
@@ -195,13 +195,13 @@ function mapRecordsToStudents(
     }
 
     if (!email.includes('@')) {
-      warnings.push(`${rowLabel}: skipped — invalid email “${email}”.`)
+      warnings.push(`${rowLabel}: skipped - invalid email “${email}”.`)
       return
     }
 
     if (!Number.isFinite(year_of_study) || year_of_study < 1 || year_of_study > 4) {
       warnings.push(
-        `${rowLabel}: skipped — year must be 1–4 (got “${yearRaw || 'empty'}”)${
+        `${rowLabel}: skipped - year must be 1-4 (got “${yearRaw || 'empty'}”)${
           full_name ? ` (${full_name})` : ''
         }.`,
       )

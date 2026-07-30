@@ -59,7 +59,7 @@ export function ParentPassTable({
                     <MobileDataCardRow label="Return by" value={formatReturnTime(pass.return_by)} />
                     <MobileDataCardRow
                       label="Gate"
-                      value={`${exitAt ? formatReturnTime(exitAt) : '—'} → ${entryAt ? formatReturnTime(entryAt) : '—'}`}
+                      value={`${exitAt ? formatReturnTime(exitAt) : '-'} → ${entryAt ? formatReturnTime(entryAt) : '-'}`}
                     />
                   </div>
                 </MobileDataCard>
@@ -111,10 +111,10 @@ export function ParentPassTable({
                         <StatusBadge status={displayStatus} label={label} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
-                        {exitAt ? formatReturnTime(exitAt) : '—'}
+                        {exitAt ? formatReturnTime(exitAt) : '-'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3.5 text-slate-700 sm:px-5">
-                        {entryAt ? formatReturnTime(entryAt) : '—'}
+                        {entryAt ? formatReturnTime(entryAt) : '-'}
                       </td>
                     </tr>
                   )

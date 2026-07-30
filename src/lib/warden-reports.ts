@@ -78,9 +78,9 @@ export function buildReportTableRow(
     destination: pass.destination,
     departure: formatReturnTime(pass.departure_at),
     returnBy: formatReturnTime(pass.return_by),
-    actualEntry: entryTime ? formatReturnTime(entryTime) : '—',
+    actualEntry: entryTime ? formatReturnTime(entryTime) : '-',
     status: STATUS_LABELS[pass.status],
-    wardenRemark: pass.warden_remark ?? '—',
+    wardenRemark: pass.warden_remark ?? '-',
   }
 }
 

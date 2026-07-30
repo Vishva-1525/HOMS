@@ -54,7 +54,7 @@ export function ReportsPage() {
   if (tier === 'superior') {
     return (
       <ReportsPanel
-        title={`Warden reports — all ${gender} blocks`}
+        title={`Warden reports - all ${gender} blocks`}
         fixedHostelBlock={null}
         fixedGender={gender}
       />
@@ -63,7 +63,7 @@ export function ReportsPage() {
 
   return (
     <ReportsPanel
-      title={`RT reports — ${formatBlockLabel(block!)} (${gender})`}
+      title={`RT reports - ${formatBlockLabel(block!)} (${gender})`}
       fixedHostelBlock={block}
       fixedGender={gender}
     />

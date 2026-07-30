@@ -29,7 +29,7 @@ function shortName(fullName: string): string {
 
 export function buildActivityDescription(row: AdminActivityRow): string {
   const name = row.student_name ? shortName(row.student_name) : 'Student'
-  const reg = row.reg_number ?? '—'
+  const reg = row.reg_number ?? '-'
   const passLabel = PASS_TYPE_LABELS[row.pass_type as keyof typeof PASS_TYPE_LABELS] ?? row.pass_type
 
   switch (row.event_type) {
@@ -44,7 +44,7 @@ export function buildActivityDescription(row: AdminActivityRow): string {
     case 'gate_entry':
       return `${name} (${reg}) returned to hostel at ${formatTime(row.scanned_at ?? row.occurred_at)}`
     case 'overdue_alert':
-      return `${name} (${reg}) is OVERDUE — expected return ${formatTime(row.return_by)}`
+      return `${name} (${reg}) is OVERDUE - expected return ${formatTime(row.return_by)}`
     default:
       return `${name} (${reg})`
   }
@@ -128,7 +128,7 @@ export function useAdminActivityFeed() {
         description: buildActivityDescription(row),
         relativeTime: formatRelativeTime(row.occurred_at),
         studentId: row.student_id,
-        studentLabel: `${row.student_name ?? 'Student'} · ${row.reg_number ?? '—'}`,
+        studentLabel: `${row.student_name ?? 'Student'} · ${row.reg_number ?? '-'}`,
       })),
     [events, tick],
   )

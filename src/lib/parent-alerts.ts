@@ -46,7 +46,7 @@ export function getWardStatusSummary(
       )
       return {
         campusStatus: 'overdue',
-        label: 'Overdue — still outside campus',
+        label: 'Overdue - still outside campus',
         detail: `Was due back ${formatReturnTime(currentlyOutPass.return_by)} (${formatOverdueDuration(overdueMs)} late)`,
         activePass: currentlyOutPass,
       }
@@ -69,7 +69,7 @@ export function getWardStatusSummary(
   if (upcomingActive) {
     return {
       campusStatus: 'in_hostel',
-      label: 'In hostel — approved pass active',
+      label: 'In hostel - approved pass active',
       detail: `${PASS_TYPE_LABELS[upcomingActive.pass_type]} to ${upcomingActive.destination} · Return by ${formatReturnTime(upcomingActive.return_by)}`,
       activePass: upcomingActive,
     }
@@ -77,7 +77,7 @@ export function getWardStatusSummary(
 
   return {
     campusStatus: 'no_active_pass',
-    label: 'In hostel — no active pass',
+    label: 'In hostel - no active pass',
     detail: 'No approved outpass is currently in use.',
     activePass: null,
   }

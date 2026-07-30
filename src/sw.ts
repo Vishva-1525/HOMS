@@ -20,7 +20,7 @@ interface PushPayload {
 
 self.addEventListener('push', (event) => {
   const payload: PushPayload = event.data ? event.data.json() : {}
-  const title = payload.title ?? 'HOMS — SVCE Hostel'
+  const title = payload.title ?? 'HOMS - SVCE Hostel'
   const options: NotificationOptions & { renotify?: boolean; vibrate?: number[] } = {
     body: payload.body ?? 'You have a new update.',
     icon: '/pwa-icon-192.png',

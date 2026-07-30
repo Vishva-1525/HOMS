@@ -65,7 +65,7 @@ export function formatRangeLabel(range: DateRange): string {
   const start = range.start.toLocaleDateString('en-IN', opts)
   const end = range.end.toLocaleDateString('en-IN', opts)
   if (start === end) return start
-  return `${start} – ${end}`
+  return `${start} - ${end}`
 }
 
 export function formatFilenameDate(reference = new Date()): string {
@@ -80,7 +80,7 @@ export function formatWeeklyTabLabel(range: DateRange): string {
   const endOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
   const start = range.start.toLocaleDateString('en-IN', startOpts)
   const end = range.end.toLocaleDateString('en-IN', endOpts)
-  return `${start}–${end}`
+  return `${start}-${end}`
 }
 
 export function formatMonthlyTabLabel(reference = new Date()): string {

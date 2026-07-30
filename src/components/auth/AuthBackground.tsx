@@ -20,7 +20,7 @@ export function AuthBackground({ children, className }: AuthBackgroundProps) {
 
   return (
     <div className={cn('relative min-h-[100dvh] overflow-hidden', className)}>
-      {/* Plain photos only — no color wash / gradient overlays */}
+      {/* Plain photos only - no color wash / gradient overlays */}
       <img
         src={SVCE_CAMPUS_DAY_URL}
         alt=""

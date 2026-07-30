@@ -25,7 +25,7 @@ export function formatTodayDate(reference = new Date()): string {
 
 export function formatPassDuration(departureIso: string, returnIso: string): string {
   const ms = new Date(returnIso).getTime() - new Date(departureIso).getTime()
-  if (ms <= 0) return '—'
+  if (ms <= 0) return '-'
 
   const hours = Math.floor(ms / 3_600_000)
   const days = Math.floor(hours / 24)
