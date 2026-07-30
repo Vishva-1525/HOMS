@@ -47,18 +47,19 @@ html.dark .dashboard-shell .dashboard-link:hover {
 }
 
 html.dark .dashboard-shell .dashboard-filter-chip {
-  border-color: var(--glass-border);
-  background: var(--glass-bg);
-  color: #e2e8f0;
+  border-color: rgb(255 255 255 / 0.2);
+  background: #1a2438;
+  color: #f1f5f9;
 }
 
 html.dark .dashboard-shell .dashboard-filter-chip:hover {
-  background: var(--glass-bg-strong);
+  background: #243044;
 }
 
 html.dark .dashboard-shell .dashboard-filter-chip-active {
   background-color: #2563eb;
   color: #fff;
+  border-color: #2563eb;
   box-shadow: none;
 }
 
