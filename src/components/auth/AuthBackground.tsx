@@ -25,7 +25,7 @@ export function AuthBackground({ children, className }: AuthBackgroundProps) {
         alt=""
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_35%] transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)] motion-reduce:transition-none md:object-center',
+          'pointer-events-none absolute inset-0 h-full w-full scale-[1.03] object-cover object-[center_35%] transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)] motion-reduce:transition-none md:object-center',
           isDark ? 'opacity-0' : 'opacity-100',
         )}
       />
@@ -34,36 +34,38 @@ export function AuthBackground({ children, className }: AuthBackgroundProps) {
         alt=""
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_35%] transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)] motion-reduce:transition-none md:object-center',
+          'pointer-events-none absolute inset-0 h-full w-full scale-[1.03] object-cover object-[center_35%] transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)] motion-reduce:transition-none md:object-center',
           isDark ? 'opacity-100' : 'opacity-0',
         )}
       />
 
-      {/* Glassmorphism wash on background only — login cards stay solid */}
+      {/* Liquid glass morphism — background only */}
       <div
         className={cn(
-          'pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
-          isDark ? 'opacity-0' : 'opacity-100',
+          'campus-liquid-glass pointer-events-none absolute inset-0',
+          isDark ? 'campus-liquid-glass-dark' : 'campus-liquid-glass-light',
         )}
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(8,32,64,0.18) 0%, rgba(8,32,64,0.08) 45%, rgba(2,10,24,0.28) 100%)',
-          backdropFilter: 'blur(8px) saturate(1.2)',
-          WebkitBackdropFilter: 'blur(8px) saturate(1.2)',
-        }}
         aria-hidden
       />
       <div
         className={cn(
-          'pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
-          isDark ? 'opacity-100' : 'opacity-0',
+          'campus-liquid-shine pointer-events-none absolute inset-0',
+          isDark ? 'opacity-70' : 'opacity-95',
         )}
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(2,8,20,0.28) 0%, rgba(2,8,20,0.12) 45%, rgba(0,0,0,0.4) 100%)',
-          backdropFilter: 'blur(10px) saturate(1.25)',
-          WebkitBackdropFilter: 'blur(10px) saturate(1.25)',
-        }}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          'campus-liquid-blob campus-liquid-blob-a pointer-events-none absolute',
+          isDark ? 'opacity-40' : 'opacity-60',
+        )}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          'campus-liquid-blob campus-liquid-blob-b pointer-events-none absolute',
+          isDark ? 'opacity-35' : 'opacity-50',
+        )}
         aria-hidden
       />
 

@@ -27,57 +27,59 @@ export function DashboardBackground({ children, className, style }: DashboardBac
       className={cn('dashboard-shell relative min-h-[100dvh] overflow-x-hidden bg-[#0B3664]', className)}
       style={style}
     >
-      {/* Day / night campus photos — cross-fade on theme toggle */}
+      {/* Day / night campus photos */}
       <div
-        className={cn(PHOTO_TRANSITION, isDark ? 'opacity-0' : 'opacity-100')}
+        className={cn(PHOTO_TRANSITION, 'scale-[1.02]', isDark ? 'opacity-0' : 'opacity-100')}
         style={{ backgroundImage: `url('${SVCE_CAMPUS_DAY_URL}')` }}
         aria-hidden
       />
       <div
-        className={cn(PHOTO_TRANSITION, isDark ? 'opacity-100' : 'opacity-0')}
+        className={cn(PHOTO_TRANSITION, 'scale-[1.02]', isDark ? 'opacity-100' : 'opacity-0')}
         style={{ backgroundImage: `url('${SVCE_CAMPUS_NIGHT_URL}')` }}
         aria-hidden
       />
 
-      {/* Glassmorphism wash on the background only — cards stay solid */}
+      {/* Liquid glass morphism — background only */}
       <div
         className={cn(
-          'pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
-          isDark ? 'opacity-0' : 'opacity-100',
+          'campus-liquid-glass pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
+          isDark ? 'campus-liquid-glass-dark opacity-100' : 'campus-liquid-glass-light opacity-100',
         )}
-        style={{
-          backgroundImage: [
-            'radial-gradient(ellipse 130% 90% at 50% 35%, rgba(255,255,255,0.14) 0%, transparent 55%)',
-            'linear-gradient(180deg, rgba(8,32,64,0.22) 0%, rgba(8,32,64,0.1) 40%, rgba(2,10,24,0.28) 100%)',
-          ].join(', '),
-          backdropFilter: 'blur(10px) saturate(1.2)',
-          WebkitBackdropFilter: 'blur(10px) saturate(1.2)',
-        }}
-        aria-hidden
-      />
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]',
-          isDark ? 'opacity-100' : 'opacity-0',
-        )}
-        style={{
-          backgroundImage: [
-            'radial-gradient(ellipse 120% 85% at 50% 30%, rgba(56,132,204,0.16) 0%, transparent 55%)',
-            'linear-gradient(180deg, rgba(2,8,20,0.32) 0%, rgba(2,8,20,0.14) 42%, rgba(0,0,0,0.38) 100%)',
-          ].join(', '),
-          backdropFilter: 'blur(12px) saturate(1.25)',
-          WebkitBackdropFilter: 'blur(12px) saturate(1.25)',
-        }}
         aria-hidden
       />
 
-      {/* Soft edge vignette */}
+      {/* Specular liquid highlight */}
       <div
-        className="pointer-events-none absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)]"
+        className={cn(
+          'campus-liquid-shine pointer-events-none absolute inset-0 transition-opacity duration-[900ms]',
+          isDark ? 'opacity-70' : 'opacity-90',
+        )}
+        aria-hidden
+      />
+
+      {/* Soft liquid blobs */}
+      <div
+        className={cn(
+          'campus-liquid-blob campus-liquid-blob-a pointer-events-none absolute transition-opacity duration-[900ms]',
+          isDark ? 'opacity-40' : 'opacity-55',
+        )}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          'campus-liquid-blob campus-liquid-blob-b pointer-events-none absolute transition-opacity duration-[900ms]',
+          isDark ? 'opacity-35' : 'opacity-45',
+        )}
+        aria-hidden
+      />
+
+      {/* Edge vignette */}
+      <div
+        className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse 85% 75% at 50% 45%, transparent 35%, rgba(2,6,23,0.34) 100%)',
-          opacity: isDark ? 0.85 : 0.55,
+            'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, rgba(2,6,23,0.42) 100%)',
+          opacity: isDark ? 0.9 : 0.5,
         }}
         aria-hidden
       />
