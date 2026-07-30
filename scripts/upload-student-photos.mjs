@@ -24,7 +24,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(__dirname, '..')
 
 const BUCKET = 'student-profiles'
+/** Canonical MIME types accepted by the bucket / uploads. */
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp']
+/** Non-standard aliases often used for JPG files. */
+const MIME_ALIASES = {
+  'image/jpg': 'image/jpeg',
+  'image/pjpeg': 'image/jpeg',
+  'image/x-jpeg': 'image/jpeg',
+}
 const DEFAULT_CONCURRENCY = 4
 const DEFAULT_MAPPING_CANDIDATES = [
   resolve(projectRoot, 'data/students_detail.csv'),
@@ -206,7 +213,26 @@ function toDirectDownloadUrl(url) {
   }
 }
 
+function normalizeMime(raw) {
+  const mime = String(raw ?? '').split(';')[0].trim().toLowerCase()
+  if (!mime) return ''
+  return MIME_ALIASES[mime] ?? mime
+}
+
+function isAllowedMime(mime) {
+  return ALLOWED_MIME.includes(normalizeMime(mime))
+}
+
+function mimeFromExtension(filePathOrUrl) {
+  const ext = extname(String(filePathOrUrl).split('?')[0]).toLowerCase()
+  if (ext === '.jpg' || ext === '.jpeg' || ext === '.jpe') return 'image/jpeg'
+  if (ext === '.png') return 'image/png'
+  if (ext === '.webp') return 'image/webp'
+  return ''
+}
+
 function sniffContentType(bytes, fallback = 'image/jpeg') {
+  // JPEG / JPG magic: FF D8 FF
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return 'image/jpeg'
   }
@@ -232,13 +258,35 @@ function sniffContentType(bytes, fallback = 'image/jpeg') {
   ) {
     return 'image/webp'
   }
-  return fallback
+  return normalizeMime(fallback) || 'image/jpeg'
 }
 
+/** Always store JPEG payloads as `.jpg` (not `.jpeg`). */
 function extensionForMime(mime) {
-  if (mime === 'image/png') return 'png'
-  if (mime === 'image/webp') return 'webp'
+  const normalized = normalizeMime(mime)
+  if (normalized === 'image/png') return 'png'
+  if (normalized === 'image/webp') return 'webp'
   return 'jpg'
+}
+
+function resolveContentType(bytes, hintMime, sourcePath) {
+  const fromBytes = sniffContentType(bytes, '')
+  if (fromBytes && isAllowedMime(fromBytes)) return fromBytes
+
+  const fromHint = normalizeMime(hintMime)
+  if (fromHint && isAllowedMime(fromHint)) return fromHint
+
+  const fromExt = mimeFromExtension(sourcePath)
+  if (fromExt && isAllowedMime(fromExt)) return fromExt
+
+  // JPG is the default student-photo format for this pipeline.
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+    return 'image/jpeg'
+  }
+
+  throw new Error(
+    `unsupported content type: ${hintMime || fromExt || 'unknown'} (expected jpg/jpeg/png/webp)`,
+  )
 }
 
 async function readPhotoPayload(source, mappingDir) {
@@ -259,14 +307,7 @@ async function readPhotoPayload(source, mappingDir) {
     }
     const buffer = readFileSync(localPath)
     const bytes = new Uint8Array(buffer)
-    const fromExt = extname(localPath).toLowerCase()
-    const fallback =
-      fromExt === '.png'
-        ? 'image/png'
-        : fromExt === '.webp'
-          ? 'image/webp'
-          : 'image/jpeg'
-    const contentType = sniffContentType(bytes, fallback)
+    const contentType = resolveContentType(bytes, mimeFromExtension(localPath), localPath)
     return { bytes, contentType, label: basename(localPath) }
   }
 
@@ -276,6 +317,7 @@ async function readPhotoPayload(source, mappingDir) {
     headers: {
       // Helps some Drive endpoints return the file instead of an HTML interstitial.
       'User-Agent': 'HOMS-photo-uploader/1.0',
+      Accept: 'image/jpeg,image/jpg,image/png,image/webp,image/*;q=0.8,*/*;q=0.5',
     },
   })
   if (!res.ok) {
@@ -292,14 +334,7 @@ async function readPhotoPayload(source, mappingDir) {
     )
   }
 
-  const contentType = ALLOWED_MIME.includes(contentTypeHeader)
-    ? contentTypeHeader
-    : sniffContentType(bytes, 'image/jpeg')
-
-  if (!ALLOWED_MIME.includes(contentType)) {
-    throw new Error(`unsupported content type: ${contentType}`)
-  }
-
+  const contentType = resolveContentType(bytes, contentTypeHeader, source)
   return { bytes, contentType, label: downloadUrl }
 }
 
@@ -309,17 +344,26 @@ async function ensureBucket(admin) {
 
   const existing = (buckets ?? []).find((b) => b.name === BUCKET || b.id === BUCKET)
   if (existing) {
-    console.log(`Storage bucket "${BUCKET}" already exists (public=${existing.public}).`)
+    // Keep JPG/JPEG allowed even if the bucket was created earlier with a narrower list.
+    const { error: updateError } = await admin.storage.updateBucket(BUCKET, {
+      public: true,
+      fileSizeLimit: 5 * 1024 * 1024,
+      allowedMimeTypes: [...ALLOWED_MIME, 'image/jpg'],
+    })
+    if (updateError) {
+      console.warn(`Could not update bucket MIME allow-list: ${updateError.message}`)
+    }
+    console.log(`Storage bucket "${BUCKET}" ready (public=${existing.public}, jpg/jpeg allowed).`)
     return
   }
 
   const { error: createError } = await admin.storage.createBucket(BUCKET, {
     public: true,
     fileSizeLimit: 5 * 1024 * 1024,
-    allowedMimeTypes: ALLOWED_MIME,
+    allowedMimeTypes: [...ALLOWED_MIME, 'image/jpg'],
   })
   if (createError) throw new Error(`createBucket: ${createError.message}`)
-  console.log(`Created public storage bucket "${BUCKET}".`)
+  console.log(`Created public storage bucket "${BUCKET}" (jpg/jpeg/png/webp).`)
 }
 
 async function resolveStudentFast(admin, row, emailIndex) {
