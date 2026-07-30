@@ -116,6 +116,7 @@ export function StudentPassesPage() {
         <PassQrSheet
           open={Boolean(qrPass)}
           pass={qrPass}
+          gateLogs={gateLogs}
           onClose={() => setQrPass(null)}
         />
       )}

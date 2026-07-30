@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { debounce } from '@/lib/debounce'
+import { getCheckpointFromLog } from '@/lib/gate-checkpoints'
 import { supabase } from '@/lib/supabase'
 import {
   fetchAdmissionNosByStudentIds,
   fetchStudentProfilesByIds,
 } from '@/lib/student-details'
 import { formatStudentRoomDisplay, getStudentName, isStudentCurrentlyOut } from '@/lib/warden'
-import type { GateLog, OutpassWithStudent, PassType } from '@/lib/types'
+import type { GateCheckpoint, GateLog, OutpassWithStudent, PassType } from '@/lib/types'
 
 export interface EnrichedGateLog {
   id: string
   outpass_id: string
   scanned_by: string
   event_type: GateLog['event_type']
+  checkpoint: GateCheckpoint | null
   scanned_at: string
   studentName: string
   admissionNo: string
@@ -113,6 +115,7 @@ async function enrichGateLogs(
       outpass_id: log.outpass_id,
       scanned_by: log.scanned_by,
       event_type: log.event_type,
+      checkpoint: getCheckpointFromLog(log),
       scanned_at: log.scanned_at,
       studentName: getStudentName(student ?? null),
       admissionNo: admissionNo ?? '-',
@@ -143,12 +146,19 @@ function buildPassScanHistory(logs: EnrichedGateLog[]): PassScanHistoryRow[] {
       lastActivityAt: log.scanned_at,
     }
 
-    if (log.event_type === 'exit') {
-      existing.exitAt = log.scanned_at
-      existing.exitScanner = log.scannerName
-    } else {
-      existing.entryAt = log.scanned_at
-      existing.entryScanner = log.scannerName
+    const checkpoint = log.checkpoint
+    // Trip start = Hostel Gate Exit; trip complete = Hostel Gate Entry
+    if (checkpoint === 'hostel_exit' || (!checkpoint && log.event_type === 'exit')) {
+      if (!existing.exitAt || log.scanned_at < existing.exitAt) {
+        existing.exitAt = log.scanned_at
+        existing.exitScanner = log.scannerName
+      }
+    }
+    if (checkpoint === 'hostel_entry' || (!checkpoint && log.event_type === 'entry')) {
+      if (!existing.entryAt || log.scanned_at > existing.entryAt) {
+        existing.entryAt = log.scanned_at
+        existing.entryScanner = log.scannerName
+      }
     }
 
     if (log.scanned_at > existing.lastActivityAt) {

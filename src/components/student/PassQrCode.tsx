@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Copy, Share2 } from 'lucide-react'
+import { GateCheckpointProgress } from '@/components/shared/GateCheckpointProgress'
 import { PassQrPlaceholder } from '@/components/student/PassQrPlaceholder'
 import { Button } from '@/components/ui/button'
 import { fetchQrAvailabilityMinutes } from '@/hooks/useQrAvailabilityMinutes'
@@ -12,13 +13,14 @@ import {
 } from '@/lib/qr-availability'
 import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { buildPassQrValue } from '@/lib/pass-qr'
-import type { OutpassRequest } from '@/lib/types'
+import type { GateLog, OutpassRequest } from '@/lib/types'
 
 interface PassQrCodeProps {
   pass: OutpassRequest
+  gateLogs?: GateLog[]
 }
 
-export function PassQrCode({ pass }: PassQrCodeProps) {
+export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [windowMinutes, setWindowMinutes] = useState(DEFAULT_QR_AVAILABILITY_MINUTES)
   const [qrReady, setQrReady] = useState(() => isQrAvailable(pass, DEFAULT_QR_AVAILABILITY_MINUTES))
@@ -106,7 +108,8 @@ export function PassQrCode({ pass }: PassQrCodeProps) {
         />
         {multiDaily && (
           <p className="max-w-[220px] text-center text-xs text-slate-600">
-            Valid for daily exit & entry until {new Date(pass.return_by).toLocaleString('en-IN', {
+            Valid for daily 4-step gate scans until{' '}
+            {new Date(pass.return_by).toLocaleString('en-IN', {
               day: 'numeric',
               month: 'short',
               hour: '2-digit',
@@ -114,6 +117,17 @@ export function PassQrCode({ pass }: PassQrCodeProps) {
             })}
           </p>
         )}
+      </div>
+
+      <div className="w-full rounded-xl border border-slate-200/80 bg-slate-50/90 p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Gate scan progress
+        </p>
+        <GateCheckpointProgress
+          passId={pass.id}
+          gateLogs={gateLogs}
+          multiDaily={multiDaily}
+        />
       </div>
 
       {entryCode && (
@@ -141,11 +155,7 @@ export function PassQrCode({ pass }: PassQrCodeProps) {
       )}
 
       <div className="flex w-full flex-col gap-3 pt-2 sm:flex-row">
-        <Button
-          type="button"
-          className="qr-action-primary flex-1 gap-2"
-          onClick={downloadQr}
-        >
+        <Button type="button" className="qr-action-primary flex-1 gap-2" onClick={downloadQr}>
           Download QR
         </Button>
         <Button

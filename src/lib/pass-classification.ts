@@ -1,6 +1,6 @@
 import type { GateLog, OutpassRequest } from '@/lib/types'
 import { SEVERE_OVERDUE_MS, getReturnOverdueMs, hasEntryLog } from '@/lib/pass-filters'
-import { getLatestGateEvent, isMultiDailyScanPass } from '@/lib/pass-multi-scan'
+import { isMultiDailyScanPass, isStudentCurrentlyOutside } from '@/lib/pass-multi-scan'
 
 export type PassClassification =
   | 'pending'
@@ -28,8 +28,7 @@ export function classifyPass(pass: OutpassRequest, gateLogs: GateLog[] = []): Pa
 
   if (isMultiDailyScanPass(pass)) {
     const overdueMs = getReturnOverdueMs(pass)
-    const latest = getLatestGateEvent(gateLogs)
-    const stillOutside = latest?.event_type === 'exit'
+    const stillOutside = isStudentCurrentlyOutside(pass, gateLogs)
 
     if (overdueMs > 0) {
       if (stillOutside || pass.is_overdue || overdueMs >= SEVERE_OVERDUE_MS) return 'overdue'

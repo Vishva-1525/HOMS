@@ -1,14 +1,15 @@
 import { X } from 'lucide-react'
 import { PassQrCode } from '@/components/student/PassQrCode'
-import type { OutpassRequest } from '@/lib/types'
+import type { GateLog, OutpassRequest } from '@/lib/types'
 
 interface PassQrSheetProps {
   open: boolean
   pass: OutpassRequest
+  gateLogs?: GateLog[]
   onClose: () => void
 }
 
-export function PassQrSheet({ open, pass, onClose }: PassQrSheetProps) {
+export function PassQrSheet({ open, pass, gateLogs = [], onClose }: PassQrSheetProps) {
   if (!open) return null
 
   return (
@@ -31,7 +32,7 @@ export function PassQrSheet({ open, pass, onClose }: PassQrSheetProps) {
             <X className="h-5 w-5" strokeWidth={1.75} />
           </button>
         </div>
-        <PassQrCode pass={pass} />
+        <PassQrCode pass={pass} gateLogs={gateLogs} />
       </div>
     </div>
   )

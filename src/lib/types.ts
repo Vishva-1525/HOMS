@@ -24,6 +24,12 @@ export type ExtensionStatus = 'pending' | 'approved' | 'rejected'
 
 export type GateEventType = 'exit' | 'entry'
 
+export type GateCheckpoint =
+  | 'hostel_exit'
+  | 'main_exit'
+  | 'main_entry'
+  | 'hostel_entry'
+
 export type HostelGender = 'male' | 'female'
 
 export interface Profile {
@@ -101,7 +107,10 @@ export interface GateLog {
   outpass_id: string
   scanned_by: string
   event_type: GateEventType
+  /** Four-step hostel/main gate checkpoint. Legacy rows may omit until backfilled. */
+  checkpoint?: GateCheckpoint | null
   scanned_at: string
+  multi_daily_scan?: boolean
 }
 
 export interface ExtensionRequest {
@@ -308,7 +317,7 @@ export interface Database {
         Returns: Json
       }
       record_gate_scan: {
-        Args: { p_outpass_id: string; p_event_type: GateEventType }
+        Args: { p_outpass_id: string; p_checkpoint: GateCheckpoint }
         Returns: Json
       }
     }

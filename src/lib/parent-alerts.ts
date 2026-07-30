@@ -1,3 +1,4 @@
+import { getCheckpointFromLog } from '@/lib/gate-checkpoints'
 import { formatOverdueDuration, isPassOverdue } from '@/lib/pass-filters'
 import { isPassTripComplete } from '@/lib/pass-multi-scan'
 import { PASS_TYPE_LABELS, formatReturnTime, formatTableDateTime } from '@/lib/outpass'
@@ -98,20 +99,24 @@ export function buildParentAlerts(
     const pass = passById.get(log.outpass_id)
     if (!pass) continue
 
-    if (log.event_type === 'exit') {
+    const checkpoint = getCheckpointFromLog(log)
+    if (!checkpoint) continue
+
+    // Meaningful parent signals: left campus / returned to hostel.
+    if (checkpoint === 'main_exit') {
       alerts.push({
-        id: `exit-${log.id}`,
+        id: `main-exit-${log.id}`,
         tone: 'info',
         title: 'Left campus',
-        message: `${wardName} exited for ${pass.destination} (${PASS_TYPE_LABELS[pass.pass_type]})`,
+        message: `${wardName} exited via Main Gate for ${pass.destination} (${PASS_TYPE_LABELS[pass.pass_type]})`,
         at: log.scanned_at,
       })
-    } else {
+    } else if (checkpoint === 'hostel_entry') {
       alerts.push({
-        id: `entry-${log.id}`,
+        id: `hostel-entry-${log.id}`,
         tone: 'success',
-        title: 'Returned to campus',
-        message: `${wardName} entered back from ${pass.destination}`,
+        title: 'Returned to hostel',
+        message: `${wardName} completed Hostel Gate Entry from ${pass.destination}`,
         at: log.scanned_at,
       })
     }

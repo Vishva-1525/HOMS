@@ -1,6 +1,7 @@
 import type { ExtensionRequest, GateLog, OutpassRequest, OutpassStatus } from '@/lib/types'
+import { isTripInProgress } from '@/lib/gate-checkpoints'
 import {
-  getLatestGateEvent,
+  hasHostelEntry,
   isMultiDailyScanPass,
   isPassTripComplete,
 } from '@/lib/pass-multi-scan'
@@ -18,21 +19,17 @@ export const PASS_FILTERS: { id: PassFilter; label: string }[] = [
   { id: 'completed', label: 'Completed' },
 ]
 
+/** Trip finished when Hostel Gate Entry is recorded (legacy entry maps to hostel_entry). */
 export function hasEntryLog(passId: string, gateLogs: GateLog[]): boolean {
-  return gateLogs.some((log) => log.outpass_id === passId && log.event_type === 'entry')
+  return hasHostelEntry(passId, gateLogs)
 }
 
 export function isPassOverdue(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
   if (getReturnOverdueMs(pass) <= 0) return false
 
-  if (isMultiDailyScanPass(pass)) {
-    const latest = getLatestGateEvent(gateLogs)
-    return latest?.event_type === 'exit'
-  }
-
-  if (hasEntryLog(pass.id, gateLogs)) return false
-  return true
+  const multi = isMultiDailyScanPass(pass)
+  return isTripInProgress(pass.id, gateLogs, { multiDaily: multi })
 }
 
 export function getReturnOverdueMs(pass: OutpassRequest, at = Date.now()): number {

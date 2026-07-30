@@ -1,12 +1,17 @@
 import {
   evaluateEntryScan,
   formatOverdueDuration,
-  hasEntryLog,
   isQrEligibleStatus,
 } from '@/lib/pass-filters'
 import {
-  getLatestGateEvent,
-  hasGateEventOnIstDay,
+  GATE_CHECKPOINT_LABELS,
+  buildCheckpointProgress,
+  checkpointToEventType,
+  getNextCheckpoint,
+  isCheckpointCycleComplete,
+  type GateCheckpoint,
+} from '@/lib/gate-checkpoints'
+import {
   isMultiDailyScanPass,
   isPassWithinValidityWindow,
 } from '@/lib/pass-multi-scan'
@@ -17,15 +22,17 @@ import {
   fetchAdmissionNoByStudentId,
   fetchStudentProfileById,
 } from '@/lib/student-details'
-import type { ExtensionRequest, GateLog, GateEventType, OutpassWithStudent } from '@/lib/types'
+import type { ExtensionRequest, GateLog, OutpassWithStudent } from '@/lib/types'
 
 export type ScanResultKind =
   | 'valid'
   | 'invalid'
   | 'late-entry'
   | 'overdue-entry'
-  | 'duplicate-exit'
-  | 'duplicate-entry'
+  | 'duplicate-checkpoint'
+  | 'out-of-sequence'
+  | 'cycle-complete'
+
 export type ScanPhase = 'exit' | 'entry'
 
 export interface ScanValidationResult {
@@ -34,7 +41,8 @@ export interface ScanValidationResult {
   pass?: OutpassWithStudent
   gateLogs?: GateLog[]
   extensions?: ExtensionRequest[]
-  nextAction?: GateEventType
+  nextCheckpoint?: GateCheckpoint | null
+  nextAction?: GateCheckpoint | null
   reason?: string
   studentAdmissionNo?: string
   extensionApproved?: boolean
@@ -45,15 +53,23 @@ export interface ScanValidationResult {
   scannerNames?: Record<string, string>
 }
 
-/** Next gate action from the latest log (supports internship multi-daily cycles). */
-export function getNextGateAction(gateLogs: GateLog[]): GateEventType {
-  const latest = getLatestGateEvent(gateLogs)
-  if (!latest || latest.event_type === 'entry') return 'exit'
-  return 'entry'
+/** @deprecated Prefer getNextCheckpoint from gate-checkpoints. */
+export function getNextGateAction(
+  passId: string,
+  gateLogs: GateLog[],
+  multiDaily = false,
+): GateCheckpoint | null {
+  return getNextCheckpoint(passId, gateLogs, { multiDaily })
 }
 
 export function hasExitLog(passId: string, gateLogs: GateLog[]): boolean {
-  return gateLogs.some((log) => log.outpass_id === passId && log.event_type === 'exit')
+  return gateLogs.some(
+    (log) =>
+      log.outpass_id === passId
+      && (log.checkpoint === 'hostel_exit'
+        || log.checkpoint === 'main_exit'
+        || (!log.checkpoint && log.event_type === 'exit')),
+  )
 }
 
 const OUTPASS_SELECT = '*'
@@ -149,7 +165,11 @@ async function fetchStudentAdmissionNoForPass(
 export async function validateScanInput(raw: string): Promise<ScanValidationResult> {
   const parsed = parseScanInput(raw)
   if (!parsed) {
-    return { kind: 'invalid', scanPhase: 'exit', reason: 'Unrecognised QR code, pass ID, or entry code.' }
+    return {
+      kind: 'invalid',
+      scanPhase: 'exit',
+      reason: 'Unrecognised QR code, pass ID, or entry code.',
+    }
   }
 
   const outpassId = await resolveOutpassIdFromInput(parsed)
@@ -172,6 +192,7 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
 
   const scannerNames = await fetchScannerNames(gateLogs)
   const studentAdmissionNo = await fetchStudentAdmissionNoForPass(pass)
+  const multi = isMultiDailyScanPass(pass)
 
   const base = {
     pass,
@@ -194,90 +215,63 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
     }
   }
 
-  const multi = isMultiDailyScanPass(pass)
+  if (multi && !isPassWithinValidityWindow(pass)) {
+    const now = Date.now()
+    const reason =
+      now < new Date(pass.departure_at).getTime()
+        ? 'Internship QR is not valid before departure.'
+        : 'Internship QR has expired. Student must renew the pass.'
+    return { ...base, kind: 'invalid', scanPhase: 'exit', reason }
+  }
 
-  if (multi) {
-    if (!isPassWithinValidityWindow(pass)) {
-      const now = Date.now()
-      const reason =
-        now < new Date(pass.departure_at).getTime()
-          ? 'Internship QR is not valid before departure.'
-          : 'Internship QR has expired. Student must renew the pass.'
-      return { ...base, kind: 'invalid', scanPhase: 'exit', reason }
-    }
+  const nextCheckpoint = getNextCheckpoint(pass.id, gateLogs, { multiDaily: multi })
 
-    const nextAction = getNextGateAction(gateLogs)
-
-    if (nextAction === 'exit' && hasGateEventOnIstDay(gateLogs, 'exit')) {
-      return {
-        ...base,
-        kind: 'duplicate-exit',
-        scanPhase: 'exit',
-        nextAction,
-        reason: 'Exit already recorded for today.',
-      }
-    }
-
-    if (nextAction === 'entry' && hasGateEventOnIstDay(gateLogs, 'entry')) {
-      return {
-        ...base,
-        kind: 'duplicate-entry',
-        scanPhase: 'entry',
-        nextAction,
-        reason: 'Entry already recorded for today.',
-      }
-    }
-
-    if (nextAction === 'exit') {
-      return { ...base, kind: 'valid', scanPhase: 'exit', nextAction }
-    }
-
+  if (!nextCheckpoint) {
     return {
       ...base,
-      kind: 'valid',
+      kind: 'cycle-complete',
       scanPhase: 'entry',
-      nextAction,
-      overdueMs: 0,
-      requiresWardenAlert: false,
+      nextCheckpoint: null,
+      nextAction: null,
+      reason: multi
+        ? 'All four gate scans already recorded for today.'
+        : 'Pass trip already completed (Hostel Gate Entry done).',
     }
   }
 
-  if (hasEntryLog(pass.id, gateLogs)) {
-    return {
-      ...base,
-      kind: 'duplicate-entry',
-      scanPhase: 'entry',
-      reason: 'Student already entered.',
-    }
-  }
+  const scanPhase = checkpointToEventType(nextCheckpoint)
+  const isReturnLeg = nextCheckpoint === 'main_entry' || nextCheckpoint === 'hostel_entry'
 
-  const nextAction = getNextGateAction(gateLogs)
-
-  if (nextAction === 'exit') {
-    if (Date.now() > new Date(pass.return_by).getTime()) {
+  if (nextCheckpoint === 'hostel_exit' || nextCheckpoint === 'main_exit') {
+    if (!multi && Date.now() > new Date(pass.return_by).getTime()) {
       return {
         ...base,
         kind: 'invalid',
         scanPhase: 'exit',
+        nextCheckpoint,
+        nextAction: nextCheckpoint,
         reason: 'This pass has expired.',
       }
     }
     return {
       ...base,
       kind: 'valid',
-      scanPhase: 'exit',
-      nextAction,
+      scanPhase,
+      nextCheckpoint,
+      nextAction: nextCheckpoint,
     }
   }
 
+  // Return legs (main/hostel entry) - allow late return with warnings
   const entry = evaluateEntryScan(pass, extensions)
 
-  if (entry.kind === 'valid') {
+  if (entry.kind === 'valid' || !isReturnLeg) {
     return {
       ...base,
       kind: 'valid',
-      scanPhase: 'entry',
-      nextAction,
+      scanPhase,
+      nextCheckpoint,
+      nextAction: nextCheckpoint,
       extensionApproved: entry.extensionApproved,
       overdueMs: 0,
       requiresWardenAlert: false,
@@ -288,8 +282,9 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
     return {
       ...base,
       kind: 'late-entry',
-      scanPhase: 'entry',
-      nextAction,
+      scanPhase,
+      nextCheckpoint,
+      nextAction: nextCheckpoint,
       extensionPending: entry.extensionPending,
       overdueMs: entry.overdueMs,
       requiresWardenAlert: false,
@@ -299,24 +294,22 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
   return {
     ...base,
     kind: 'overdue-entry',
-    scanPhase: 'entry',
-    nextAction,
+    scanPhase,
+    nextCheckpoint,
+    nextAction: nextCheckpoint,
     extensionPending: entry.extensionPending,
     overdueMs: entry.overdueMs,
     requiresWardenAlert: entry.requiresWardenAlert,
   }
 }
 
-export async function recordGateEvent(
+export async function recordGateCheckpoint(
   outpassId: string,
-  scannedBy: string,
-  eventType: GateEventType,
+  checkpoint: GateCheckpoint,
 ): Promise<{ error?: string; gateLogs?: GateLog[] }> {
-  void scannedBy
-
   const { error } = await supabase.rpc('record_gate_scan', {
     p_outpass_id: outpassId,
-    p_event_type: eventType,
+    p_checkpoint: checkpoint,
   })
 
   if (error) {
@@ -330,6 +323,24 @@ export async function recordGateEvent(
   return { gateLogs: updatedLogs }
 }
 
+/** @deprecated Use recordGateCheckpoint */
+export async function recordGateEvent(
+  outpassId: string,
+  scannedBy: string,
+  checkpoint: GateCheckpoint,
+): Promise<{ error?: string; gateLogs?: GateLog[] }> {
+  void scannedBy
+  return recordGateCheckpoint(outpassId, checkpoint)
+}
+
+export function getScanProgress(passId: string, gateLogs: GateLog[], multiDaily = false) {
+  return buildCheckpointProgress(passId, gateLogs, { multiDaily })
+}
+
+export function checkpointLabel(checkpoint: GateCheckpoint): string {
+  return GATE_CHECKPOINT_LABELS[checkpoint]
+}
+
 function buildWardenAlertDetail(
   overdueMs: number | undefined,
   extensionPending: boolean | undefined,
@@ -337,27 +348,31 @@ function buildWardenAlertDetail(
   const parts: string[] = []
 
   if (overdueMs && overdueMs > 0) {
-    parts.push(`Late by ${formatOverdueDuration(overdueMs)}`)
+    parts.push(`${formatOverdueDuration(overdueMs)} overdue`)
   }
-
   if (extensionPending) {
     parts.push('extension pending - not yet approved')
-  } else {
-    parts.push('no approved extension on file')
   }
 
-  return parts.join('; ')
+  return parts.join('; ') || 'Overdue return at gate'
 }
 
 export async function alertWardenOverdue(
   pass: OutpassWithStudent,
   options?: { overdueMs?: number; extensionPending?: boolean },
 ): Promise<{ error?: string }> {
-  const { error } = await supabase.rpc('alert_warden_overdue', {
-    p_reg_number: getStudentReg(pass.students),
-    p_student_name: getStudentName(pass.students),
-    p_detail: buildWardenAlertDetail(options?.overdueMs, options?.extensionPending),
+  const name = getStudentName(pass.students)
+  const detail = buildWardenAlertDetail(options?.overdueMs, options?.extensionPending)
+
+  const { error } = await supabase.from('notifications_log').insert({
+    user_id: pass.approved_by,
+    type: 'overdue_return',
+    title: 'Overdue return at gate',
+    body: `${name} - ${detail}`,
+    outpass_id: pass.id,
   })
 
-  return error ? { error: error.message } : {}
+  return { error: error?.message }
 }
+
+export { isCheckpointCycleComplete }

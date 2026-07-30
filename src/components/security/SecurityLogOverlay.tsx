@@ -49,7 +49,7 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-5">
           <div>
             <h2 className="dashboard-heading text-base sm:text-lg">Gate history</h2>
-            <p className="dashboard-muted mt-0.5 text-xs">Last 30 days · exit & entry scan history</p>
+            <p className="dashboard-muted mt-0.5 text-xs">Last 30 days · 4-step gate scan history</p>
           </div>
           <button
             type="button"
@@ -117,8 +117,8 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
                         <tr className="border-b border-slate-200/60 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                           <th className="px-4 py-2.5 sm:px-5">Student</th>
                           <th className="px-4 py-2.5 sm:px-5">Reg no</th>
-                          <th className="px-4 py-2.5 sm:px-5">Exit scan</th>
-                          <th className="px-4 py-2.5 sm:px-5">Entry scan</th>
+                          <th className="px-4 py-2.5 sm:px-5">Hostel exit</th>
+                          <th className="px-4 py-2.5 sm:px-5">Hostel entry</th>
                           <th className="px-4 py-2.5 sm:px-5">Status</th>
                           <th className="px-4 py-2.5 sm:px-5">Pass</th>
                           <th className="px-4 py-2.5 sm:px-5">Destination</th>
@@ -177,8 +177,8 @@ function PassHistoryMobileCard({ row }: { row: PassScanHistoryRow }) {
         <StatusBadge status={row.status} />
       </div>
       <div className="mt-2 space-y-1">
-        <MobileDataCardRow label="Exit scan" value={formatScanCell(row.exitAt, row.exitScanner)} />
-        <MobileDataCardRow label="Entry scan" value={formatScanCell(row.entryAt, row.entryScanner)} />
+        <MobileDataCardRow label="Hostel exit" value={formatScanCell(row.exitAt, row.exitScanner)} />
+        <MobileDataCardRow label="Hostel entry" value={formatScanCell(row.entryAt, row.entryScanner)} />
         <MobileDataCardRow
           label="Pass"
           value={row.passType ? <PassTypeBadge type={row.passType} /> : '-'}

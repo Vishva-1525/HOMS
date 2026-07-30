@@ -1,7 +1,6 @@
 import type { GateLog, OutpassRequest, StudentProfile } from '@/lib/types'
 import { hasEntryLog } from '@/lib/pass-filters'
 import {
-  getLatestGateEvent,
   getPassGateLogs,
   isMultiDailyScanPass,
   isStudentCurrentlyOutside,
@@ -60,30 +59,40 @@ export function isStudentCurrentlyOut(
 
 export function isOverdueReturn(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
+  if (Date.now() <= new Date(pass.return_by).getTime()) return false
 
-  const passLogs = getPassGateLogs(pass.id, gateLogs)
-
-  if (isMultiDailyScanPass(pass)) {
-    const latest = getLatestGateEvent(passLogs)
-    if (latest?.event_type !== 'exit') return false
-    return Date.now() > new Date(pass.return_by).getTime()
-  }
-
-  if (hasEntryLog(pass.id, gateLogs)) return false
-  return Date.now() > new Date(pass.return_by).getTime()
+  const multi = isMultiDailyScanPass(pass)
+  return isStudentCurrentlyOutside(pass, gateLogs) || (
+    multi
+      ? false
+      : !hasEntryLog(pass.id, gateLogs) && getPassGateLogs(pass.id, gateLogs).length > 0
+  )
 }
 
 export function getExitTime(passId: string, gateLogs: GateLog[]): string | null {
   const exitLog = gateLogs
-    .filter((log) => log.outpass_id === passId && log.event_type === 'exit')
-    .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())[0]
+    .filter((log) => {
+      if (log.outpass_id !== passId) return false
+      return (
+        log.checkpoint === 'hostel_exit'
+        || log.checkpoint === 'main_exit'
+        || (!log.checkpoint && log.event_type === 'exit')
+      )
+    })
+    .sort((a, b) => new Date(a.scanned_at).getTime() - new Date(b.scanned_at).getTime())[0]
 
   return exitLog?.scanned_at ?? null
 }
 
 export function getEntryTime(passId: string, gateLogs: GateLog[]): string | null {
   const entryLog = gateLogs
-    .filter((log) => log.outpass_id === passId && log.event_type === 'entry')
+    .filter((log) => {
+      if (log.outpass_id !== passId) return false
+      return (
+        log.checkpoint === 'hostel_entry'
+        || (!log.checkpoint && log.event_type === 'entry')
+      )
+    })
     .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())[0]
 
   return entryLog?.scanned_at ?? null

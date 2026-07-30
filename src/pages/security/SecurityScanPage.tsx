@@ -23,11 +23,11 @@ export function SecurityScanPage() {
     phase,
     result,
     submitting,
-    lastRecordedEvent,
+    lastRecordedLabel,
     cameraActive,
     processScan,
     resetScan,
-    recordEvent,
+    recordCheckpoint,
     alertWarden,
   } = useSecurityScan({ userId: user?.id })
 
@@ -65,10 +65,9 @@ export function SecurityScanPage() {
     await processScan(manualId.trim())
   }
 
-  const successMessage =
-    lastRecordedEvent === 'exit'
-      ? 'Exit recorded - student may leave'
-      : 'Entry recorded - student may enter'
+  const successMessage = lastRecordedLabel
+    ? `${lastRecordedLabel} recorded`
+    : 'Gate scan recorded'
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -103,8 +102,7 @@ export function SecurityScanPage() {
                 result={result}
                 visible
                 submitting={submitting}
-                onRecordExit={() => recordEvent('exit')}
-                onRecordEntry={() => recordEvent('entry')}
+                onRecordCheckpoint={() => void recordCheckpoint()}
                 onAlertWarden={alertWarden}
                 onScanAgain={handleResetScan}
               />
@@ -178,7 +176,7 @@ export function SecurityScanPage() {
                         <ShieldCheck className="h-3 w-3 text-emerald-600" strokeWidth={2} />
                         Approved passes only
                       </span>
-                      <span className="security-info-pill">Exit → Entry</span>
+                      <span className="security-info-pill">4-step gate scan</span>
                     </div>
                   )}
                 </div>

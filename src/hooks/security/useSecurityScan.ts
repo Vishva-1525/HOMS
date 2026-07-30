@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
 import {
   alertWardenOverdue,
-  recordGateEvent,
+  checkpointLabel,
+  recordGateCheckpoint,
   validateScanInput,
   type ScanValidationResult,
 } from '@/lib/security-actions'
-import type { GateEventType } from '@/lib/types'
+import type { GateCheckpoint } from '@/lib/gate-checkpoints'
 
 export type SecurityScanPhase =
   | 'scanning'
@@ -16,18 +17,18 @@ export type SecurityScanPhase =
 
 interface UseSecurityScanOptions {
   userId: string | undefined
-  onRecorded?: (eventType: GateEventType) => void
+  onRecorded?: (checkpoint: GateCheckpoint) => void
 }
 
 export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) {
   const [phase, setPhase] = useState<SecurityScanPhase>('scanning')
   const [result, setResult] = useState<ScanValidationResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [lastRecordedEvent, setLastRecordedEvent] = useState<GateEventType | null>(null)
+  const [lastRecordedCheckpoint, setLastRecordedCheckpoint] = useState<GateCheckpoint | null>(null)
 
   const resetScan = useCallback(() => {
     setResult(null)
-    setLastRecordedEvent(null)
+    setLastRecordedCheckpoint(null)
     setPhase('scanning')
   }, [])
 
@@ -77,20 +78,22 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
     }
   }, [])
 
-  const recordEvent = useCallback(
-    async (eventType: GateEventType) => {
+  const recordCheckpoint = useCallback(
+    async (checkpoint?: GateCheckpoint) => {
       if (!userId || !result?.pass) return
+      const target = checkpoint ?? result.nextCheckpoint
+      if (!target) return
 
       setSubmitting(true)
-      const { error } = await recordGateEvent(result.pass.id, userId, eventType)
+      const { error, gateLogs } = await recordGateCheckpoint(result.pass.id, target)
       setSubmitting(false)
 
       if (error) {
         const kind =
-          error === 'Student already exited.'
-            ? 'duplicate-exit'
-            : error === 'Student already entered.'
-              ? 'duplicate-entry'
+          /already scanned|already recorded|cycle/i.test(error)
+            ? 'duplicate-checkpoint'
+            : /sequence|must|next required/i.test(error)
+              ? 'out-of-sequence'
               : 'invalid'
 
         setResult({
@@ -98,18 +101,19 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
           scanPhase: result.scanPhase,
           reason: error,
           pass: result.pass,
-          gateLogs: result.gateLogs,
+          gateLogs: gateLogs ?? result.gateLogs,
           extensions: result.extensions,
           studentAdmissionNo: result.studentAdmissionNo,
           scannerNames: result.scannerNames,
+          nextCheckpoint: result.nextCheckpoint,
           nextAction: result.nextAction,
         })
         setPhase('result')
         return
       }
 
-      setLastRecordedEvent(eventType)
-      onRecorded?.(eventType)
+      setLastRecordedCheckpoint(target)
+      onRecorded?.(target)
       setPhase('success-flash')
       window.setTimeout(() => setPhase('ready-next'), 2000)
     },
@@ -141,11 +145,17 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
     phase,
     result,
     submitting,
-    lastRecordedEvent,
+    lastRecordedCheckpoint,
+    lastRecordedEvent: lastRecordedCheckpoint,
+    lastRecordedLabel: lastRecordedCheckpoint
+      ? checkpointLabel(lastRecordedCheckpoint)
+      : null,
     cameraActive,
     processScan,
     resetScan,
-    recordEvent,
+    recordCheckpoint,
+    /** @deprecated use recordCheckpoint */
+    recordEvent: recordCheckpoint,
     alertWarden,
   }
 }

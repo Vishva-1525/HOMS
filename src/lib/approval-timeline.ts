@@ -127,8 +127,8 @@ export function buildApprovalTimeline(
       state: hasQr ? 'completed' : isApproved ? 'current' : 'pending',
       detail: hasQr
         ? isInternship
-          ? 'Internship QR - reusable for daily exit and entry'
-          : 'Ready for gate scan'
+          ? 'Internship QR - reusable for daily 4-step gate scans'
+          : 'Ready for 4-step gate scan'
         : isApproved
           ? 'Generating QR…'
           : undefined,
@@ -141,8 +141,8 @@ export function buildApprovalTimeline(
       label: 'Checked out',
       state: 'current',
       detail: isInternship
-        ? 'Outside campus - same QR for return entry today'
-        : 'Exit scan recorded at gate',
+        ? 'Trip in progress - complete Main/Hostel entry scans to return'
+        : 'Hostel exit recorded - continue Main Gate Exit next',
     })
   }
 

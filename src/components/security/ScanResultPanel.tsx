@@ -1,13 +1,21 @@
 import type { ReactNode } from 'react'
-import { Camera, Clock, MapPin, LogIn, LogOut, User } from 'lucide-react'
+import { Camera, Clock, MapPin } from 'lucide-react'
+import { GateCheckpointProgress } from '@/components/shared/GateCheckpointProgress'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import {
+  GATE_CHECKPOINT_LABELS,
+  GATE_CHECKPOINTS,
+  getCheckpointFromLog,
+  type GateCheckpoint,
+} from '@/lib/gate-checkpoints'
 import { formatReturnTime, formatTableDateTime } from '@/lib/outpass'
 import { formatOverdueDuration } from '@/lib/pass-filters'
+import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import type { ScanValidationResult } from '@/lib/security-actions'
-import { hasExitLog } from '@/lib/security-actions'
+import { checkpointLabel } from '@/lib/security-actions'
 import { getStudentName } from '@/lib/warden'
 import { cn } from '@/lib/utils'
 
@@ -18,10 +26,13 @@ interface ScanResultPanelProps {
   result: ScanValidationResult | null
   visible: boolean
   submitting: boolean
-  onRecordExit: () => void
-  onRecordEntry: () => void
+  onRecordCheckpoint: () => void
   onAlertWarden: () => void
   onScanAgain: () => void
+  /** @deprecated */
+  onRecordExit?: () => void
+  /** @deprecated */
+  onRecordEntry?: () => void
 }
 
 function getVerificationResult(result: ScanValidationResult): {
@@ -29,19 +40,19 @@ function getVerificationResult(result: ScanValidationResult): {
   detail: string
   tone: 'success' | 'warning' | 'danger' | 'neutral'
 } {
-  if (result.kind === 'duplicate-exit') {
+  if (result.kind === 'duplicate-checkpoint' || result.kind === 'cycle-complete') {
     return {
-      label: 'Duplicate exit',
-      detail: result.reason ?? 'Student already exited.',
+      label: result.kind === 'cycle-complete' ? 'Trip complete' : 'Duplicate scan',
+      detail: result.reason ?? 'This checkpoint was already scanned.',
       tone: 'warning',
     }
   }
 
-  if (result.kind === 'duplicate-entry') {
+  if (result.kind === 'out-of-sequence') {
     return {
-      label: 'Duplicate entry',
-      detail: result.reason ?? 'Student already entered.',
-      tone: 'warning',
+      label: 'Out of sequence',
+      detail: result.reason ?? 'Scan the previous checkpoint first.',
+      tone: 'danger',
     }
   }
 
@@ -53,38 +64,37 @@ function getVerificationResult(result: ScanValidationResult): {
     }
   }
 
-  if (result.scanPhase === 'exit') {
-    return {
-      label: 'Exit allowed',
-      detail: 'Verify identity and record exit.',
-      tone: 'success',
+  const next = result.nextCheckpoint
+  if (next && (result.kind === 'valid' || result.kind === 'late-entry' || result.kind === 'overdue-entry')) {
+    if (result.kind === 'late-entry') {
+      return {
+        label: `Late - ${GATE_CHECKPOINT_LABELS[next]}`,
+        detail: result.overdueMs
+          ? `${formatOverdueDuration(result.overdueMs)} past return time.`
+          : 'Past scheduled return time.',
+        tone: 'warning',
+      }
     }
-  }
-
-  if (result.kind === 'valid') {
-    return {
-      label: result.extensionApproved ? 'Entry allowed (extension)' : 'Entry allowed',
-      detail: 'Student is returning on time.',
-      tone: 'success',
+    if (result.kind === 'overdue-entry') {
+      return {
+        label: `Overdue - ${GATE_CHECKPOINT_LABELS[next]}`,
+        detail: result.wardenNotified
+          ? 'Severely overdue - warden notified.'
+          : 'Severely overdue - notify warden if needed.',
+        tone: 'danger',
+      }
     }
-  }
-
-  if (result.kind === 'late-entry') {
     return {
-      label: 'Late entry',
-      detail: result.overdueMs
-        ? `${formatOverdueDuration(result.overdueMs)} past return time.`
-        : 'Past scheduled return time.',
-      tone: 'warning',
+      label: `${GATE_CHECKPOINT_LABELS[next]} allowed`,
+      detail: `Verify identity and record ${GATE_CHECKPOINT_LABELS[next]}.`,
+      tone: 'success',
     }
   }
 
   return {
-    label: 'Overdue entry',
-    detail: result.wardenNotified
-      ? 'Severely overdue - warden notified.'
-      : 'Severely overdue - notify warden if needed.',
-    tone: 'danger',
+    label: 'Ready',
+    detail: 'Verify the student and continue.',
+    tone: 'neutral',
   }
 }
 
@@ -106,21 +116,26 @@ export function ScanResultPanel({
   result,
   visible,
   submitting,
-  onRecordExit,
-  onRecordEntry,
+  onRecordCheckpoint,
   onAlertWarden,
   onScanAgain,
+  onRecordExit,
+  onRecordEntry,
 }: ScanResultPanelProps) {
   if (!result || !visible) return null
 
+  const record = onRecordCheckpoint ?? onRecordExit ?? onRecordEntry ?? (() => {})
   const pass = result.pass
   const gateLogs = result.gateLogs ?? []
   const scannerNames = result.scannerNames ?? {}
   const verification = getVerificationResult(result)
-  const isDuplicate =
-    result.kind === 'duplicate-exit' || result.kind === 'duplicate-entry'
+  const isBlocked =
+    result.kind === 'invalid'
+    || result.kind === 'duplicate-checkpoint'
+    || result.kind === 'out-of-sequence'
+    || result.kind === 'cycle-complete'
 
-  if (result.kind === 'invalid' || isDuplicate) {
+  if (isBlocked) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
         <div
@@ -149,6 +164,15 @@ export function ScanResultPanel({
               </div>
             </div>
           )}
+          {pass && (
+            <div className="w-full max-w-md rounded-xl border border-slate-200/80 bg-white/80 p-3">
+              <GateCheckpointProgress
+                passId={pass.id}
+                gateLogs={gateLogs}
+                multiDaily={isMultiDailyScanPass(pass)}
+              />
+            </div>
+          )}
           <div
             className={cn(
               'w-full max-w-md rounded-xl border px-4 py-3 text-center text-sm font-medium',
@@ -174,23 +198,30 @@ export function ScanResultPanel({
   const studentName = getStudentName(pass.students)
   const admissionNo = result.studentAdmissionNo ?? '-'
   const displayName = studentName !== 'Unknown' ? studentName : '-'
-  const hasExit = hasExitLog(pass.id, gateLogs)
-  const nextAction = result.nextAction ?? 'exit'
-  const isExitScan = result.scanPhase === 'exit'
+  const nextCheckpoint = result.nextCheckpoint
   const displayStatus = getPassDisplayStatus(pass, gateLogs)
   const statusLabel = getPassStatusLabel(pass.status, gateLogs, pass)
-  const exitLog = gateLogs.find((log) => log.event_type === 'exit')
-  const entryLog = gateLogs.find((log) => log.event_type === 'entry')
+  const multi = isMultiDailyScanPass(pass)
+  const isExitLeg =
+    nextCheckpoint === 'hostel_exit' || nextCheckpoint === 'main_exit'
+
+  const logsByCheckpoint = new Map<GateCheckpoint, (typeof gateLogs)[number]>()
+  for (const log of gateLogs) {
+    const cp = getCheckpointFromLog(log)
+    if (cp && !logsByCheckpoint.has(cp)) logsByCheckpoint.set(cp, log)
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
       <div
         className={cn(
           'px-3 py-3 text-center text-sm font-bold leading-snug text-white sm:px-4 sm:text-base',
-          isExitScan ? bannerStyles.neutral : bannerStyles[verification.tone],
+          isExitLeg ? bannerStyles.neutral : bannerStyles[verification.tone],
         )}
       >
-        {isExitScan ? 'College exit - verify and allow departure' : verification.label}
+        {nextCheckpoint
+          ? `Now scanning: ${GATE_CHECKPOINT_LABELS[nextCheckpoint]}`
+          : verification.label}
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
@@ -230,6 +261,13 @@ export function ScanResultPanel({
           <p className="mt-0.5 opacity-90">{verification.detail}</p>
         </div>
 
+        <div className="rounded-xl border border-slate-200/80 bg-white/80 p-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Gate progress
+          </p>
+          <GateCheckpointProgress passId={pass.id} gateLogs={gateLogs} multiDaily={multi} />
+        </div>
+
         <div className="grid gap-2 rounded-xl border border-slate-200/70 bg-white/70 p-3 text-sm shadow-sm">
           <DetailRow icon={MapPin} label="Destination" value={pass.destination} />
           <DetailRow
@@ -249,20 +287,19 @@ export function ScanResultPanel({
         <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 text-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scan history</p>
           <div className="mt-2 space-y-2">
-            <HistoryRow
-              icon={LogOut}
-              label="Exit scan"
-              time={exitLog?.scanned_at}
-              scanner={exitLog ? scannerNames[exitLog.scanned_by] : undefined}
-              recorded={hasExit}
-            />
-            <HistoryRow
-              icon={LogIn}
-              label="Entry scan"
-              time={entryLog?.scanned_at}
-              scanner={entryLog ? scannerNames[entryLog.scanned_by] : undefined}
-              recorded={Boolean(entryLog)}
-            />
+            {GATE_CHECKPOINTS.map((cp) => {
+              const log = logsByCheckpoint.get(cp)
+              return (
+                <HistoryRow
+                  key={cp}
+                  label={GATE_CHECKPOINT_LABELS[cp]}
+                  time={log?.scanned_at}
+                  scanner={log ? scannerNames[log.scanned_by] : undefined}
+                  recorded={Boolean(log)}
+                  current={nextCheckpoint === cp}
+                />
+              )
+            })}
           </div>
         </div>
       </div>
@@ -270,22 +307,20 @@ export function ScanResultPanel({
       <div className="mt-auto space-y-2.5 border-t border-slate-200/80 bg-white/50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:space-y-3 sm:p-4">
         <button
           type="button"
-          disabled={submitting || (nextAction === 'exit' ? hasExit : !hasExit)}
-          onClick={nextAction === 'exit' ? onRecordExit : onRecordEntry}
+          disabled={submitting || !nextCheckpoint}
+          onClick={record}
           className={cn(
             'security-action-btn',
-            nextAction === 'exit'
+            isExitLeg
               ? 'bg-[#1A5CA0] hover:bg-[#164a85]'
               : 'bg-emerald-600 hover:bg-emerald-700',
           )}
         >
           {submitting
             ? 'Recording…'
-            : nextAction === 'exit'
-              ? 'Record exit - allow student to leave'
-              : result.kind === 'overdue-entry'
-                ? 'Record entry - warden notified'
-                : 'Record entry - allow student to return'}
+            : nextCheckpoint
+              ? `Record ${checkpointLabel(nextCheckpoint)}`
+              : 'No scan required'}
         </button>
 
         {result.kind === 'overdue-entry' && !result.wardenNotified && (
@@ -334,47 +369,36 @@ function DetailRow({
 }
 
 function HistoryRow({
-  icon: Icon,
   label,
   time,
   scanner,
   recorded,
+  current,
 }: {
-  icon: typeof LogOut
   label: string
   time?: string
   scanner?: string
   recorded: boolean
+  current?: boolean
 }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-slate-200/60 bg-white/80 px-3 py-2">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.75} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-medium text-slate-800">{label}</span>
-          <span
-            className={cn(
-              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase',
-              recorded ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600',
-            )}
-          >
-            {recorded ? 'Done' : 'Pending'}
-          </span>
-        </div>
-        {recorded && time ? (
-          <>
-            <p className="mt-0.5 text-xs text-slate-600">{formatReturnTime(time)}</p>
-            {scanner && (
-              <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
-                <User className="h-3 w-3" />
-                {scanner}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="mt-0.5 text-xs text-slate-500">Not recorded</p>
-        )}
+    <div
+      className={cn(
+        'flex items-start justify-between gap-2 rounded-lg px-2 py-1.5',
+        current && 'bg-[#EBF3FF] ring-1 ring-[#1A5CA0]/25',
+        recorded && !current && 'bg-emerald-50/80',
+      )}
+    >
+      <div className="min-w-0">
+        <p className={cn('text-sm font-medium', recorded ? 'text-slate-900' : 'text-slate-500')}>
+          {recorded ? '✓ ' : current ? '⏳ ' : '○ '}
+          {label}
+        </p>
+        {scanner && <p className="text-[11px] text-slate-500">by {scanner}</p>}
       </div>
+      <p className="shrink-0 text-xs text-slate-600">
+        {time ? formatTableDateTime(time) : current ? 'Next' : 'Pending'}
+      </p>
     </div>
   )
 }
