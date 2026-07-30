@@ -63,7 +63,7 @@ export function WardenHomePage() {
   async function handleDecision(action: 'approve' | 'reject') {
     if (!selectedRequest || !user) return
     if (scope && !scope.canApprove) {
-      setActionError('You are Away - approvals are handled by superior wardens. Switch back to Working to approve.')
+      setActionError('You are on leave — approvals are handled by superior wardens. Resume duty to approve.')
       return
     }
 
