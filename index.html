@@ -18,46 +18,6 @@
         }
       } catch (_) {}
     </script>
-    <script>
-      /* One-shot purge of broken PWA navigation caches that served stale HTML after deploys. */
-      (function () {
-        var CACHE_EPOCH = 'homs-cache-epoch-v3';
-        try {
-          if (localStorage.getItem(CACHE_EPOCH) === '1') return;
-          localStorage.setItem(CACHE_EPOCH, '1');
-        } catch (_) {
-          return;
-        }
-
-        var needsReload = false;
-        var done = function () {
-          if (needsReload) location.reload();
-        };
-
-        try {
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (regs) {
-              if (regs.length) needsReload = true;
-              return Promise.all(regs.map(function (r) { return r.unregister(); }));
-            }).then(function () {
-              if (!('caches' in window)) { done(); return; }
-              return caches.keys().then(function (keys) {
-                if (keys.length) needsReload = true;
-                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-              }).then(done).catch(done);
-            }).catch(done);
-            return;
-          }
-        } catch (_) {}
-
-        if ('caches' in window) {
-          caches.keys().then(function (keys) {
-            if (keys.length) needsReload = true;
-            return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-          }).then(done).catch(done);
-        }
-      })();
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -73,6 +33,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/boot.ts"></script>
   </body>
 </html>

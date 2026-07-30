@@ -88,20 +88,13 @@ export default defineConfig({
     target: 'es2022',
     cssCodeSplit: true,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
-            return 'vendor-react'
-          }
-          if (id.includes('@supabase')) return 'vendor-supabase'
-          if (id.includes('lucide-react') || id.includes('@tabler/icons-react')) {
-            return 'vendor-icons'
-          }
-          if (id.includes('xlsx') || id.includes('jspdf')) return 'vendor-export'
-          if (id.includes('@zxing') || id.includes('qrcode')) return 'vendor-scan'
-        },
+    // Avoid manualChunks — they merged Vite's preload helper into the xlsx/jspdf
+    // chunk and caused "Cannot access before initialization" on boot for some users.
+    modulePreload: {
+      polyfill: true,
+      resolveDependencies: (filename, deps) => {
+        if (/assets\/index-/.test(filename)) return []
+        return deps
       },
     },
   },

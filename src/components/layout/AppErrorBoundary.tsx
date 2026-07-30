@@ -41,7 +41,9 @@ async function hardResetApp(): Promise<void> {
   }
 
   try {
-    localStorage.removeItem('homs-build-id')
+    // Force the boot gate to purge again on next load.
+    localStorage.removeItem('homs-cache-epoch-v4')
+    localStorage.removeItem('homs-cache-epoch-v3')
   } catch {
     /* ignore */
   }
