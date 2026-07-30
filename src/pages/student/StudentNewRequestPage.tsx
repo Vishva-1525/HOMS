@@ -234,7 +234,7 @@ export function StudentNewRequestPage() {
               value={form.reason}
               onChange={(e) => updateField('reason', e.target.value)}
               disabled={submitting}
-              className="flex w-full rounded-xl border border-white/55 bg-white/50 px-3 py-2 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+              className="flex w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             />
             {errors.reason && <p className="text-sm text-[#DC2626]">{errors.reason}</p>}
           </div>

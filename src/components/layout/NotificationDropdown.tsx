@@ -47,7 +47,7 @@ export function NotificationDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--svce-text-secondary)] hover:bg-white/40 dark:hover:bg-white/10"
+        className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--svce-text-secondary)] hover:bg-[var(--glass-bg-muted)] dark:hover:bg-[var(--glass-bg-muted)]"
         aria-label="Notifications"
         aria-expanded={open}
       >
@@ -72,7 +72,7 @@ export function NotificationDropdown({
               'fixed inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:max-h-none md:w-[min(360px,calc(100vw-2rem))] md:rounded-xl',
             )}
           >
-            <div className="flex items-center justify-between border-b border-white/40 px-4 py-3 dark:border-white/10 md:py-3">
+            <div className="flex items-center justify-between border-b border-[var(--glass-border)] px-4 py-3 dark:border-[var(--glass-border)] md:py-3">
               <p className="text-sm font-semibold text-[var(--svce-text-primary)]">Notifications</p>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
@@ -107,7 +107,7 @@ export function NotificationDropdown({
                       to={getNotificationUrl(role, item)}
                       onClick={() => handleItemClick(item)}
                       className={cn(
-                        'block border-b border-[var(--svce-border-default)] px-4 py-3 transition-colors hover:bg-white/50',
+                        'block border-b border-[var(--svce-border-default)] px-4 py-3 transition-colors hover:bg-[var(--glass-bg)]',
                         !item.read_at && 'bg-[#EBF3FF]',
                       )}
                     >

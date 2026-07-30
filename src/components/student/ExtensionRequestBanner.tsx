@@ -12,7 +12,7 @@ export function ExtensionRequestBanner({ pass, onRequestExtension }: ExtensionRe
     <button
       type="button"
       onClick={onRequestExtension}
-      className="group w-full rounded-2xl border border-[#1A5CA0]/30 bg-gradient-to-r from-[#EBF3FF] via-white/97 to-white/92 p-4 text-left shadow-lg shadow-[#1A5CA0]/10 backdrop-blur-xl transition-all duration-200 hover:border-[#1A5CA0]/45 hover:shadow-xl active:scale-[0.995] sm:p-5"
+      className="group w-full rounded-2xl border border-[#1A5CA0]/30 bg-[#EBF3FF] p-4 text-left shadow-sm transition-all duration-200 hover:border-[#1A5CA0]/45 hover:shadow-md active:scale-[0.995] sm:p-5"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1A5CA0]/12 text-[#1A5CA0] ring-1 ring-[#1A5CA0]/25">

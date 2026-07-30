@@ -154,7 +154,7 @@ export function StudentProfilePage() {
           <p className="dashboard-subheading mt-1 text-sm font-medium">{student?.reg_number ?? '-'}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-px border-t border-white/50 bg-white/40">
+        <div className="grid grid-cols-2 gap-px border-t border-[var(--glass-border)] bg-[var(--glass-bg-muted)]">
           <div className="flex flex-col items-center px-4 py-4 text-center">
             <Home className="mb-1.5 h-4 w-4 text-[#1A5CA0]" strokeWidth={1.75} />
             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Room</p>
@@ -168,7 +168,7 @@ export function StudentProfilePage() {
             </p>
           </div>
           {student?.department && (
-            <div className="col-span-2 flex flex-col items-center border-t border-white/50 px-4 py-4 text-center">
+            <div className="col-span-2 flex flex-col items-center border-t border-[var(--glass-border)] px-4 py-4 text-center">
               <GraduationCap className="mb-1.5 h-4 w-4 text-[#1A5CA0]" strokeWidth={1.75} />
               <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Department</p>
               <p className="mt-0.5 text-sm font-semibold text-slate-900">
@@ -188,7 +188,7 @@ export function StudentProfilePage() {
       )}
 
       <div className="glass-panel overflow-hidden">
-        <div className="border-b border-white/50 px-4 py-3">
+        <div className="border-b border-[var(--glass-border)] px-4 py-3">
           <h2 className="dashboard-heading text-sm font-semibold">Contact information</h2>
         </div>
         <div className="divide-y divide-white/50">

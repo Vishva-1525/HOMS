@@ -67,7 +67,7 @@ export function Login() {
 
             {error && (
               <div
-                className="mb-5 rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-800 backdrop-blur-sm"
+                className="mb-5 rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-800"
                 role="alert"
               >
                 {error}

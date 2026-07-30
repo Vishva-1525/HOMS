@@ -24,7 +24,7 @@ export function WardenAvailabilityPanel({
 
   if (scope.tier === 'superior') {
     return (
-      <div className="glass-panel border-[#BFDBFE] bg-[#EBF3FF]/80 px-4 py-3 text-sm text-[#0D3F72]">
+      <div className="glass-panel border-[#BFDBFE] bg-[#EBF3FF] px-4 py-3 text-sm text-[#0D3F72]">
         <p className="font-semibold">Warden coverage</p>
         <p className="mt-1 text-xs leading-relaxed text-slate-700">
           You receive escalated requests for all {scope.gender} hostel blocks while their RT is Away.
@@ -66,8 +66,8 @@ export function WardenAvailabilityPanel({
       className={cn(
         'glass-panel px-4 py-3',
         scope.isAvailable
-          ? 'border-emerald-200/80 bg-emerald-50/70'
-          : 'border-amber-300/80 bg-amber-50/80',
+          ? 'border-emerald-200 bg-emerald-50'
+          : 'border-amber-300 bg-amber-50',
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -121,7 +121,7 @@ export function WardenAvailabilityPanel({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. On leave until Monday, medical, conference…"
-            className="flex w-full rounded-xl border border-white/55 bg-white/70 px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" loading={submitting} onClick={() => void goAway()}>

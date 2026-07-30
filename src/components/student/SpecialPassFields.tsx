@@ -44,7 +44,7 @@ export function SpecialPassFields({
           value={purpose ?? ''}
           disabled={disabled}
           onChange={(e) => onPurposeChange(e.target.value as SpecialPassPurpose)}
-          className="flex h-10 w-full rounded-xl border border-white/55 bg-white/50 px-3 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+          className="flex h-10 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
         >
           <option value="">Select purpose…</option>
           {SPECIAL_PASS_PURPOSES.map((option) => (
@@ -68,7 +68,7 @@ export function SpecialPassFields({
             value={remarks}
             disabled={disabled}
             onChange={(e) => onRemarksChange(e.target.value)}
-            className="flex w-full rounded-xl border border-white/55 bg-white/50 px-3 py-2 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="flex w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
           {errors?.specialRemarks && (
             <p className="text-sm text-[#DC2626]">{errors.specialRemarks}</p>
@@ -82,7 +82,7 @@ export function SpecialPassFields({
           <label
             htmlFor="special-document"
             className={cn(
-              'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#1A5CA0]/35 bg-white/50 px-4 py-6 text-center transition-colors hover:bg-white/70',
+              'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#1A5CA0]/35 bg-[var(--glass-bg)] px-4 py-6 text-center transition-colors hover:bg-[var(--glass-bg)]',
               disabled && 'pointer-events-none opacity-50',
             )}
           >

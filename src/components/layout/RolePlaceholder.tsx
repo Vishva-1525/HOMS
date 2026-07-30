@@ -29,7 +29,7 @@ export function RolePlaceholder({ title }: { title: string }) {
           <Button
             type="button"
             variant="outline"
-            className="mt-8 gap-2 border-white/60 bg-white/40 hover:bg-white/60"
+            className="mt-8 gap-2 border-[var(--glass-border)] bg-[var(--glass-bg-muted)] hover:bg-[var(--glass-bg)]"
             onClick={() => signOut()}
           >
             <IconLogout className="h-4 w-4" stroke={1.75} />

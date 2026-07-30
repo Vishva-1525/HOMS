@@ -30,7 +30,7 @@ export function PassQrPlaceholder({
   const isExpired = variant === 'expired'
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300/80 bg-white/75 p-8 text-center backdrop-blur-sm">
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300/80 bg-[var(--glass-bg)] p-8 text-center">
       <div className="flex h-[200px] w-[200px] items-center justify-center rounded-xl bg-slate-100/90">
         <div className="flex flex-col items-center gap-2 px-4">
           <QrCode className="h-10 w-10 text-slate-400" strokeWidth={1.5} />

@@ -207,7 +207,7 @@ export function AdminCalendarPage() {
               <p className="mt-1 text-sm font-medium opacity-90">{selectedMeta.label}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-current/20 bg-white/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide dark:bg-black/20">
+              <span className="rounded-full border border-current/20 bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide dark:bg-black/20">
                 {ACADEMIC_DAY_LABELS[selectedMeta.dayType]}
               </span>
               <Button
@@ -243,7 +243,7 @@ export function AdminCalendarPage() {
                 'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
                 typeFilter === option.id
                   ? 'bg-[#1A5CA0] text-white shadow-sm'
-                  : 'border border-white/70 bg-white/90 text-slate-900 shadow-sm hover:bg-white',
+                  : 'border border-[var(--glass-border)] bg-[var(--glass-bg-strong)] text-slate-900 shadow-sm hover:bg-white',
               )}
             >
               {option.label}
@@ -343,7 +343,7 @@ export function AdminCalendarPage() {
                   day_type: e.target.value as AcademicDayType,
                 }))
               }
-              className="mt-1 w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm font-medium"
+              className="mt-1 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm font-medium"
             >
               {DAY_TYPES.map((type) => (
                 <option key={type} value={type}>

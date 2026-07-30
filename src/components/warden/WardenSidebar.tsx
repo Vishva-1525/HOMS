@@ -37,7 +37,7 @@ export function WardenSidebar() {
 
   return (
     <aside className="glass-nav flex h-screen w-[240px] shrink-0 flex-col border-r shadow-xl shadow-slate-900/5">
-      <div className="border-b border-white/40 px-5 py-6">
+      <div className="border-b border-[var(--glass-border)] px-5 py-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
           HOMS Warden
         </p>
@@ -59,7 +59,7 @@ export function WardenSidebar() {
                   'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-white/45 hover:text-foreground',
+                    : 'text-muted-foreground hover:bg-[var(--glass-bg-muted)] hover:text-foreground',
                 )
               }
             >
@@ -75,11 +75,11 @@ export function WardenSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-white/40 p-3">
+      <div className="border-t border-[var(--glass-border)] p-3">
         <Button
           type="button"
           variant="outline"
-          className="w-full gap-2 border-white/55 bg-white/35 hover:bg-white/55"
+          className="w-full gap-2 border-[var(--glass-border)] bg-[var(--glass-bg-muted)] hover:bg-[var(--glass-bg)]"
           size="sm"
           onClick={() => signOut()}
         >

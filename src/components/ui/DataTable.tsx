@@ -109,7 +109,7 @@ export function DataTable<T extends object>({
                   style={column.width ? { width: column.width, minWidth: column.width } : undefined}
                   className={cn(
                     'px-4 py-3 text-[length:var(--svce-text-small)] font-bold uppercase tracking-wider text-slate-900',
-                    stickyHeader && 'sticky top-0 z-10 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95',
+                    stickyHeader && 'sticky top-0 z-10 bg-[var(--glass-bg-strong)] dark:bg-slate-900/95',
                     column.headerClassName,
                   )}
                 >
@@ -123,7 +123,7 @@ export function DataTable<T extends object>({
               Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
                 <tr
                   key={`skeleton-${rowIndex}`}
-                  className="h-[var(--table-row-height)] border-b border-white/40 bg-transparent"
+                  className="h-[var(--table-row-height)] border-b border-[var(--glass-border)] bg-transparent"
                 >
                   {columns.map((column) => (
                     <td key={String(column.accessor)} className="px-4 py-3">

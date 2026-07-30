@@ -318,7 +318,7 @@ export function PassDetailSheet({
                     value={extensionDurationHours}
                     onChange={(e) => setExtensionDurationHours(e.target.value)}
                     disabled={submittingExtension}
-                    className="flex h-10 w-full rounded-xl border border-white/55 bg-white/50 px-3 text-sm text-slate-900 shadow-sm"
+                    className="flex h-10 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 text-sm text-slate-900 shadow-sm"
                   >
                     {EXTENSION_DURATION_OPTIONS.map((option) => (
                       <option key={option.hours} value={String(option.hours)}>

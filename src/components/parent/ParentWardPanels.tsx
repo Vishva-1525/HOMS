@@ -47,7 +47,7 @@ export function ParentWardHeader({ ward, wards, onSelectWard }: ParentWardHeader
           <select
             value={ward.student.id}
             onChange={(e) => onSelectWard(e.target.value)}
-            className="w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm text-slate-900 sm:w-auto"
+            className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm text-slate-900 sm:w-auto"
           >
             {wards.map((w) => (
               <option key={w.student.id} value={w.student.id}>

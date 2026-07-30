@@ -44,7 +44,7 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
   const totalPasses = logsByDate.reduce((sum, [, rows]) => sum + rows.length, 0)
 
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col bg-slate-900/45 p-0 backdrop-blur-md animate-[slideUpFull_0.3s_ease-out] sm:p-4">
+    <div className="fixed inset-0 z-[90] flex flex-col bg-slate-900/45 p-0 animate-[slideUpFull_0.3s_ease-out] sm:p-4">
       <div className="dashboard-surface flex min-h-0 flex-1 flex-col overflow-hidden rounded-none sm:rounded-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-5">
           <div>
@@ -98,7 +98,7 @@ export function SecurityLogOverlay({ open, onClose }: SecurityLogOverlayProps) {
             <div className="divide-y divide-slate-200/80">
               {logsByDate.map(([dateLabel, dayRows]) => (
                 <section key={dateLabel}>
-                  <div className="sticky top-0 z-10 border-b border-slate-200/80 bg-slate-100/95 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-600 backdrop-blur-sm sm:px-5">
+                  <div className="sticky top-0 z-10 border-b border-slate-200/80 bg-slate-100/95 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-600 sm:px-5">
                     {dateLabel}
                     <span className="ml-2 font-normal normal-case text-slate-500">
                       ({dayRows.length} pass{dayRows.length !== 1 ? 'es' : ''})

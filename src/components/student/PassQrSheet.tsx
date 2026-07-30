@@ -16,7 +16,7 @@ export function PassQrSheet({ open, pass, gateLogs = [], onClose }: PassQrSheetP
     <div className="fixed inset-0 z-[70] flex items-end justify-center md:items-center">
       <button
         type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50"
         aria-label="Close"
         onClick={onClose}
       />

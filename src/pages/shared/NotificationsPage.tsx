@@ -46,7 +46,7 @@ export function NotificationsPage() {
                     if (!item.read_at) void markOneRead(item.id)
                   }}
                   className={cn(
-                    'block border-b border-white/50 px-4 py-4 transition-colors hover:bg-white/40',
+                    'block border-b border-[var(--glass-border)] px-4 py-4 transition-colors hover:bg-[var(--glass-bg-muted)]',
                     !item.read_at && 'bg-[#EBF3FF]/60',
                   )}
                 >

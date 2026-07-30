@@ -38,7 +38,7 @@ export function StudentDashboardHero({
           <StudentAvatar
             name={fullName}
             size="lg"
-            className="hidden border-white/30 ring-white/25 sm:flex"
+            className="hidden border-white/30 ring-white/40 sm:flex"
           />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#D6E6F7]">

@@ -74,7 +74,7 @@ export function SecurityScanPage() {
       <SecurityTopBar onLogClick={openLog} />
 
       {phase === 'success-flash' && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700/95 px-6 text-center text-white backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700/95 px-6 text-center text-white">
           <div
             className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-4xl font-bold shadow-lg ring-2 ring-white/30"
             style={{ animation: 'securitySuccessPop 0.35s ease-out' }}
@@ -127,7 +127,7 @@ export function SecurityScanPage() {
                         <button
                           type="button"
                           onClick={() => setManualOpen(true)}
-                          className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-4 py-2.5 text-sm font-medium text-[#1A5CA0] shadow-sm transition-colors hover:bg-white active:scale-[0.98]"
+                          className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-[var(--glass-bg-strong)] px-4 py-2.5 text-sm font-medium text-[#1A5CA0] shadow-sm transition-colors hover:bg-white active:scale-[0.98]"
                         >
                           <Keyboard className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                           Enter pass ID or entry code manually

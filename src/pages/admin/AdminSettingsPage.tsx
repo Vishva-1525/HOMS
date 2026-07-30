@@ -60,7 +60,7 @@ export function AdminSettingsPage() {
                 id={key}
                 value={settings[key] ?? 'false'}
                 onChange={(e) => updateDraft(key, e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm"
               >
                 <option value="true">Enabled</option>
                 <option value="false">Disabled</option>

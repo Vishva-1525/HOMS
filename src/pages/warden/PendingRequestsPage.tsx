@@ -377,7 +377,7 @@ export function PendingRequestsPage() {
               rows={3}
               value={bulkRemarks}
               onChange={(e) => setBulkRemarks(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm"
             />
           </div>
           {bulkError && <p className="text-sm text-[#DC2626]">{bulkError}</p>}

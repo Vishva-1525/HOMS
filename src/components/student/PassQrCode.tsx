@@ -97,7 +97,7 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-white/70 bg-white p-4 shadow-md">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-white p-4 shadow-md">
         <QRCodeCanvas
           ref={canvasRef}
           value={qrValue}

@@ -44,7 +44,7 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
         value={value ?? ''}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value as PassType)}
-        className="flex h-10 w-full rounded-xl border border-white/55 bg-white/50 px-3 text-sm text-slate-900 shadow-sm backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        className="flex h-10 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
         <option value="">Select pass type…</option>
         {PASS_OPTIONS.map((option) => (
@@ -55,7 +55,7 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
       </select>
 
       {selected && (
-        <div className="flex items-center gap-3 rounded-xl border border-white/55 bg-white/45 px-3 py-2.5">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg-muted)] px-3 py-2.5">
           <selected.icon className="h-5 w-5 shrink-0 text-[#0D3F72]" strokeWidth={1.5} />
           <p className="text-xs text-slate-600">{selected.description}</p>
         </div>
@@ -75,7 +75,7 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
                 'flex flex-col items-center rounded-lg border p-3 text-center transition-colors',
                 isSelected
                   ? 'border-[#1A5CA0] bg-[#EBF3FF]/90'
-                  : 'border-white/55 bg-white/40 hover:border-[#1A5CA0]/40 hover:bg-white/60',
+                  : 'border-[var(--glass-border)] bg-[var(--glass-bg-muted)] hover:border-[#1A5CA0]/40 hover:bg-[var(--glass-bg)]',
                 disabled && 'pointer-events-none opacity-50',
               )}
             >

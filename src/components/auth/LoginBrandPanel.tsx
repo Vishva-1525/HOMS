@@ -39,7 +39,7 @@ export function LoginBrandPanel({ className }: LoginBrandPanelProps) {
         <ul className="mt-10 space-y-3.5">
           {FEATURES.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-center gap-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/70 ring-1 ring-white/80 shadow-sm backdrop-blur-sm">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--glass-bg)] ring-1 ring-[var(--glass-border)] shadow-sm">
                 <Icon className="h-4 w-4 text-[#E87722]" strokeWidth={1.75} />
               </span>
               <span className="text-sm font-medium text-slate-800">{text}</span>

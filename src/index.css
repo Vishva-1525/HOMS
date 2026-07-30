@@ -28,45 +28,45 @@
 
 :root {
   --radius: 0.875rem;
-  --background: oklch(0.985 0.004 250);
-  --foreground: oklch(0.22 0.025 250);
-  --card: oklch(1 0 0 / 88%);
-  --card-foreground: oklch(0.22 0.025 250);
-  --popover: oklch(1 0 0 / 92%);
-  --popover-foreground: oklch(0.22 0.025 250);
-  --primary: oklch(0.38 0.045 250);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.94 0.012 250);
-  --secondary-foreground: oklch(0.32 0.04 250);
-  --muted: oklch(0.94 0.01 250 / 75%);
-  --muted-foreground: oklch(0.48 0.025 250);
-  --accent: oklch(0.92 0.02 250 / 80%);
-  --accent-foreground: oklch(0.28 0.04 250);
-  --destructive: oklch(0.55 0.2 25);
-  --border: oklch(1 0 0 / 55%);
-  --input: oklch(1 0 0 / 65%);
-  --ring: oklch(0.45 0.05 250);
+  --background: #e8eef5;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #1a5ca0;
+  --primary-foreground: #ffffff;
+  --secondary: #e8eef5;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #ebf3ff;
+  --accent-foreground: #0d3f72;
+  --destructive: #dc2626;
+  --border: #d5dde8;
+  --input: #ffffff;
+  --ring: #1a5ca0;
 }
 
 .dark {
-  --background: oklch(0.16 0.03 255);
-  --foreground: oklch(0.97 0.01 250);
-  --card: oklch(0.28 0.04 255 / 55%);
-  --card-foreground: oklch(0.97 0.01 250);
-  --popover: oklch(0.24 0.035 255 / 88%);
-  --popover-foreground: oklch(0.97 0.01 250);
-  --primary: oklch(0.62 0.16 255);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.28 0.04 255 / 70%);
-  --secondary-foreground: oklch(0.95 0.01 250);
-  --muted: oklch(0.28 0.03 255 / 55%);
-  --muted-foreground: oklch(0.78 0.02 250);
-  --accent: oklch(0.32 0.05 255 / 55%);
-  --accent-foreground: oklch(0.97 0.01 250);
-  --destructive: oklch(0.68 0.18 22);
-  --border: oklch(0.78 0.06 250 / 22%);
-  --input: oklch(0.28 0.04 255 / 55%);
-  --ring: oklch(0.68 0.14 255);
+  --background: #070b14;
+  --foreground: #f1f5f9;
+  --card: #151d2e;
+  --card-foreground: #f1f5f9;
+  --popover: #1a2438;
+  --popover-foreground: #f1f5f9;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1a2438;
+  --secondary-foreground: #f1f5f9;
+  --muted: #111827;
+  --muted-foreground: #94a3b8;
+  --accent: #1a2740;
+  --accent-foreground: #93c5fd;
+  --destructive: #f87171;
+  --border: #2a3548;
+  --input: #151d2e;
+  --ring: #3b82f6;
 }
 
 @layer base {
@@ -82,50 +82,37 @@
 
 @layer utilities {
   .dashboard-shell {
-    --card: oklch(1 0 0 / 88%);
-    --popover: oklch(1 0 0 / 92%);
-    --background: oklch(1 0 0 / 50%);
-    --muted: oklch(0.98 0.005 250 / 82%);
-    --accent: oklch(0.97 0.01 250 / 78%);
-    --secondary: oklch(0.98 0.008 250 / 80%);
-    --border: oklch(1 0 0 / 62%);
-    --input: oklch(1 0 0 / 72%);
-    --foreground: oklch(0.15 0.03 250);
-    --muted-foreground: oklch(0.35 0.03 250);
+    --card: #ffffff;
+    --popover: #ffffff;
+    --background: #e8eef5;
+    --muted: #f1f5f9;
+    --accent: #ebf3ff;
+    --secondary: #e8eef5;
+    --border: #d5dde8;
+    --input: #ffffff;
+    --foreground: #0f172a;
+    --muted-foreground: #475569;
   }
 
   html.dark .dashboard-shell {
-    --card: oklch(0.32 0.045 255 / 52%);
-    --popover: oklch(0.26 0.04 255 / 90%);
-    --background: oklch(0.2 0.035 255 / 45%);
-    --muted: oklch(0.3 0.04 255 / 48%);
-    --accent: oklch(0.34 0.05 255 / 45%);
-    --secondary: oklch(0.3 0.04 255 / 50%);
-    --border: oklch(0.8 0.06 250 / 22%);
-    --input: oklch(0.3 0.04 255 / 50%);
-    --foreground: oklch(0.97 0.01 250);
-    --muted-foreground: oklch(0.78 0.025 250);
+    --card: #151d2e;
+    --popover: #1a2438;
+    --background: #070b14;
+    --muted: #111827;
+    --accent: #1a2740;
+    --secondary: #1a2438;
+    --border: #2a3548;
+    --input: #151d2e;
+    --foreground: #f1f5f9;
+    --muted-foreground: #94a3b8;
   }
 
-  .dashboard-shell .bg-card,
-  .dashboard-shell .bg-background,
-  .dashboard-shell .bg-muted,
-  .dashboard-shell .bg-muted\/30,
-  .dashboard-shell .bg-muted\/40,
-  .dashboard-shell .bg-muted\/20,
-  .dashboard-shell .bg-popover {
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-  }
-
-  /* Shared liquid-morphism language (matches calendar / DateTimePicker glass) */
+  /* Shared solid surface language (legacy glass-* class names retained) */
   .liquid-glass {
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .glass-panel {
@@ -134,8 +121,6 @@
     background: var(--glass-bg);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .glass-panel-strong {
@@ -144,19 +129,15 @@
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
-  /* Login split cards — true glass over campus photo */
+  /* Login cards — solid high-contrast surfaces */
   .login-glass-card {
     @apply rounded-3xl;
     border: 1px solid var(--glass-border-strong);
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: blur(28px) saturate(1.35);
-    -webkit-backdrop-filter: blur(28px) saturate(1.35);
   }
 
   html.dark .login-glass-card h1,
@@ -174,12 +155,10 @@
   }
 
   .glass-nav {
-    @apply text-slate-900 shadow-lg shadow-slate-900/10;
+    @apply text-slate-900 shadow-sm;
     border-color: var(--glass-border-strong);
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
   }
 
   .dashboard-page-header {
@@ -188,23 +167,21 @@
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-heading {
-    @apply font-bold tracking-tight text-white;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.25);
+    @apply font-bold tracking-tight text-slate-950;
+    color: var(--glass-fg);
   }
 
   .dashboard-subheading {
-    @apply font-medium leading-relaxed text-slate-100;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+    @apply font-medium leading-relaxed text-slate-700;
+    color: var(--glass-fg-muted);
   }
 
   .dashboard-muted {
-    @apply text-slate-100;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    @apply text-slate-600;
+    color: var(--glass-fg-muted);
   }
 
   .dashboard-surface {
@@ -213,8 +190,6 @@
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-surface-muted {
@@ -223,8 +198,6 @@
     background: var(--glass-bg-muted);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   /* On white/glass panels: invert back to dark text for readability */
@@ -273,16 +246,14 @@
     background: var(--glass-bg);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .academic-calendar-nav-btn {
-    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-white/55 bg-white/50 text-slate-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:-translate-y-px hover:border-[#1A5CA0]/40 hover:bg-[#EBF3FF]/80 hover:text-[#0D3F72] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] active:translate-y-0;
+    @apply flex h-9 w-9 items-center justify-center rounded-xl border border-[#d5dde8] bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-[#1A5CA0]/40 hover:bg-[#EBF3FF]/80 hover:text-[#0D3F72] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0] active:translate-y-0;
   }
 
   .academic-calendar-select {
-    @apply h-9 rounded-xl border border-white/55 bg-white/50 px-2.5 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#1A5CA0]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0];
+    @apply h-9 rounded-xl border border-[#d5dde8] bg-white px-2.5 text-xs font-bold text-slate-900 shadow-sm transition-all duration-200 hover:border-[#1A5CA0]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0];
   }
 
   .academic-calendar-day {
@@ -329,8 +300,6 @@
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-section {
@@ -338,17 +307,17 @@
   }
 
   .dashboard-section-title {
-    @apply px-1 text-sm font-bold tracking-tight text-white sm:text-base;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.25);
+    @apply px-1 text-sm font-bold tracking-tight text-slate-950 sm:text-base;
+    color: var(--glass-fg);
   }
 
   .dashboard-section-heading {
-    @apply flex items-center gap-3 px-1 text-base font-bold tracking-tight text-white sm:text-lg;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.25);
+    @apply flex items-center gap-3 px-1 text-base font-bold tracking-tight text-slate-950 sm:text-lg;
+    color: var(--glass-fg);
   }
 
   .dashboard-section-accent {
-    @apply h-5 w-1.5 shrink-0 rounded-full bg-sky-300 shadow-[0_0_0_1px_rgba(255,255,255,0.35)];
+    @apply h-5 w-1.5 shrink-0 rounded-full bg-[#1A5CA0];
   }
 
   .dashboard-page-header .dashboard-section-title,
@@ -400,8 +369,6 @@
   .qr-action-secondary {
     @apply border-2 border-[#1A5CA0] font-semibold text-[#0D3F72] shadow-sm;
     background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .qr-action-secondary:hover {
@@ -412,8 +379,6 @@
     @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--svce-text-secondary)] shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--svce-primary-blue)] focus-visible:outline-offset-1;
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
   }
 
   .admin-row-action-btn:hover {
@@ -442,8 +407,6 @@
   .admin-table-actions-cell {
     @apply sticky right-0 z-10;
     background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-table-row:hover .admin-table-actions-cell {
@@ -473,8 +436,6 @@
     background: var(--glass-bg-muted);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .dashboard-link {
@@ -486,8 +447,6 @@
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
     color: var(--glass-fg);
-    backdrop-filter: blur(12px) saturate(1.3);
-    -webkit-backdrop-filter: blur(12px) saturate(1.3);
   }
 
   .dashboard-filter-chip:hover {
@@ -499,13 +458,13 @@
   }
 
   .dashboard-on-photo {
-    @apply text-white;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+    @apply text-slate-950;
+    color: var(--glass-fg);
   }
 
   .dashboard-on-photo-muted {
-    @apply text-slate-100;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    @apply text-slate-600;
+    color: var(--glass-fg-muted);
   }
 
   .dashboard-shell .glass-panel .text-muted-foreground,
@@ -516,21 +475,17 @@
   }
 
   .security-scan-card {
-    @apply rounded-2xl ring-1 ring-white/40;
+    @apply rounded-2xl ring-1 ring-[#d5dde8];
     border: 1px solid var(--glass-border-strong);
     background: var(--glass-bg-strong);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .security-scan-dock {
     @apply shrink-0 border-t px-3 py-3 sm:px-5 sm:py-4;
     border-color: var(--glass-border);
     background: var(--glass-bg-strong);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .security-info-pill {
@@ -538,8 +493,6 @@
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
     color: var(--glass-fg-muted);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
   }
 
   .security-action-btn {
@@ -552,11 +505,9 @@
     background: var(--glass-bg);
     color: var(--glass-fg);
     box-shadow: var(--glass-shadow);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
-  /* Dark mode liquid surfaces — luminous glass over night campus */
+  /* Dark mode solid surfaces */
   html.dark .dashboard-shell .glass-panel,
   html.dark .dashboard-shell .glass-panel-strong,
   html.dark .dashboard-shell .glass-nav,
@@ -567,13 +518,12 @@
   html.dark .dashboard-shell .security-scan-card,
   html.dark .dashboard-shell .security-identity-card,
   html.dark .dashboard-shell .academic-calendar-panel,
-  html.dark .dashboard-shell .liquid-glass {
+  html.dark .dashboard-shell .liquid-glass,
+  html.dark .login-glass-card {
     border-color: var(--glass-border) !important;
     background: var(--glass-bg) !important;
     color: var(--glass-fg) !important;
     box-shadow: var(--glass-shadow) !important;
-    backdrop-filter: var(--glass-blur) !important;
-    -webkit-backdrop-filter: var(--glass-blur) !important;
   }
 
   html.dark .dashboard-shell .glass-panel-strong,
@@ -597,8 +547,8 @@
   html.dark .dashboard-shell .dashboard-heading,
   html.dark .dashboard-shell .dashboard-section-heading,
   html.dark .dashboard-shell .dashboard-section-title {
-    color: rgb(255 255 255) !important;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45) !important;
+    color: var(--glass-fg) !important;
+    text-shadow: none !important;
   }
 
   html.dark .dashboard-shell .dashboard-page-header .dashboard-heading,
@@ -620,8 +570,8 @@
   }
 
   html.dark .dashboard-shell .dashboard-subheading {
-    color: rgb(226 232 240) !important;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.35) !important;
+    color: var(--glass-fg-muted) !important;
+    text-shadow: none !important;
   }
 
   html.dark .dashboard-shell .dashboard-page-header .dashboard-subheading,
@@ -635,8 +585,8 @@
 
   html.dark .dashboard-shell .dashboard-muted,
   html.dark .dashboard-shell .dashboard-on-photo-muted {
-    color: rgb(226 232 240) !important;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.35) !important;
+    color: var(--glass-fg-muted) !important;
+    text-shadow: none !important;
   }
 
   html.dark .dashboard-shell .dashboard-page-header .dashboard-muted,
@@ -650,8 +600,8 @@
   }
 
   html.dark .dashboard-shell .dashboard-on-photo {
-    color: rgb(255 255 255) !important;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45) !important;
+    color: var(--glass-fg) !important;
+    text-shadow: none !important;
   }
 
   html.dark .dashboard-shell .dashboard-section-accent {
@@ -704,8 +654,6 @@
     background: var(--glass-bg-strong) !important;
     border-color: var(--glass-border) !important;
     color: var(--glass-fg) !important;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   html.dark .dashboard-shell .bg-white\/45,
@@ -716,8 +664,6 @@
   html.dark .dashboard-shell .bg-white\/75,
   html.dark .dashboard-shell .bg-white\/80 {
     background: var(--glass-bg-muted) !important;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   html.dark .dashboard-shell .bg-white\/90,
@@ -726,8 +672,6 @@
   html.dark .dashboard-shell .bg-white\/97,
   html.dark .dashboard-shell .bg-white\/98 {
     background: var(--glass-bg-strong) !important;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   html.dark .dashboard-shell .academic-calendar-nav-btn {

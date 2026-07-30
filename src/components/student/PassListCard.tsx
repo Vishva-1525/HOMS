@@ -60,13 +60,13 @@ const CARD_TONE_STYLES: Record<
   completed: {
     container: 'liquid-glass',
     icon: CheckCircle2,
-    iconWrap: 'bg-slate-500/10 text-[var(--svce-text-secondary)] ring-white/30',
+    iconWrap: 'bg-slate-500/10 text-[var(--svce-text-secondary)] ring-[var(--glass-border)]',
     statusHint: 'Trip completed',
   },
   neutral: {
     container: 'liquid-glass',
     icon: Clock3,
-    iconWrap: 'bg-slate-500/10 text-[var(--svce-text-secondary)] ring-white/30',
+    iconWrap: 'bg-slate-500/10 text-[var(--svce-text-secondary)] ring-[var(--glass-border)]',
     statusHint: '',
   },
 }

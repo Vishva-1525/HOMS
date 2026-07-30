@@ -195,7 +195,7 @@ export function AdminStudentsPage() {
           <select
             value={departmentFilter}
             onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="h-10 rounded-xl border border-white/60 bg-white/70 px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            className="h-10 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
           >
             <option value="all">All departments</option>
             {(departments ?? []).map((d) => (
@@ -209,7 +209,7 @@ export function AdminStudentsPage() {
             onChange={(e) =>
               setYearFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))
             }
-            className="h-10 rounded-xl border border-white/60 bg-white/70 px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+            className="h-10 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
           >
             <option value="all">All years</option>
             {[1, 2, 3, 4].map((y) => (
@@ -286,7 +286,7 @@ export function AdminStudentsPage() {
               id="students-page-size"
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value) as StudentPageSize)}
-              className="h-9 rounded-xl border border-white/60 bg-white/70 px-2.5 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
+              className="h-9 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 text-sm text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1A5CA0]"
             >
               {STUDENT_PAGE_SIZE_OPTIONS.map((size) => (
                 <option key={size} value={size}>

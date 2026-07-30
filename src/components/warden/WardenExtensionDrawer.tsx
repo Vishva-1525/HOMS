@@ -54,7 +54,7 @@ export function WardenExtensionDrawer({
           'md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:max-w-[480px] md:rounded-none md:border-l md:border-t-0 md:animate-[slideInRight_0.25s_ease-out]',
         )}
       >
-        <div className="border-b border-white/40 px-4 py-4 sm:px-6 dark:border-white/10">
+        <div className="border-b border-[var(--glass-border)] px-4 py-4 sm:px-6 dark:border-[var(--glass-border)]">
           <h2 className="text-lg font-semibold text-[var(--svce-text-primary)]">
             {isReject ? 'Reject extension' : 'Review extension'}
           </h2>
@@ -118,7 +118,7 @@ export function WardenExtensionDrawer({
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-white/40 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-white/10">
+        <div className="space-y-2 border-t border-[var(--glass-border)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-[var(--glass-border)]">
           <Button
             type="button"
             className="w-full"

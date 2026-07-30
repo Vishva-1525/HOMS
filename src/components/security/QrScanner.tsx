@@ -91,14 +91,14 @@ export function QrScanner({ active, onScan }: QrScannerProps) {
       {showCamera && <ScanFrameOverlay />}
 
       {active && starting && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75 backdrop-blur-sm">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75">
           <Loader2 className="h-8 w-8 animate-spin text-white" aria-hidden />
           <p className="text-sm font-medium text-white/90">Starting camera…</p>
         </div>
       )}
 
       {active && cameraError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/90 p-6 text-center backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/90 p-6 text-center">
           <div className="max-w-xs">
             <p className="text-sm font-semibold text-white">Camera unavailable</p>
             <p className="mt-2 text-sm leading-relaxed text-white/75">{cameraError}</p>
@@ -113,7 +113,7 @@ export function QrScanner({ active, onScan }: QrScannerProps) {
         <button
           type="button"
           onClick={handleTorchToggle}
-          className="absolute bottom-4 right-4 rounded-full border border-white/20 bg-black/50 p-3 text-white shadow-lg backdrop-blur-md transition-transform active:scale-95"
+          className="absolute bottom-4 right-4 rounded-full border border-white/20 bg-black/50 p-3 text-white shadow-lg transition-transform active:scale-95"
           aria-label={torchOn ? 'Turn torch off' : 'Turn torch on'}
         >
           {torchOn ? (

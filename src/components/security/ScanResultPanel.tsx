@@ -148,7 +148,7 @@ export function ScanResultPanel({
         </div>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6 sm:px-5">
           {pass && (
-            <div className="flex w-full max-w-md items-center gap-3 rounded-xl border border-slate-200/80 bg-white/80 p-4">
+            <div className="flex w-full max-w-md items-center gap-3 rounded-xl border border-slate-200/80 bg-[var(--glass-bg)] p-4">
               <StudentAvatar
                 name={getStudentName(pass.students)}
                 photoUrl={DEMO_STUDENT_PHOTO_URL}
@@ -165,7 +165,7 @@ export function ScanResultPanel({
             </div>
           )}
           {pass && (
-            <div className="w-full max-w-md rounded-xl border border-slate-200/80 bg-white/80 p-3">
+            <div className="w-full max-w-md rounded-xl border border-slate-200/80 bg-[var(--glass-bg)] p-3">
               <GateCheckpointProgress
                 passId={pass.id}
                 gateLogs={gateLogs}
@@ -227,7 +227,7 @@ export function ScanResultPanel({
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
         <div className="security-identity-card flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="mx-auto w-full max-w-[180px] shrink-0 sm:mx-0">
-            <div className="overflow-hidden rounded-2xl border-2 border-white/90 bg-slate-100 shadow-md ring-2 ring-[#1A5CA0]/20">
+            <div className="overflow-hidden rounded-2xl border-2 border-[var(--glass-border)] bg-slate-100 shadow-md ring-2 ring-[#1A5CA0]/20">
               <img
                 src={DEMO_STUDENT_PHOTO_URL}
                 alt={`Photo of ${displayName}`}
@@ -261,14 +261,14 @@ export function ScanResultPanel({
           <p className="mt-0.5 opacity-90">{verification.detail}</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200/80 bg-white/80 p-3">
+        <div className="rounded-xl border border-slate-200/80 bg-[var(--glass-bg)] p-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Gate progress
           </p>
           <GateCheckpointProgress passId={pass.id} gateLogs={gateLogs} multiDaily={multi} />
         </div>
 
-        <div className="grid gap-2 rounded-xl border border-slate-200/70 bg-white/70 p-3 text-sm shadow-sm">
+        <div className="grid gap-2 rounded-xl border border-slate-200/70 bg-[var(--glass-bg)] p-3 text-sm shadow-sm">
           <DetailRow icon={MapPin} label="Destination" value={pass.destination} />
           <DetailRow
             icon={Clock}
@@ -304,7 +304,7 @@ export function ScanResultPanel({
         </div>
       </div>
 
-      <div className="mt-auto space-y-2.5 border-t border-slate-200/80 bg-white/50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:space-y-3 sm:p-4">
+      <div className="mt-auto space-y-2.5 border-t border-slate-200/80 bg-[var(--glass-bg)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:space-y-3 sm:p-4">
         <button
           type="button"
           disabled={submitting || !nextCheckpoint}

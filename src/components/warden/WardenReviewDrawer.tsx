@@ -25,7 +25,7 @@ interface WardenReviewDrawerProps {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-white/35 py-2.5 text-sm last:border-0 dark:border-white/10">
+    <div className="flex justify-between gap-4 border-b border-[var(--glass-border)] py-2.5 text-sm last:border-0 dark:border-[var(--glass-border)]">
       <span className="text-[var(--svce-text-secondary)]">{label}</span>
       <span className="text-right font-medium text-[var(--svce-text-primary)]">{value}</span>
     </div>
@@ -51,7 +51,7 @@ function ParentPhoneRow({ phone }: { phone: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/35 py-2.5 text-sm last:border-0 dark:border-white/10">
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--glass-border)] py-2.5 text-sm last:border-0 dark:border-[var(--glass-border)]">
       <span className="shrink-0 text-[var(--svce-text-secondary)]">Parent phone</span>
       <div className="flex min-w-0 items-center gap-1.5">
         <a
@@ -111,7 +111,7 @@ export function WardenReviewDrawer({
           'md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:max-w-[480px] md:rounded-none md:border-l md:border-t-0 md:animate-[slideInRight_0.25s_ease-out]',
         )}
       >
-        <div className="border-b border-white/40 px-4 py-4 sm:px-6 dark:border-white/10">
+        <div className="border-b border-[var(--glass-border)] px-4 py-4 sm:px-6 dark:border-[var(--glass-border)]">
           <h2 className="text-lg font-semibold text-[var(--svce-text-primary)]">
             {isReject ? 'Reject request' : 'Review request'}
           </h2>
@@ -192,7 +192,7 @@ export function WardenReviewDrawer({
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-white/40 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-white/10">
+        <div className="space-y-2 border-t border-[var(--glass-border)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-[var(--glass-border)]">
           <Button
             type="button"
             className="w-full"

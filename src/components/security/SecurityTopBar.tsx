@@ -26,7 +26,7 @@ function HeaderAction({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-xl border border-white/60 bg-white/55 px-2.5 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:bg-white/80 active:scale-95 sm:min-h-0 sm:min-w-0 sm:px-3 sm:py-1.5',
+        'inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:bg-[var(--glass-bg)] active:scale-95 sm:min-h-0 sm:min-w-0 sm:px-3 sm:py-1.5',
         className,
       )}
       aria-label={label}
@@ -55,7 +55,7 @@ export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
       </h1>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <ThemeToggle className="border border-white/60 bg-white/55 shadow-sm" />
+        <ThemeToggle className="border border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-sm" />
         <HeaderAction onClick={onLogClick} label="Log" icon={ClipboardList} />
         <HeaderAction onClick={() => signOut()} label="Sign out" icon={LogOut} />
         <UserAvatar name={profile?.full_name ?? 'Guard'} size="sm" />

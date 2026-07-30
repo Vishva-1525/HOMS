@@ -557,7 +557,7 @@ export function BulkStudentUploadModal({
               </p>
             </div>
             <div
-              className="h-2.5 w-full overflow-hidden rounded-full bg-white/80 ring-1 ring-[#1A5CA0]/15"
+              className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--glass-bg)] ring-1 ring-[#1A5CA0]/15"
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={totalCount}

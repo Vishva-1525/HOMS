@@ -377,7 +377,7 @@ export function AdminPassesPage() {
               id="override-status"
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value as OutpassStatus)}
-              className="mt-1 w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm"
             >
               {(['pending', 'approved', 'rejected', 'extended', 'cancelled'] as OutpassStatus[]).map(
                 (s) => (
@@ -456,7 +456,7 @@ export function AdminPassesPage() {
               rows={3}
               value={bulkRemarks}
               onChange={(e) => setBulkRemarks(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm"
               placeholder="Reason for rejection"
             />
           </div>

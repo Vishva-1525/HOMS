@@ -51,7 +51,7 @@ export function MobileDrawer({
         aria-label="Close menu"
         onClick={onClose}
       />
-      <aside className="relative flex h-full w-[min(280px,85vw)] flex-col bg-[#0D3F72]/95 shadow-xl backdrop-blur-xl">
+      <aside className="relative flex h-full w-[min(280px,85vw)] flex-col bg-[#0D3F72]/95 shadow-xl">
         <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-5">
           <div>
             <ShellLogo />
@@ -62,7 +62,7 @@ export function MobileDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            className="rounded-md p-1.5 text-white/80 transition-colors hover:bg-[var(--glass-bg-muted)] hover:text-white"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />

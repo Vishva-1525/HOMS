@@ -17,7 +17,7 @@ interface TopBarProps {
 }
 
 const ICON_BTN =
-  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-white/50'
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-[var(--glass-bg)]'
 
 export function TopBar({
   breadcrumb,

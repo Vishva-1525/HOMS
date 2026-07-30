@@ -1,34 +1,33 @@
 /**
  * Dark mode overrides for dashboard shells (html.dark).
- * Liquid-glass surfaces are owned by index.css tokens (--glass-*).
- * This file handles contrast, chrome, and hard-coded light-only utilities.
+ * Surfaces are solid tokens (--glass-*). No blur / glass morphism.
  */
 
 html.dark .dashboard-shell {
-  --svce-text-primary: #f8fafc;
+  --svce-text-primary: #f1f5f9;
   --svce-text-secondary: #cbd5e1;
   --svce-text-muted: #94a3b8;
-  --svce-border-default: rgba(148, 197, 255, 0.18);
-  --svce-border-strong: rgba(148, 197, 255, 0.3);
-  --svce-page-bg: #060b16;
-  --svce-blue-tint: rgba(59, 130, 246, 0.22);
-  --svce-green-tint: rgba(52, 211, 153, 0.16);
-  --svce-orange-tint: rgba(251, 146, 60, 0.18);
-  --svce-danger-tint: rgba(248, 113, 113, 0.16);
-  --svce-info-tint: rgba(96, 165, 250, 0.18);
-  --svce-selection-bg: rgba(59, 130, 246, 0.35);
+  --svce-border-default: #2a3548;
+  --svce-border-strong: #3a465c;
+  --svce-page-bg: #070b14;
+  --svce-blue-tint: #1a2740;
+  --svce-green-tint: #14251f;
+  --svce-orange-tint: #2a2118;
+  --svce-danger-tint: #2a1518;
+  --svce-info-tint: #152338;
+  --svce-selection-bg: #1e3a5f;
   --svce-selection-text: #f8fafc;
 }
 
 html.dark .dashboard-shell .sidebar-logout-btn {
-  border-color: rgba(248, 113, 113, 0.28);
-  background-color: rgba(248, 113, 113, 0.1);
-  color: rgb(254 226 226);
+  border-color: #7f1d1d;
+  background-color: #2a1518;
+  color: #fecaca;
 }
 
 html.dark .dashboard-shell .sidebar-logout-btn:hover {
-  border-color: rgba(248, 113, 113, 0.45);
-  background-color: rgba(220, 38, 38, 0.32);
+  border-color: #b91c1c;
+  background-color: #7f1d1d;
   color: #fff;
 }
 
@@ -36,7 +35,7 @@ html.dark .dashboard-shell .glass-panel .text-muted-foreground,
 html.dark .dashboard-shell .glass-panel-strong .text-muted-foreground,
 html.dark .dashboard-shell .dashboard-surface .text-muted-foreground,
 html.dark .dashboard-shell .dashboard-surface-muted .text-muted-foreground {
-  color: rgb(148 163 184) !important;
+  color: #94a3b8 !important;
 }
 
 html.dark .dashboard-shell .dashboard-link {
@@ -50,7 +49,7 @@ html.dark .dashboard-shell .dashboard-link:hover {
 html.dark .dashboard-shell .dashboard-filter-chip {
   border-color: var(--glass-border);
   background: var(--glass-bg);
-  color: rgb(226 232 240);
+  color: #e2e8f0;
 }
 
 html.dark .dashboard-shell .dashboard-filter-chip:hover {
@@ -60,23 +59,23 @@ html.dark .dashboard-shell .dashboard-filter-chip:hover {
 html.dark .dashboard-shell .dashboard-filter-chip-active {
   background-color: #2563eb;
   color: #fff;
-  box-shadow: 0 4px 14px -4px rgb(37 99 235 / 0.55);
+  box-shadow: none;
 }
 
 html.dark .dashboard-shell .security-info-pill {
   border-color: var(--glass-border);
-  background: var(--glass-bg);
-  color: rgb(186 198 214);
+  background: var(--glass-bg-muted);
+  color: #cbd5e1;
 }
 
 html.dark .dashboard-shell .theme-toggle,
 html.dark .dashboard-shell .glass-nav button {
-  color: rgb(226 232 240);
+  color: #e2e8f0;
 }
 
 html.dark .dashboard-shell .theme-toggle:hover,
 html.dark .dashboard-shell .glass-nav button:hover {
-  background-color: rgb(255 255 255 / 0.1);
+  background-color: #1a2740;
 }
 
 html.dark .dashboard-shell .border-white\/50,
@@ -88,51 +87,47 @@ html.dark .dashboard-shell .border-white\/70 {
 }
 
 html.dark .dashboard-shell table thead tr {
-  border-color: rgb(148 197 255 / 0.14);
-  background: rgb(30 46 76 / 0.45);
+  border-color: #2a3548;
+  background: #111827;
 }
 
 html.dark .dashboard-shell table tbody tr {
-  border-color: rgb(148 197 255 / 0.1);
+  border-color: #2a3548;
 }
 
 html.dark .dashboard-shell table tbody tr:hover {
-  background-color: rgb(255 255 255 / 0.06);
+  background-color: #1a2438;
 }
 
 html.dark .dashboard-shell input,
 html.dark .dashboard-shell select,
 html.dark .dashboard-shell textarea {
   border-color: var(--glass-border);
-  background: rgb(8 14 28 / 0.55);
-  color: rgb(248 250 252);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #0f1624;
+  color: #f1f5f9;
 }
 
 html.dark .dashboard-shell input::placeholder,
 html.dark .dashboard-shell textarea::placeholder {
-  color: rgb(148 163 184);
+  color: #94a3b8;
 }
 
 html.dark .dashboard-shell .hover\:bg-white\/35:hover {
-  background-color: rgb(255 255 255 / 0.08) !important;
+  background-color: #1a2740 !important;
 }
 
 html.dark .dashboard-shell .hover\:bg-white\/50:hover {
-  background-color: rgb(255 255 255 / 0.1) !important;
+  background-color: #1a2438 !important;
 }
 
 html.dark .dashboard-shell [class*='bg-white'][class*='shadow-lg'] {
   border-color: var(--glass-border);
   background: var(--glass-bg-strong);
   color: var(--glass-fg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 html.dark .dashboard-shell [class*='text-[#1A1A2E]'] {
-  color: #f8fafc;
+  color: #f1f5f9;
 }
 
 html.dark .dashboard-shell [class*='text-[#4B5563]'] {
@@ -144,7 +139,7 @@ html.dark .dashboard-shell [class*='text-[#166534]'] {
 }
 
 html.dark .dashboard-shell [class*='bg-[#EBF3FF]'] {
-  background-color: rgb(59 130 246 / 0.2);
+  background-color: #1a2740;
 }
 
 html.dark .dashboard-shell [class*='text-[#0D3F72]'] {
@@ -153,36 +148,34 @@ html.dark .dashboard-shell [class*='text-[#0D3F72]'] {
 
 html.dark .dashboard-shell [class*='from-emerald-50'],
 html.dark .dashboard-shell [class*='via-emerald-50'] {
-  --tw-gradient-from: rgb(6 78 59 / 0.28) !important;
-  --tw-gradient-via: rgb(12 22 40 / 0.55) !important;
-  --tw-gradient-to: rgb(12 22 40 / 0.62) !important;
+  --tw-gradient-from: #14251f !important;
+  --tw-gradient-via: #151d2e !important;
+  --tw-gradient-to: #151d2e !important;
 }
 
 html.dark .dashboard-shell .border-amber-200,
 html.dark .dashboard-shell .border-amber-300\/80 {
-  border-color: rgb(251 191 36 / 0.35) !important;
+  border-color: #78350f !important;
 }
 
 html.dark .dashboard-shell .bg-amber-50,
 html.dark .dashboard-shell .bg-amber-50\/80 {
-  background-color: rgb(120 53 15 / 0.35) !important;
+  background-color: #2a2414 !important;
 }
 
 html.dark .dashboard-shell .text-amber-900,
 html.dark .dashboard-shell .text-amber-950 {
-  color: rgb(253 230 138) !important;
+  color: #fde68a !important;
 }
 
-/* Opaque drawer / modal shells → liquid glass */
+/* Drawer / modal shells → solid elevated surface */
 html.dark .dashboard-shell aside.bg-white,
 html.dark .dashboard-shell [class*='bg-white'].shadow-xl {
   border-color: var(--glass-border-strong) !important;
   background: var(--glass-bg-strong) !important;
   color: var(--glass-fg) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
 }
 
 html.dark .dashboard-shell [class*='bg-[var(--svce-page-bg)]'] {
-  background: var(--glass-bg-muted) !important;
+  background: var(--svce-page-bg) !important;
 }

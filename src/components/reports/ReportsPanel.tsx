@@ -215,7 +215,7 @@ function ReportAggregateTable({ rows }: { rows: ReportRow[] }) {
     <div className="dashboard-surface overflow-x-auto">
       <table className="w-full min-w-[480px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-white/50 bg-white/45">
+          <tr className="border-b border-[var(--glass-border)] bg-[var(--glass-bg-muted)]">
             <th className="px-4 py-3 text-[length:var(--svce-text-small)] font-semibold uppercase tracking-wide text-slate-700">
               Block
             </th>
@@ -241,7 +241,7 @@ function ReportAggregateTable({ rows }: { rows: ReportRow[] }) {
             return (
               <tr
                 key={block}
-                className="h-[var(--table-row-height)] border-b border-white/40 bg-transparent"
+                className="h-[var(--table-row-height)] border-b border-[var(--glass-border)] bg-transparent"
               >
                 <td className="px-4 py-3 text-sm font-medium text-slate-800">{block}</td>
                 {typeCounts.map((count, i) => (

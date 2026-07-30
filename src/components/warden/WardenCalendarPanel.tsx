@@ -77,7 +77,7 @@ export function WardenCalendarPanel() {
           <p className="mt-0.5 truncate text-sm font-semibold">{selectedMeta.formatted}</p>
           <p className="mt-0.5 truncate text-xs opacity-90">{selectedMeta.label}</p>
         </div>
-        <span className="shrink-0 rounded-full border border-current/20 bg-white/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide dark:bg-black/20">
+        <span className="shrink-0 rounded-full border border-current/20 bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide dark:bg-black/20">
           {ACADEMIC_DAY_LABELS[selectedMeta.dayType]}
         </span>
       </div>
