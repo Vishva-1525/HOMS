@@ -9,21 +9,16 @@ export function PwaBootstrap() {
     if (!('serviceWorker' in navigator) || registeredRef.current) return
 
     registeredRef.current = true
-    const updateSW = registerSW({
+    registerSW({
       immediate: true,
       onRegistered(registration) {
-        if (registration) {
-          console.info('HOMS service worker registered')
-          // Poll for a new deploy so blank stale-cache states clear quickly.
-          window.setInterval(() => {
-            void registration.update()
-          }, 60_000)
-        }
+        if (!registration) return
+        console.info('HOMS service worker registered')
+        window.setInterval(() => {
+          void registration.update()
+        }, 60_000)
       },
-      onNeedRefresh() {
-        // New assets available — take them immediately to avoid blank screens.
-        void updateSW(true)
-      },
+      // Avoid mid-boot reload races; users get the new SW on next navigation.
       onOfflineReady() {
         console.info('HOMS ready for offline use')
       },
