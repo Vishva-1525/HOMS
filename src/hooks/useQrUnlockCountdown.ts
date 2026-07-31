@@ -37,17 +37,26 @@ export function useQrUnlockCountdown(pass: OutpassRequest | null): QrUnlockCount
     if (!pass) return
     if (isMultiDailyScanPass(pass)) return
 
+    // Use `let` so the first tick can clear the interval after it exists.
+    // (A `const id` after an immediate tick() caused TDZ: "Cannot access before initialization".)
+    let intervalId = 0
     const tick = () => {
       const t = Date.now()
       setNow(t)
-      if (isQrAvailable(pass, windowMinutes, t)) {
-        window.clearInterval(id)
+      if (isQrAvailable(pass, windowMinutes, t) && intervalId) {
+        window.clearInterval(intervalId)
+        intervalId = 0
       }
     }
 
     tick()
-    const id = window.setInterval(tick, 1000)
-    return () => window.clearInterval(id)
+    if (!isQrAvailable(pass, windowMinutes, Date.now())) {
+      intervalId = window.setInterval(tick, 1000)
+    }
+
+    return () => {
+      if (intervalId) window.clearInterval(intervalId)
+    }
   }, [pass, windowMinutes])
 
   if (!pass) {
