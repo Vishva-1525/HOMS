@@ -17,7 +17,8 @@ import { bulkApproveOutpassRequests, bulkRejectOutpassRequests } from '@/lib/bul
 import { classifyPass } from '@/lib/pass-classification'
 import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
-import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
+import { getStudentAvatarUrl, getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
 import type { OutpassWithStudent, PassType } from '@/lib/types'
 import type { PassClassificationFilter } from '@/components/shared/PassListFilters'
 
@@ -253,7 +254,18 @@ export function PendingRequestsPage() {
             {
               header: 'Student',
               accessor: 'id',
-              render: (row) => getStudentName(row.students),
+              render: (row) => (
+                <div className="flex items-center gap-3">
+                  <StudentAvatar
+                    name={getStudentName(row.students)}
+                    photoUrl={getStudentAvatarUrl(row.students)}
+                    size="sm"
+                  />
+                  <span className="font-medium text-slate-900">
+                    {getStudentName(row.students)}
+                  </span>
+                </div>
+              ),
             },
             { header: 'Reg No', accessor: 'id', render: (row) => getStudentReg(row.students) },
             { header: 'Room', accessor: 'id', render: (row) => getStudentRoom(row.students) },

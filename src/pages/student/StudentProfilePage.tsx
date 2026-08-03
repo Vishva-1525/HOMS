@@ -149,7 +149,12 @@ export function StudentProfilePage() {
     <div className="mx-auto max-w-lg space-y-6">
       <div className="glass-panel-strong overflow-hidden">
         <div className="bg-gradient-to-br from-[#0D3F72]/8 via-transparent to-[#1A5CA0]/5 px-6 pb-6 pt-8 text-center">
-          <StudentAvatar name={displayName} size="xl" className="mx-auto" />
+          <StudentAvatar
+            name={displayName}
+            photoUrl={profile?.avatar_url}
+            size="xl"
+            className="mx-auto"
+          />
           <h1 className="dashboard-heading mt-4 text-xl font-semibold">{displayName}</h1>
           <p className="dashboard-subheading mt-1 text-sm font-medium">{student?.reg_number ?? '-'}</p>
         </div>

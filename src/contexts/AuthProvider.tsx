@@ -41,7 +41,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 const PROFILE_SELECT =
-  'id, role, full_name, phone, password_changed, created_at, gender, warden_tier, is_available, unavailable_reason'
+  'id, role, full_name, phone, password_changed, created_at, gender, warden_tier, is_available, unavailable_reason, avatar_url'
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
   try {

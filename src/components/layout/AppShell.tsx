@@ -47,6 +47,7 @@ export function AppShell({
   const mobileNavItems = getMobileNavForRole(role)
   const breadcrumb = getBreadcrumbLabel(location.pathname, navItems)
   const userName = profile.full_name
+  const photoUrl = profile.avatar_url
   const roleLabel = getRoleDisplayLabel(role, profile.warden_tier)
 
   return (
@@ -57,6 +58,7 @@ export function AppShell({
         role={role}
         roleLabel={roleLabel}
         userName={userName}
+        photoUrl={photoUrl}
         onSignOut={handleSignOut}
         signingOut={signingOut}
         getNavBadgeCount={getNavBadgeCount}
@@ -69,6 +71,7 @@ export function AppShell({
         role={role}
         roleLabel={roleLabel}
         userName={userName}
+        photoUrl={photoUrl}
         onSignOut={handleSignOut}
         signingOut={signingOut}
         getNavBadgeCount={getNavBadgeCount}
@@ -83,6 +86,7 @@ export function AppShell({
         <TopBar
           breadcrumb={breadcrumb}
           userName={userName}
+          photoUrl={photoUrl}
           collapsed={collapsed}
           onToggleSidebar={() => setCollapsed((value) => !value)}
           onOpenMobileMenu={() => setMobileDrawerOpen(true)}

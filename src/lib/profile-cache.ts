@@ -1,7 +1,7 @@
 import type { Profile } from '@/lib/types'
 
 const MEMORY_TTL_MS = 5 * 60_000
-const STORAGE_KEY = 'homs:profile-cache:v1'
+const STORAGE_KEY = 'homs:profile-cache:v2'
 
 interface StoredProfile {
   profile: Profile

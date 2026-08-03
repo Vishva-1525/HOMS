@@ -13,6 +13,7 @@ interface SidebarProps {
   role: UserRole
   roleLabel?: string
   userName: string
+  photoUrl?: string | null
   onSignOut: () => void | Promise<void>
   getNavBadgeCount?: (path: string) => number
   signingOut?: boolean
@@ -24,6 +25,7 @@ export function Sidebar({
   role,
   roleLabel,
   userName,
+  photoUrl,
   onSignOut,
   getNavBadgeCount,
   signingOut = false,
@@ -88,7 +90,7 @@ export function Sidebar({
             collapsed && 'flex-col justify-center gap-2',
           )}
         >
-          <UserAvatar name={userName} size="sm" />
+          <UserAvatar name={userName} photoUrl={photoUrl} size="sm" />
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{userName}</p>

@@ -46,7 +46,7 @@ export function ExtensionRequestsPage() {
             room_number,
             hostel_block,
             gender,
-            profiles ( full_name )
+            profiles ( full_name, avatar_url )
           )
         )
       `)

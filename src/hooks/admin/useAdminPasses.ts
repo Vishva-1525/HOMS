@@ -22,7 +22,7 @@ type PassWithStudent = OutpassRequest & {
     reg_number: string
     room_number: string
     hostel_block: string
-    profiles: { full_name: string } | null
+    profiles: { full_name: string; avatar_url?: string | null } | null
   } | null
 }
 
@@ -49,7 +49,7 @@ const PASS_COLUMNS = `
     reg_number,
     room_number,
     hostel_block,
-    profiles ( full_name )
+    profiles ( full_name, avatar_url )
   )
 `
 
@@ -59,6 +59,7 @@ function mapPassRow(p: PassWithStudent, pageLogs: GateLog[]): AdminPassRow {
     pass: p,
     student_id: p.student_id,
     student_name: p.students?.profiles?.full_name ?? '-',
+    avatar_url: p.students?.profiles?.avatar_url ?? null,
     reg_number: p.students?.reg_number ?? '-',
     room_number: p.students?.room_number ?? '-',
     hostel_block: p.students?.hostel_block ?? '-',

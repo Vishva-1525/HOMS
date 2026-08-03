@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -80,18 +81,25 @@ export function AdminStudentDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', campusBadge.className)}>
-              {campusBadge.label}
-            </span>
-            <span
-              className={cn(
-                'rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                student.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600',
-              )}
-            >
-              {student.is_active ? 'Active' : 'Inactive'}
-            </span>
+          <div className="flex items-center gap-3">
+            <StudentAvatar
+              name={getAdminStudentName(student)}
+              photoUrl={student.profiles?.avatar_url}
+              size="lg"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', campusBadge.className)}>
+                {campusBadge.label}
+              </span>
+              <span
+                className={cn(
+                  'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                  student.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600',
+                )}
+              >
+                {student.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
           </div>
 
           {editing ? (

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { QrCode, Settings2 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { BulkActionBar } from '@/components/shared/BulkActionBar'
 import { PassListFilters, ALL_PASS_FILTER_DEFAULTS } from '@/components/shared/PassListFilters'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
@@ -25,10 +26,11 @@ function toOutpassWithStudent(row: AdminPassRow): OutpassWithStudent {
   return {
     ...row.pass,
     students: {
+      id: row.student_id,
       reg_number: row.reg_number,
       room_number: row.room_number,
       hostel_block: row.hostel_block,
-      profiles: { full_name: row.student_name },
+      profiles: { full_name: row.student_name, avatar_url: row.avatar_url ?? null },
     },
   }
 }
@@ -234,7 +236,16 @@ export function AdminPassesPage() {
             {
               header: 'Student',
               accessor: 'student_name',
-              render: (row) => row.student_name,
+              render: (row) => (
+                <div className="flex items-center gap-3">
+                  <StudentAvatar
+                    name={row.student_name}
+                    photoUrl={row.avatar_url}
+                    size="sm"
+                  />
+                  <span className="font-medium text-slate-900">{row.student_name}</span>
+                </div>
+              ),
             },
             { header: 'Reg No', accessor: 'reg_number' },
             {

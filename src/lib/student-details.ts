@@ -7,6 +7,7 @@ interface StudentGateInfo {
   room_number: string
   hostel_block: string
   reg_number: string
+  avatar_url?: string | null
 }
 
 async function fetchStudentGateInfoRpc(
@@ -24,6 +25,7 @@ async function fetchStudentGateInfoRpc(
     room_number: typeof row.room_number === 'string' ? row.room_number : '',
     hostel_block: typeof row.hostel_block === 'string' ? row.hostel_block : '',
     reg_number: typeof row.reg_number === 'string' ? row.reg_number : '',
+    avatar_url: typeof row.avatar_url === 'string' ? row.avatar_url : null,
   }
 }
 
@@ -38,7 +40,13 @@ function buildStudentProfile(
     reg_number: gateInfo.reg_number,
     room_number: gateInfo.room_number,
     hostel_block: gateInfo.hostel_block,
-    profiles: fullName ? { full_name: fullName, phone } : null,
+    profiles: fullName
+      ? {
+          full_name: fullName,
+          phone,
+          avatar_url: gateInfo.avatar_url ?? null,
+        }
+      : null,
   }
 }
 
@@ -58,7 +66,7 @@ export async function fetchStudentProfileById(
       .maybeSingle(),
     supabase
       .from('profiles')
-      .select('id, full_name, phone')
+      .select('id, full_name, phone, avatar_url')
       .eq('id', studentId)
       .maybeSingle(),
   ])
@@ -74,7 +82,11 @@ export async function fetchStudentProfileById(
     room_number: student?.room_number ?? '',
     hostel_block: student?.hostel_block ?? '',
     profiles: profile
-      ? { full_name: profile.full_name, phone: profile.phone }
+      ? {
+          full_name: profile.full_name,
+          phone: profile.phone,
+          avatar_url: profile.avatar_url,
+        }
       : null,
   }
 }
@@ -132,7 +144,7 @@ export async function fetchStudentProfilesByIds(
       .from('students')
       .select('id, reg_number, room_number, hostel_block')
       .in('id', missingIds),
-    supabase.from('profiles').select('id, full_name, phone').in('id', missingIds),
+    supabase.from('profiles').select('id, full_name, phone, avatar_url').in('id', missingIds),
   ])
 
   const studentRows = studentsResult.data ?? []
@@ -150,7 +162,11 @@ export async function fetchStudentProfilesByIds(
       room_number: student?.room_number ?? '',
       hostel_block: student?.hostel_block ?? '',
       profiles: profile
-        ? { full_name: profile.full_name, phone: profile.phone }
+        ? {
+            full_name: profile.full_name,
+            phone: profile.phone,
+            avatar_url: profile.avatar_url,
+          }
         : null,
     })
   }

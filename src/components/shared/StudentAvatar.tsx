@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { User } from 'lucide-react'
 import { UserAvatar, getInitials } from '@/components/layout/UserAvatar'
 import { cn } from '@/lib/utils'
@@ -20,15 +21,15 @@ const ICON_SIZES: Record<StudentAvatarSize, string> = {
 
 export interface StudentAvatarProps {
   name: string
-  /** When profile photos are added, pass the URL here - UI stays the same. */
+  /** Public storage URL from profiles.avatar_url */
   photoUrl?: string | null
   size?: StudentAvatarSize
   className?: string
 }
 
 /**
- * Consistent student profile placeholder across dashboards.
- * Replace `photoUrl` when real photos are available - no layout changes needed.
+ * Consistent student profile photo across dashboards.
+ * Falls back to initials / icon when photoUrl is missing or fails to load.
  */
 export function StudentAvatar({
   name,
@@ -39,14 +40,22 @@ export function StudentAvatar({
   const sizeClass = SIZE_CLASSES[size]
   const displayName = name.trim() || 'Student'
   const initials = getInitials(displayName)
+  const [imgFailed, setImgFailed] = useState(false)
 
-  if (photoUrl) {
+  useEffect(() => {
+    setImgFailed(false)
+  }, [photoUrl])
+
+  const showPhoto = Boolean(photoUrl) && !imgFailed
+
+  if (showPhoto && photoUrl) {
     return (
       <img
         src={photoUrl}
         alt=""
+        onError={() => setImgFailed(true)}
         className={cn(
-          'shrink-0 rounded-full border-2 border-white/80 object-cover shadow-sm ring-2 ring-[#1A5CA0]/20',
+          'shrink-0 rounded-full border-2 border-white/80 object-cover object-top shadow-sm ring-2 ring-[#1A5CA0]/20',
           sizeClass,
           className,
         )}

@@ -15,6 +15,7 @@ interface MobileDrawerProps {
   role: UserRole
   roleLabel?: string
   userName: string
+  photoUrl?: string | null
   onSignOut: () => void | Promise<void>
   getNavBadgeCount?: (path: string) => number
   signingOut?: boolean
@@ -27,6 +28,7 @@ export function MobileDrawer({
   role,
   roleLabel,
   userName,
+  photoUrl,
   onSignOut,
   getNavBadgeCount,
   signingOut = false,
@@ -103,7 +105,7 @@ export function MobileDrawer({
 
         <div className="space-y-3 border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
-            <UserAvatar name={userName} size="sm" />
+            <UserAvatar name={userName} photoUrl={photoUrl} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{userName}</p>
               <p className="truncate text-xs text-white/70">{displayRole}</p>

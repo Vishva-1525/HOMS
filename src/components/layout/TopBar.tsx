@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 interface TopBarProps {
   breadcrumb: string
   userName: string
+  photoUrl?: string | null
   collapsed: boolean
   onToggleSidebar: () => void
   onOpenMobileMenu: () => void
@@ -22,6 +23,7 @@ const ICON_BTN =
 export function TopBar({
   breadcrumb,
   userName,
+  photoUrl,
   collapsed,
   onToggleSidebar,
   onOpenMobileMenu,
@@ -90,7 +92,7 @@ export function TopBar({
           {greeting},&nbsp;<span className="font-semibold text-slate-900">{firstName}</span>
         </p>
 
-        <UserAvatar name={userName} size="sm" className="hidden sm:flex" />
+        <UserAvatar name={userName} photoUrl={photoUrl} size="sm" className="hidden sm:flex" />
       </div>
     </header>
   )

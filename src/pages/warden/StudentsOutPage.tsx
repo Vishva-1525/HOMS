@@ -9,11 +9,13 @@ import { useCountdown } from '@/hooks/useCountdown'
 import { formatReturnTime } from '@/lib/outpass'
 import {
   getExitTime,
+  getStudentAvatarUrl,
   getStudentName,
   getStudentRoom,
   isOverdueReturn,
   isStudentCurrentlyOut,
 } from '@/lib/warden'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import type { OutpassWithStudent } from '@/lib/types'
 
 function TimeRemainingCell({ returnBy }: { returnBy: string }) {
@@ -66,7 +68,22 @@ export function StudentsOutPage() {
       <div className="dashboard-surface">
         <DataTable
           columns={[
-            { header: 'Student', accessor: 'id', render: (row) => getStudentName(row.students) },
+            {
+              header: 'Student',
+              accessor: 'id',
+              render: (row) => (
+                <div className="flex items-center gap-3">
+                  <StudentAvatar
+                    name={getStudentName(row.students)}
+                    photoUrl={getStudentAvatarUrl(row.students)}
+                    size="sm"
+                  />
+                  <span className="font-medium text-slate-900">
+                    {getStudentName(row.students)}
+                  </span>
+                </div>
+              ),
+            },
             { header: 'Room', accessor: 'id', render: (row) => getStudentRoom(row.students) },
             { header: 'Destination', accessor: 'destination' },
             {

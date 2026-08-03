@@ -41,6 +41,7 @@ interface ProfileRow {
   id: string
   full_name: string | null
   phone: string | null
+  avatar_url: string | null
 }
 
 interface FilterOptionsPayload {
@@ -248,7 +249,7 @@ export function useAdminStudents() {
             .from('student_campus_status')
             .select('student_id, full_name, current_status')
             .in('student_id', ids),
-          supabase.from('profiles').select('id, full_name, phone').in('id', ids),
+          supabase.from('profiles').select('id, full_name, phone, avatar_url').in('id', ids),
         ])
 
         if (!statusResult.error) {
@@ -285,6 +286,7 @@ export function useAdminStudents() {
           profiles: {
             full_name: fullName,
             phone: profile?.phone ?? '',
+            avatar_url: profile?.avatar_url ?? null,
           },
           campus_status: statusById.get(row.id) ?? 'inside',
         }

@@ -218,7 +218,7 @@ export function useSecurityGateLog(enabled = true) {
               reg_number,
               room_number,
               hostel_block,
-              profiles ( full_name )
+              profiles ( full_name, avatar_url )
             )
           `,
           )

@@ -53,7 +53,7 @@ export interface AdminStudentRow {
   is_active: boolean
   /** Preferred display name; kept in sync with profiles.full_name when available. */
   full_name: string
-  profiles: { full_name: string; phone: string } | null
+  profiles: { full_name: string; phone: string; avatar_url?: string | null } | null
   campus_status: 'inside' | 'outside' | 'overdue'
 }
 
@@ -74,6 +74,7 @@ export interface AdminPassRow {
   pass: import('@/lib/types').OutpassRequest
   student_id: string
   student_name: string
+  avatar_url?: string | null
   reg_number: string
   room_number: string
   hostel_block: string

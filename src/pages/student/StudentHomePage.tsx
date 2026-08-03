@@ -130,6 +130,7 @@ export function StudentHomePage() {
         firstName={firstName}
         student={student}
         checkedOutPass={activeCheckedOutPass}
+        photoUrl={profile?.avatar_url}
       />
 
       {activePass && (

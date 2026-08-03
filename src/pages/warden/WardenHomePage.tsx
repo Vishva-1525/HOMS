@@ -19,7 +19,7 @@ import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { getGreeting } from '@/lib/outpass'
 import { formatPassDuration, formatRelativeTime, formatTodayDate } from '@/lib/relative-time'
 import { approveOutpassRequest, rejectOutpassRequest } from '@/lib/warden-actions'
-import { getStudentName, getStudentRoom } from '@/lib/warden'
+import { getStudentAvatarUrl, getStudentName, getStudentRoom } from '@/lib/warden'
 import type { OutpassWithStudent } from '@/lib/types'
 
 export function WardenHomePage() {
@@ -185,7 +185,11 @@ export function WardenHomePage() {
                   accessor: 'id',
                   render: (row) => (
                     <div className="flex items-center gap-3">
-                      <StudentAvatar name={getStudentName(row.students)} size="sm" />
+                      <StudentAvatar
+                        name={getStudentName(row.students)}
+                        photoUrl={getStudentAvatarUrl(row.students)}
+                        size="sm"
+                      />
                       <span className="font-medium text-slate-900">
                         {getStudentName(row.students)}
                       </span>

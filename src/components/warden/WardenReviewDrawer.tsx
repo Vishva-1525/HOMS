@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Check, Copy, Phone, User } from 'lucide-react'
+import { Check, Copy, Phone } from 'lucide-react'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { Button } from '@/components/ui/button'
 import { PASS_TYPE_LABELS, formatReturnTime } from '@/lib/outpass'
-import { getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
+import { getStudentAvatarUrl, getStudentName, getStudentReg, getStudentRoom } from '@/lib/warden'
 import { formatRelativeTime } from '@/lib/relative-time'
 import type { OutpassWithStudent } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -122,9 +123,11 @@ export function WardenReviewDrawer({
 
         <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="liquid-glass flex items-center gap-4 rounded-xl p-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EBF3FF]">
-              <User className="h-7 w-7 text-[#1A5CA0]" strokeWidth={1.5} />
-            </div>
+            <StudentAvatar
+              name={getStudentName(student)}
+              photoUrl={getStudentAvatarUrl(student)}
+              size="lg"
+            />
             <div>
               <p className="font-semibold text-[#1A1A2E]">{getStudentName(student)}</p>
               <p className="text-sm text-[#4B5563]">{getStudentReg(student)}</p>

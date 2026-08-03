@@ -8,6 +8,7 @@ import { formatReturnTime } from '@/lib/outpass'
 import { formatPassDuration, formatRelativeTime } from '@/lib/relative-time'
 import {
   getExitTime,
+  getStudentAvatarUrl,
   getStudentName,
   getStudentReg,
   getStudentRoom,
@@ -34,7 +35,11 @@ export function WardenPendingMobileCard({
     <MobileDataCard>
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-3">
-          <StudentAvatar name={getStudentName(pass.students)} size="sm" />
+          <StudentAvatar
+            name={getStudentName(pass.students)}
+            photoUrl={getStudentAvatarUrl(pass.students)}
+            size="sm"
+          />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{getStudentName(pass.students)}</p>
             <p className="mt-0.5 text-xs text-slate-600">

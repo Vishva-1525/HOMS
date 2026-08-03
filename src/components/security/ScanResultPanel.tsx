@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { Camera, Clock, MapPin } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Camera, Clock, MapPin, User } from 'lucide-react'
 import { GateCheckpointProgress } from '@/components/shared/GateCheckpointProgress'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
@@ -16,11 +16,53 @@ import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { getPassDisplayStatus, getPassStatusLabel } from '@/lib/pass-status'
 import type { ScanValidationResult } from '@/lib/security-actions'
 import { checkpointLabel } from '@/lib/security-actions'
-import { getStudentName } from '@/lib/warden'
+import { getStudentAvatarUrl, getStudentName } from '@/lib/warden'
 import { cn } from '@/lib/utils'
 
-/** Demo-only placeholder so security can show a student photo after scan. */
-const DEMO_STUDENT_PHOTO_URL = `${import.meta.env.BASE_URL}demo-student-photo.svg`
+function ScanStudentPhoto({
+  name,
+  photoUrl,
+}: {
+  name: string
+  photoUrl: string | null
+}) {
+  const [imgFailed, setImgFailed] = useState(false)
+
+  useEffect(() => {
+    setImgFailed(false)
+  }, [photoUrl])
+
+  const showPhoto = Boolean(photoUrl) && !imgFailed
+
+  return (
+    <div className="mx-auto w-full max-w-[180px] shrink-0 sm:mx-0">
+      <div className="overflow-hidden rounded-2xl border-2 border-[var(--glass-border)] bg-slate-100 shadow-md ring-2 ring-[#1A5CA0]/20">
+        {showPhoto && photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={`Photo of ${name}`}
+            onError={() => setImgFailed(true)}
+            className="aspect-[4/5] w-full object-cover object-top"
+          />
+        ) : (
+          <div
+            className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#1A5CA0] to-[#0D3F72] text-white"
+            aria-hidden
+          >
+            <User className="h-12 w-12 opacity-90" strokeWidth={1.75} />
+            <span className="px-3 text-center text-sm font-semibold leading-tight">
+              {name !== '-' ? name.split(/\s+/).slice(0, 2).join(' ') : 'No photo'}
+            </span>
+          </div>
+        )}
+      </div>
+      <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        <Camera className="h-3 w-3" aria-hidden />
+        {showPhoto ? 'Student photo' : 'Photo unavailable'}
+      </p>
+    </div>
+  )
+}
 
 interface ScanResultPanelProps {
   result: ScanValidationResult | null
@@ -135,6 +177,8 @@ export function ScanResultPanel({
     || result.kind === 'out-of-sequence'
     || result.kind === 'cycle-complete'
 
+  const photoUrl = pass ? getStudentAvatarUrl(pass.students) : null
+
   if (isBlocked) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-[slideUpFull_0.3s_ease-out]">
@@ -151,7 +195,7 @@ export function ScanResultPanel({
             <div className="flex w-full max-w-md items-center gap-3 rounded-xl border border-slate-200/80 bg-[var(--glass-bg)] p-4">
               <StudentAvatar
                 name={getStudentName(pass.students)}
-                photoUrl={DEMO_STUDENT_PHOTO_URL}
+                photoUrl={photoUrl}
                 size="lg"
               />
               <div className="min-w-0">
@@ -226,19 +270,7 @@ export function ScanResultPanel({
 
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
         <div className="security-identity-card flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="mx-auto w-full max-w-[180px] shrink-0 sm:mx-0">
-            <div className="overflow-hidden rounded-2xl border-2 border-[var(--glass-border)] bg-slate-100 shadow-md ring-2 ring-[#1A5CA0]/20">
-              <img
-                src={DEMO_STUDENT_PHOTO_URL}
-                alt={`Photo of ${displayName}`}
-                className="aspect-[4/5] w-full object-cover"
-              />
-            </div>
-            <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              <Camera className="h-3 w-3" aria-hidden />
-              Student photo · demo
-            </p>
-          </div>
+          <ScanStudentPhoto name={displayName} photoUrl={photoUrl} />
 
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <p className="truncate text-xl font-bold leading-tight text-slate-900 sm:text-2xl">

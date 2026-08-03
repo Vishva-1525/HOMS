@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { AdminStudentRowActions } from '@/components/admin/AdminStudentRowActions'
+import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { DataTable } from '@/components/ui/DataTable'
 import { getAdminStudentName, type AdminStudentRow } from '@/lib/admin-types'
 import { formatBlockLabel } from '@/lib/block-display'
@@ -75,7 +76,14 @@ export function AdminStudentsYearGroup({
                 header: 'Name',
                 accessor: 'full_name',
                 render: (row) => (
-                  <span className="font-medium text-slate-900">{getAdminStudentName(row)}</span>
+                  <div className="flex items-center gap-3">
+                    <StudentAvatar
+                      name={getAdminStudentName(row)}
+                      photoUrl={row.profiles?.avatar_url}
+                      size="sm"
+                    />
+                    <span className="font-medium text-slate-900">{getAdminStudentName(row)}</span>
+                  </div>
                 ),
               },
               { header: 'Reg No', accessor: 'reg_number' },

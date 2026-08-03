@@ -10,6 +10,7 @@ interface StudentDashboardHeroProps {
   firstName: string
   student: Student | null
   checkedOutPass: ActiveCheckedOutPass | null
+  photoUrl?: string | null
   className?: string
 }
 
@@ -17,6 +18,7 @@ export function StudentDashboardHero({
   firstName,
   student,
   checkedOutPass,
+  photoUrl,
   className,
 }: StudentDashboardHeroProps) {
   const fullName = student ? `${firstName}` : firstName
@@ -37,6 +39,7 @@ export function StudentDashboardHero({
         <div className="flex min-w-0 flex-1 items-start gap-4">
           <StudentAvatar
             name={fullName}
+            photoUrl={photoUrl}
             size="lg"
             className="hidden border-white/30 ring-white/40 sm:flex"
           />

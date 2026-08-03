@@ -11,6 +11,13 @@ export function getStudentName(student: StudentProfile | null | undefined): stri
   return name || 'Unknown'
 }
 
+export function getStudentAvatarUrl(
+  student: StudentProfile | null | undefined,
+): string | null {
+  const url = student?.profiles?.avatar_url?.trim()
+  return url || null
+}
+
 export function getStudentReg(student: StudentProfile | null | undefined): string {
   return student?.reg_number ?? '-'
 }

@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface UserAvatarProps {
   name: string
+  photoUrl?: string | null
   size?: 'sm' | 'md'
   className?: string
 }
@@ -16,8 +18,30 @@ export function getInitials(name: string): string {
     .toUpperCase()
 }
 
-export function UserAvatar({ name, size = 'md', className }: UserAvatarProps) {
+export function UserAvatar({ name, photoUrl, size = 'md', className }: UserAvatarProps) {
   const sizeClass = size === 'sm' ? 'h-8 w-8 text-xs' : 'h-9 w-9 text-sm'
+  const [imgFailed, setImgFailed] = useState(false)
+
+  useEffect(() => {
+    setImgFailed(false)
+  }, [photoUrl])
+
+  const showPhoto = Boolean(photoUrl) && !imgFailed
+
+  if (showPhoto && photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt=""
+        onError={() => setImgFailed(true)}
+        className={cn(
+          'shrink-0 rounded-full object-cover object-top',
+          sizeClass,
+          className,
+        )}
+      />
+    )
+  }
 
   return (
     <div
