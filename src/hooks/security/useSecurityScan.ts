@@ -139,7 +139,7 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
     setResult({ ...result, wardenNotified: true })
   }, [result])
 
-  const cameraActive = phase === 'scanning'
+  const scannerActive = phase === 'scanning'
 
   return {
     phase,
@@ -150,7 +150,9 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
     lastRecordedLabel: lastRecordedCheckpoint
       ? checkpointLabel(lastRecordedCheckpoint)
       : null,
-    cameraActive,
+    scannerActive,
+    /** @deprecated use scannerActive — camera preview removed in favor of hardware scanner */
+    cameraActive: scannerActive,
     processScan,
     resetScan,
     recordCheckpoint,

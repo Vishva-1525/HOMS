@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Keyboard, ShieldCheck } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { QrScanner } from '@/components/security/QrScanner'
+import { HardwareScannerPanel } from '@/components/security/HardwareScannerPanel'
 import { ScanResultPanel } from '@/components/security/ScanResultPanel'
 import { ScanValidatingOverlay } from '@/components/security/ScanValidatingOverlay'
 import { SecurityLogOverlay } from '@/components/security/SecurityLogOverlay'
 import { SecurityTopBar } from '@/components/security/SecurityTopBar'
 import { useAuth } from '@/contexts/AuthProvider'
+import { useHardwareScanner } from '@/hooks/security/useHardwareScanner'
 import { useSecurityScan } from '@/hooks/security/useSecurityScan'
 
 export function SecurityScanPage() {
@@ -24,18 +25,37 @@ export function SecurityScanPage() {
     result,
     submitting,
     lastRecordedLabel,
-    cameraActive,
+    scannerActive,
     processScan,
     resetScan,
     recordCheckpoint,
     alertWarden,
   } = useSecurityScan({ userId: user?.id })
 
-  const cameraOn = cameraActive && !logOpen
   const showMainPanel = phase !== 'ready-next' && phase !== 'success-flash'
-  const showCamera = phase === 'scanning'
+  const showScanner = phase === 'scanning'
   const showResult = phase === 'result'
   const showValidating = phase === 'validating'
+  const wedgeEnabled =
+    !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next')
+
+  const handleHardwareScan = useCallback(
+    (raw: string) => {
+      if (phase === 'ready-next') {
+        setManualId('')
+        setManualError(null)
+        setManualOpen(false)
+        resetScan()
+      }
+      void processScan(raw)
+    },
+    [phase, processScan, resetScan],
+  )
+
+  useHardwareScanner({
+    enabled: wedgeEnabled,
+    onScan: handleHardwareScan,
+  })
 
   function openLog() {
     navigate('/security/log')
@@ -108,77 +128,70 @@ export function SecurityScanPage() {
               />
             )}
 
-            {showCamera && (
+            {showScanner && (
               <>
-                <div className="relative flex min-h-0 flex-1 flex-col">
-                  <QrScanner active={cameraOn} onScan={processScan} />
-                </div>
+                <HardwareScannerPanel active={scannerActive && !logOpen} />
 
                 <div className="security-scan-dock">
-                  {cameraOn && (
-                    <p className="text-center text-sm font-medium text-slate-800">
-                      Point camera at the student&apos;s pass QR code or entry code
-                    </p>
-                  )}
+                  <p className="text-center text-sm font-medium text-slate-800">
+                    Scan the student&apos;s pass QR with the desktop scanner
+                  </p>
 
-                  {cameraOn && (
-                    <div className="mt-3">
-                      {!manualOpen ? (
+                  <div className="mt-3">
+                    {!manualOpen ? (
+                      <button
+                        type="button"
+                        onClick={() => setManualOpen(true)}
+                        className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-[var(--glass-bg-strong)] px-4 py-2.5 text-sm font-medium text-[#1A5CA0] shadow-sm transition-colors hover:bg-white active:scale-[0.98]"
+                      >
+                        <Keyboard className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                        Enter pass ID or entry code manually
+                      </button>
+                    ) : (
+                      <form
+                        onSubmit={handleManualSubmit}
+                        className="mx-auto flex w-full max-w-md flex-col gap-2"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            type="text"
+                            value={manualId}
+                            onChange={(e) => setManualId(e.target.value)}
+                            placeholder="Pass UUID, entry code, or QR JSON…"
+                            autoFocus
+                            className="h-11 flex-1 rounded-xl border border-slate-200/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
+                          />
+                          <button
+                            type="submit"
+                            className="security-action-btn h-11 shrink-0 bg-[#1A5CA0] hover:bg-[#164a85] sm:w-auto sm:px-5"
+                          >
+                            Look up
+                          </button>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setManualOpen(true)}
-                          className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-[var(--glass-bg-strong)] px-4 py-2.5 text-sm font-medium text-[#1A5CA0] shadow-sm transition-colors hover:bg-white active:scale-[0.98]"
+                          onClick={() => {
+                            setManualOpen(false)
+                            setManualError(null)
+                          }}
+                          className="text-xs font-medium text-slate-500 hover:text-slate-800"
                         >
-                          <Keyboard className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                          Enter pass ID or entry code manually
+                          Cancel
                         </button>
-                      ) : (
-                        <form
-                          onSubmit={handleManualSubmit}
-                          className="mx-auto flex w-full max-w-md flex-col gap-2"
-                        >
-                          <div className="flex flex-col gap-2 sm:flex-row">
-                            <input
-                              type="text"
-                              value={manualId}
-                              onChange={(e) => setManualId(e.target.value)}
-                              placeholder="Pass UUID, entry code, or QR JSON…"
-                              className="h-11 flex-1 rounded-xl border border-slate-200/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
-                            />
-                            <button
-                              type="submit"
-                              className="security-action-btn h-11 shrink-0 bg-[#1A5CA0] hover:bg-[#164a85] sm:w-auto sm:px-5"
-                            >
-                              Look up
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setManualOpen(false)
-                              setManualError(null)
-                            }}
-                            className="text-xs font-medium text-slate-500 hover:text-slate-800"
-                          >
-                            Cancel
-                          </button>
-                        </form>
-                      )}
-                      {manualError && (
-                        <p className="mt-2 text-center text-xs font-medium text-red-700">{manualError}</p>
-                      )}
-                    </div>
-                  )}
+                      </form>
+                    )}
+                    {manualError && (
+                      <p className="mt-2 text-center text-xs font-medium text-red-700">{manualError}</p>
+                    )}
+                  </div>
 
-                  {cameraOn && (
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                      <span className="security-info-pill">
-                        <ShieldCheck className="h-3 w-3 text-emerald-600" strokeWidth={2} />
-                        Approved passes only
-                      </span>
-                      <span className="security-info-pill">4-step gate scan</span>
-                    </div>
-                  )}
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <span className="security-info-pill">
+                      <ShieldCheck className="h-3 w-3 text-emerald-600" strokeWidth={2} />
+                      Approved passes only
+                    </span>
+                    <span className="security-info-pill">4-step gate scan</span>
+                  </div>
                 </div>
               </>
             )}
@@ -188,15 +201,21 @@ export function SecurityScanPage() {
 
       {phase === 'ready-next' && (
         <div className="flex flex-1 flex-col justify-end px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:mx-auto sm:w-full sm:max-w-lg sm:px-4 sm:pb-5 sm:pt-3">
-          <div className="security-scan-card p-4 sm:p-5">
-            <p className="dashboard-muted mb-4 text-center text-sm">{successMessage}</p>
-            <button
-              type="button"
-              onClick={handleResetScan}
-              className="security-action-btn h-14 bg-[#1A5CA0] text-base hover:bg-[#164a85] sm:h-16 sm:text-lg"
-            >
-              Tap to scan next pass
-            </button>
+          <div className="security-scan-card overflow-hidden">
+            <HardwareScannerPanel active={!logOpen} className="min-h-[min(36dvh,16rem)]" />
+            <div className="space-y-3 p-4 sm:p-5">
+              <p className="dashboard-muted text-center text-sm">{successMessage}</p>
+              <p className="text-center text-sm font-medium text-slate-800">
+                Scan the next pass with the desktop scanner, or tap below
+              </p>
+              <button
+                type="button"
+                onClick={handleResetScan}
+                className="security-action-btn h-14 bg-[#1A5CA0] text-base hover:bg-[#164a85] sm:h-16 sm:text-lg"
+              >
+                Ready for next scan
+              </button>
+            </div>
           </div>
         </div>
       )}
