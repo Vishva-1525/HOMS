@@ -4,7 +4,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const isPortable = process.env.VITE_PORTABLE === '1'
+
 export default defineConfig({
+  base: isPortable ? './' : '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -19,7 +22,7 @@ export default defineConfig({
         'favicon.svg',
       ],
       manifest: {
-        id: '/',
+        id: isPortable ? './' : '/',
         name: 'HOMS — SVCE Hostel Outpass',
         short_name: 'HOMS',
         description: 'Hostel Outpass Management System for Sri Venkateswara College of Engineering',
@@ -27,8 +30,8 @@ export default defineConfig({
         background_color: '#F5F7FA',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: isPortable ? './' : '/',
+        start_url: isPortable ? './' : '/',
         categories: ['education', 'productivity'],
         icons: [
           {
@@ -85,7 +88,7 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2022',
+    target: isPortable ? 'es2020' : 'es2022',
     cssCodeSplit: true,
     sourcemap: false,
     // Avoid manualChunks — they merged Vite's preload helper into the xlsx/jspdf

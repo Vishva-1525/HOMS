@@ -1,4 +1,4 @@
-import { Download, Share, Smartphone } from 'lucide-react'
+import { Download, Monitor, Share, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { getApkDownloadUrl, isAndroidDevice, isMobileDevice } from '@/lib/app-download'
@@ -48,6 +48,20 @@ export function AppDownloadCard({ className }: { className?: string }) {
             </p>
           </div>
         ) : null}
+
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm text-slate-800">
+          <p className="flex items-center gap-2 font-medium text-[#1A5CA0]">
+            <Monitor className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            Security gate computer (no internet)
+          </p>
+          <p className="mt-2 text-slate-700">
+            Do <strong>not</strong> save the website as HTML — that only downloads one file and
+            will not work. On a laptop with internet, run{' '}
+            <code className="rounded bg-white px-1 py-0.5 text-xs">npm run package:portable</code>{' '}
+            in the HOMS project, copy <strong>HOMS-Portable.zip</strong> to a pendrive, unzip on the
+            old PC, and double-click <strong>START-HOMS.bat</strong>.
+          </p>
+        </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <a

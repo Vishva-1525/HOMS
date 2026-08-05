@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+HOMS-Portable
+HOMS-Portable.zip
 *.local
 .env
 .env.*

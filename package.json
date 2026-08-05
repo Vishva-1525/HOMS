@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:portable": "VITE_PORTABLE=1 tsc -b && VITE_PORTABLE=1 vite build",
+    "package:portable": "node scripts/package-portable.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
