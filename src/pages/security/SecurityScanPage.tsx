@@ -7,13 +7,11 @@ import { ScanValidatingOverlay } from '@/components/security/ScanValidatingOverl
 import { SecurityLogOverlay } from '@/components/security/SecurityLogOverlay'
 import { SecurityTopBar } from '@/components/security/SecurityTopBar'
 import { useAuth } from '@/contexts/AuthProvider'
-import { useSecurityOfflineContext } from '@/contexts/SecurityOfflineContext'
 import { useHardwareScanner } from '@/hooks/security/useHardwareScanner'
 import { useSecurityScan } from '@/hooks/security/useSecurityScan'
 
 export function SecurityScanPage() {
   const { user } = useAuth()
-  const { refreshMeta } = useSecurityOfflineContext()
   const navigate = useNavigate()
   const location = useLocation()
   const logOpen = location.pathname === '/security/log'
@@ -32,43 +30,30 @@ export function SecurityScanPage() {
     resetScan,
     recordCheckpoint,
     alertWarden,
-  } = useSecurityScan({
-    userId: user?.id,
-    onAfterRecord: () => {
-      void refreshMeta()
-    },
-    onAfterValidate: () => {
-      void refreshMeta()
-    },
-  })
+  } = useSecurityScan({ userId: user?.id })
 
   const showMainPanel = phase !== 'ready-next' && phase !== 'success-flash'
   const showScanner = phase === 'scanning'
   const showResult = phase === 'result'
   const showValidating = phase === 'validating'
+  const wedgeEnabled =
+    !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next')
 
   const handleHardwareScan = useCallback(
     (raw: string) => {
-      const trimmed = raw.trim()
-      if (!trimmed) return
-
-      // Always clear ready-next / manual UI before processing so the next
-      // wedge burst is not blocked by stale phase state.
-      if (phase === 'ready-next' || manualOpen) {
+      if (phase === 'ready-next') {
         setManualId('')
         setManualError(null)
         setManualOpen(false)
-        if (phase === 'ready-next') resetScan()
+        resetScan()
       }
-      void processScan(trimmed)
+      void processScan(raw)
     },
-    [manualOpen, phase, processScan, resetScan],
+    [phase, processScan, resetScan],
   )
 
   useHardwareScanner({
-    // Pause capture while the log overlay or manual text field is open so
-    // focus is not stolen from the typed lookup form.
-    enabled: !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next'),
+    enabled: wedgeEnabled,
     onScan: handleHardwareScan,
   })
 
@@ -174,7 +159,6 @@ export function SecurityScanPage() {
                             onChange={(e) => setManualId(e.target.value)}
                             placeholder="Pass UUID, entry code, or QR JSON…"
                             autoFocus
-                            data-manual-scan-entry="true"
                             className="h-11 flex-1 rounded-xl border border-slate-200/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
                           />
                           <button
