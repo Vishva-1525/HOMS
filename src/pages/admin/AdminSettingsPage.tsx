@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
+import { AppDownloadCard } from '@/components/settings/AppDownloadCard'
 import { useSystemSettings } from '@/hooks/admin/useSystemSettings'
 
 const SETTING_LABELS: Record<string, { label: string; type?: 'boolean' }> = {
@@ -50,6 +51,8 @@ export function AdminSettingsPage() {
           Settings saved successfully.
         </div>
       )}
+
+      <AppDownloadCard />
 
       <div className="glass-panel-strong max-w-2xl space-y-5 p-6">
         {Object.entries(SETTING_LABELS).map(([key, meta]) => (

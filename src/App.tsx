@@ -95,6 +95,14 @@ const NotificationsPage = lazyPage(
   () => import('@/pages/shared/NotificationsPage'),
   'NotificationsPage',
 )
+const UserSettingsPage = lazyPage(
+  () => import('@/pages/shared/UserSettingsPage'),
+  'UserSettingsPage',
+)
+const SecuritySettingsPage = lazyPage(
+  () => import('@/pages/security/SecuritySettingsPage'),
+  'SecuritySettingsPage',
+)
 const ComponentGalleryPage = lazyPage(
   () => import('@/pages/dev/ComponentGalleryPage'),
   'ComponentGalleryPage',
@@ -131,6 +139,7 @@ export default function App() {
                   <Route path="/student/new-request" element={<StudentNewRequestPage />} />
                   <Route path="/student/passes" element={<StudentPassesPage />} />
                   <Route path="/student/profile" element={<StudentProfilePage />} />
+                  <Route path="/student/settings" element={<UserSettingsPage />} />
                   <Route path="/student/notifications" element={<NotificationsPage />} />
                 </Route>
               </Route>
@@ -149,6 +158,7 @@ export default function App() {
                   <Route path="/warden/out" element={<StudentsOutPage />} />
                   <Route path="/warden/extensions" element={<ExtensionRequestsPage />} />
                   <Route path="/warden/reports" element={<ReportsPage />} />
+                  <Route path="/warden/settings" element={<UserSettingsPage />} />
                   <Route path="/warden/notifications" element={<NotificationsPage />} />
                 </Route>
               </Route>
@@ -157,6 +167,7 @@ export default function App() {
                 <Route element={<SecurityShell />}>
                   <Route path="/security/scan" element={<SecurityScanPage />} />
                   <Route path="/security/log" element={<SecurityScanPage />} />
+                  <Route path="/security/settings" element={<SecuritySettingsPage />} />
                 </Route>
               </Route>
 
@@ -164,6 +175,7 @@ export default function App() {
                 <Route element={<ParentShell />}>
                   <Route path="/parent/dashboard" element={<ParentDashboard />} />
                   <Route path="/parent/history" element={<ParentHistoryPage />} />
+                  <Route path="/parent/settings" element={<UserSettingsPage />} />
                   <Route path="/parent/notifications" element={<NotificationsPage />} />
                 </Route>
               </Route>
@@ -176,6 +188,7 @@ export default function App() {
                   <Route path="/admin/passes" element={<AdminPassesPage />} />
                   <Route path="/admin/calendar" element={<AdminCalendarPage />} />
                   <Route path="/admin/reports" element={<AdminReportsPage />} />
+                  <Route path="/admin/account" element={<UserSettingsPage />} />
                   <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 </Route>
               </Route>

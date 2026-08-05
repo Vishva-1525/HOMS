@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { Building2, GraduationCap, Home, Mail, Phone, Shield } from 'lucide-react'
 import { PasswordInput } from '@/components/auth/PasswordInput'
 import { PasswordStrengthBar } from '@/components/auth/PasswordStrengthBar'
+import { AppDownloadCard } from '@/components/settings/AppDownloadCard'
 import { StudentAvatar } from '@/components/shared/StudentAvatar'
 import { Button } from '@/components/ui/button'
 import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
@@ -277,6 +278,8 @@ export function StudentProfilePage() {
           Save profile
         </Button>
       </form>
+
+      <AppDownloadCard />
     </div>
   )
 }
