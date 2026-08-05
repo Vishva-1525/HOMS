@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, type FormEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 const MIN_SCAN_LENGTH = 4
-const IDLE_SUBMIT_MS = 180
+const IDLE_SUBMIT_MS = 280
+const DEDUPE_MS = 800
+
+const UUID_RE =
+  /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i
 
 function isManualEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -10,23 +14,44 @@ function isManualEntryTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest('[data-manual-scan-entry="true"]'))
 }
 
-/** Map legacy keyCode / code → character for scanners that send Unidentified keys. */
+function isCaptureInput(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return target.dataset.hardwareScannerCapture === 'true'
+}
+
+/** Extract a complete outpass id from whatever the scanner typed. */
+function extractScanPayload(raw: string): string | null {
+  const trimmed = raw.replace(/[\u0000-\u001F\u007F]/g, '').trim()
+  if (!trimmed) return null
+
+  const uuid = trimmed.match(UUID_RE)
+  if (uuid) return uuid[0]
+
+  // Full JSON QR (legacy)
+  if (trimmed.startsWith('{') && trimmed.includes('outpass_id')) {
+    return trimmed
+  }
+
+  // Entry codes only when the whole buffer is exactly that (scanner finished).
+  const compact = trimmed.replace(/\s+/g, '')
+  if (/^[A-Z0-9]{6,10}$/i.test(compact)) return compact.toUpperCase()
+
+  return null
+}
+
 function charFromKeyboardEvent(event: KeyboardEvent): string | null {
   if (event.key === 'Enter' || event.key === 'Tab' || event.key === 'Escape') return null
   if (event.key === 'Backspace') return null
-
   if (event.key.length === 1) return event.key
 
-  // Industrial HID scanners often report key as "Unidentified".
   const code = event.code
   if (code.startsWith('Digit')) return code.slice(5)
-  if (code.startsWith('Numpad') && code.length === 7) return code.slice(6)
-  if (code.startsWith('Key')) {
+  if (code.startsWith('Numpad') && /^Numpad\d$/.test(code)) return code.slice(6)
+  if (code.startsWith('Key') && code.length === 4) {
     const letter = code.slice(3)
     return event.shiftKey ? letter : letter.toLowerCase()
   }
   if (code === 'Minus' || code === 'NumpadSubtract') return '-'
-  if (code === 'Space') return ' '
 
   const keyCode = event.keyCode || event.which
   if (keyCode >= 48 && keyCode <= 57) return String.fromCharCode(keyCode)
@@ -36,19 +61,7 @@ function charFromKeyboardEvent(event: KeyboardEvent): string | null {
     return event.shiftKey ? letter : letter.toLowerCase()
   }
   if (keyCode === 189 || keyCode === 109) return '-'
-
   return null
-}
-
-function looksComplete(value: string): boolean {
-  const v = value.trim()
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)) {
-    return true
-  }
-  if (/^[A-Z0-9]{6,10}$/i.test(v)) return true
-  // JSON QR payloads
-  if (v.startsWith('{') && v.endsWith('}') && v.includes('outpass_id')) return true
-  return false
 }
 
 interface HardwareScannerCaptureProps {
@@ -58,12 +71,14 @@ interface HardwareScannerCaptureProps {
 }
 
 /**
- * Accept USB/HID 2D barcode scanners (keyboard wedge).
+ * USB/HID 2D scanners act as a keyboard wedge: they type the QR payload into
+ * the focused field and usually finish with Enter.
  *
- * Uses BOTH:
- * 1. A visible input (for scanners that type normally)
- * 2. Document-level keydown capture with keyCode fallbacks (for scanners
- *    that send Unidentified keys and never fill an <input>)
+ * Primary path: editable focused <input> (native character insertion).
+ * Backup path: document keydown when focus drifted to a button/nav.
+ *
+ * Do NOT use readOnly + preventDefault on the capture field — that blocks the
+ * native path industrial scanners rely on.
  */
 export function HardwareScannerCapture({
   enabled,
@@ -72,23 +87,18 @@ export function HardwareScannerCapture({
 }: HardwareScannerCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const onScanRef = useRef(onScan)
-  const bufferRef = useRef('')
-  const lastKeyAtRef = useRef(0)
+  const backupBufferRef = useRef('')
   const lastScanAtRef = useRef(0)
   const idleTimerRef = useRef<number | null>(null)
-  const [displayValue, setDisplayValue] = useState('')
 
   onScanRef.current = onScan
 
   useEffect(() => {
     if (!enabled) {
-      bufferRef.current = ''
-      setDisplayValue('')
+      backupBufferRef.current = ''
+      if (inputRef.current) inputRef.current.value = ''
       return
     }
-
-    const input = inputRef.current
-    input?.focus({ preventScroll: true })
 
     function clearIdleTimer() {
       if (idleTimerRef.current != null) {
@@ -97,127 +107,153 @@ export function HardwareScannerCapture({
       }
     }
 
-    function syncDisplay(value: string) {
-      bufferRef.current = value
-      setDisplayValue(value)
-      if (inputRef.current && inputRef.current.value !== value) {
-        inputRef.current.value = value
-      }
-    }
-
-    function flush(raw?: string) {
-      clearIdleTimer()
-      const value = (raw ?? bufferRef.current).trim()
-      syncDisplay('')
-      if (value.length < MIN_SCAN_LENGTH) return
+    function submit(raw: string) {
+      const payload = extractScanPayload(raw) ?? raw.trim()
+      if (payload.length < MIN_SCAN_LENGTH) return
 
       const now = Date.now()
-      if (now - lastScanAtRef.current < 500) return
+      if (now - lastScanAtRef.current < DEDUPE_MS) return
       lastScanAtRef.current = now
-      onScanRef.current(value)
+
+      clearIdleTimer()
+      backupBufferRef.current = ''
+      if (inputRef.current) inputRef.current.value = ''
+
+      onScanRef.current(payload)
     }
 
-    function scheduleIdleFlush() {
+    function scheduleIdleSubmit(raw: string) {
       clearIdleTimer()
       idleTimerRef.current = window.setTimeout(() => {
-        if (looksComplete(bufferRef.current)) {
-          flush(bufferRef.current)
+        // Only auto-submit when a FULL UUID (or JSON) is present.
+        // Never treat the first 8 hex chars of a UUID as an "entry code".
+        const uuid = raw.match(UUID_RE)
+        if (uuid) {
+          submit(uuid[0])
+          return
+        }
+        if (raw.trim().startsWith('{') && raw.includes('outpass_id') && raw.trim().endsWith('}')) {
+          submit(raw)
         }
       }, IDLE_SUBMIT_MS)
     }
 
-    function appendChar(ch: string) {
-      const now = Date.now()
-      // Human typing is slow; wedge scanners are bursty. Reset if a long gap.
-      if (lastKeyAtRef.current && now - lastKeyAtRef.current > 800) {
-        bufferRef.current = ''
+    function focusCapture() {
+      const el = inputRef.current
+      if (!el) return
+      if (isManualEntryTarget(document.activeElement)) return
+      if (document.activeElement === el) return
+      try {
+        el.focus({ preventScroll: true })
+      } catch {
+        el.focus()
       }
-      lastKeyAtRef.current = now
-      syncDisplay(bufferRef.current + ch)
-      scheduleIdleFlush()
     }
 
-    function onKeyDown(event: KeyboardEvent) {
+    focusCapture()
+
+    function onDocumentKeyDown(event: KeyboardEvent) {
       if (!enabled) return
       if (event.ctrlKey || event.metaKey || event.altKey) return
       if (isManualEntryTarget(event.target)) return
 
-      // Terminator
+      // Capture field is focused → let the browser insert characters natively.
+      // Only handle Enter here so form submit still works if React misses it.
+      if (isCaptureInput(event.target)) {
+        if (event.key === 'Enter' || event.key === 'Tab' || event.keyCode === 13) {
+          const value = inputRef.current?.value ?? ''
+          if (value.trim().length >= MIN_SCAN_LENGTH) {
+            event.preventDefault()
+            submit(value)
+          }
+        }
+        return
+      }
+
+      // Focus drifted (button, panel, etc.) — buffer wedge keystrokes.
       if (event.key === 'Enter' || event.key === 'Tab' || event.keyCode === 13) {
-        if (bufferRef.current.trim().length >= MIN_SCAN_LENGTH) {
+        if (backupBufferRef.current.trim().length >= MIN_SCAN_LENGTH) {
           event.preventDefault()
-          event.stopPropagation()
-          flush(bufferRef.current)
+          submit(backupBufferRef.current)
         }
         return
       }
 
       if (event.key === 'Escape') {
-        syncDisplay('')
+        backupBufferRef.current = ''
         clearIdleTimer()
         return
       }
 
       if (event.key === 'Backspace' || event.keyCode === 8) {
-        syncDisplay(bufferRef.current.slice(0, -1))
-        scheduleIdleFlush()
+        backupBufferRef.current = backupBufferRef.current.slice(0, -1)
         return
       }
 
       const ch = charFromKeyboardEvent(event)
       if (!ch) return
 
-      // Always capture wedge characters at document level so Unidentified
-      // key events still build the pass id even when <input> ignores them.
       event.preventDefault()
-      event.stopPropagation()
-      appendChar(ch)
+      backupBufferRef.current += ch
+      scheduleIdleSubmit(backupBufferRef.current)
     }
 
-    // Some scanners inject via beforeinput / paste instead of keydown.
-    function onBeforeInput(event: InputEvent) {
-      if (!enabled) return
-      if (isManualEntryTarget(event.target)) return
-      if (event.inputType !== 'insertText' && event.inputType !== 'insertFromPaste') return
-      const data = event.data
-      if (!data) return
-      event.preventDefault()
-      for (const ch of data) appendChar(ch)
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+      if (isManualEntryTarget(target)) return
+      // Reclaim focus after click, without an aggressive polling interval.
+      window.setTimeout(focusCapture, 0)
     }
 
-    function onPaste(event: ClipboardEvent) {
-      if (!enabled) return
-      if (isManualEntryTarget(event.target)) return
-      const text = event.clipboardData?.getData('text') ?? ''
-      if (!text.trim()) return
-      event.preventDefault()
-      syncDisplay(text)
-      flush(text)
-    }
-
-    document.addEventListener('keydown', onKeyDown, true)
-    document.addEventListener('beforeinput', onBeforeInput as EventListener, true)
-    document.addEventListener('paste', onPaste, true)
+    document.addEventListener('keydown', onDocumentKeyDown, true)
+    document.addEventListener('pointerdown', onPointerDown, true)
+    window.addEventListener('focus', focusCapture)
 
     return () => {
-      document.removeEventListener('keydown', onKeyDown, true)
-      document.removeEventListener('beforeinput', onBeforeInput as EventListener, true)
-      document.removeEventListener('paste', onPaste, true)
+      document.removeEventListener('keydown', onDocumentKeyDown, true)
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      window.removeEventListener('focus', focusCapture)
       clearIdleTimer()
     }
   }, [enabled])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const value = (inputRef.current?.value || bufferRef.current || displayValue).trim()
-    if (value.length < MIN_SCAN_LENGTH) return
+    const value = inputRef.current?.value ?? ''
+    if (value.trim().length < MIN_SCAN_LENGTH) return
+
     const now = Date.now()
-    if (now - lastScanAtRef.current < 500) return
+    if (now - lastScanAtRef.current < DEDUPE_MS) return
     lastScanAtRef.current = now
-    bufferRef.current = ''
-    setDisplayValue('')
+
+    if (idleTimerRef.current != null) {
+      window.clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = null
+    }
+    backupBufferRef.current = ''
     if (inputRef.current) inputRef.current.value = ''
-    onScanRef.current(value)
+    onScanRef.current(extractScanPayload(value) ?? value.trim())
+  }
+
+  function handleInput() {
+    const value = inputRef.current?.value ?? ''
+    if (idleTimerRef.current != null) {
+      window.clearTimeout(idleTimerRef.current)
+    }
+    // Auto-submit only when a full UUID has landed (scanners that omit Enter).
+    idleTimerRef.current = window.setTimeout(() => {
+      const current = inputRef.current?.value ?? value
+      const uuid = current.match(UUID_RE)
+      if (uuid) {
+        const now = Date.now()
+        if (now - lastScanAtRef.current < DEDUPE_MS) return
+        lastScanAtRef.current = now
+        backupBufferRef.current = ''
+        if (inputRef.current) inputRef.current.value = ''
+        onScanRef.current(uuid[0])
+      }
+    }, IDLE_SUBMIT_MS)
   }
 
   if (!enabled) return null
@@ -236,23 +272,25 @@ export function HardwareScannerCapture({
         ref={inputRef}
         type="text"
         name="hardware-scanner"
-        value={displayValue}
-        readOnly
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
+        enterKeyHint="go"
         data-hardware-scanner-capture="true"
-        placeholder="Waiting for desktop scanner…"
-        onFocus={() => {
-          // Keep selection at end so wedge append looks natural if editable later
+        onInput={handleInput}
+        onBlur={() => {
+          window.setTimeout(() => {
+            if (!enabled) return
+            if (isManualEntryTarget(document.activeElement)) return
+            inputRef.current?.focus({ preventScroll: true })
+          }, 0)
         }}
+        placeholder="Waiting for desktop scanner…"
         className="h-11 w-full rounded-xl border border-[#1A5CA0]/35 bg-white px-3 font-mono text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] placeholder:font-sans placeholder:text-slate-400 focus:ring-2"
       />
       <p className="mt-1.5 text-center text-[11px] text-slate-500">
-        {displayValue
-          ? `Receiving scan… (${displayValue.length} chars)`
-          : 'Point the desk scanner at the pass QR — this field fills automatically'}
+        Scanner types here automatically — keep this field focused
       </p>
     </form>
   )
