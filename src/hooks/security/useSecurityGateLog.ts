@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { debounce } from '@/lib/debounce'
 import { getCheckpointFromLog } from '@/lib/gate-checkpoints'
-import { isOnline } from '@/lib/network-status'
-import { isTransientNetworkError } from '@/lib/network-error'
-import { loadCachedSecurityGateLog } from '@/lib/offline/security-gate-log-cache'
 import { supabase } from '@/lib/supabase'
 import {
   fetchAdmissionNosByStudentIds,
@@ -197,16 +194,6 @@ export function useSecurityGateLog(enabled = true) {
       setLoading(true)
       setError(null)
 
-      if (!isOnline()) {
-        const cached = await loadCachedSecurityGateLog()
-        setRecentRawLogs(cached.recentRawLogs)
-        setLogs(cached.logs)
-        setActivePasses(cached.activePasses)
-        setPassHistory(cached.passHistory)
-        setLoading(false)
-        return
-      }
-
       const [historyResult, passesResult] = await Promise.all([
         supabase
           .from('gate_logs')
@@ -241,15 +228,6 @@ export function useSecurityGateLog(enabled = true) {
       ])
 
       if (historyResult.error) {
-        if (isTransientNetworkError(historyResult.error)) {
-          const cached = await loadCachedSecurityGateLog()
-          setRecentRawLogs(cached.recentRawLogs)
-          setLogs(cached.logs)
-          setActivePasses(cached.activePasses)
-          setPassHistory(cached.passHistory)
-          setLoading(false)
-          return
-        }
         setError(historyResult.error.message)
         setLoading(false)
         return

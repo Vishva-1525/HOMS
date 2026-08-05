@@ -1,19 +1,17 @@
 import { useCallback, useState } from 'react'
 import { Keyboard, ShieldCheck } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { HardwareScannerCapture } from '@/components/security/HardwareScannerCapture'
 import { HardwareScannerPanel } from '@/components/security/HardwareScannerPanel'
 import { ScanResultPanel } from '@/components/security/ScanResultPanel'
 import { ScanValidatingOverlay } from '@/components/security/ScanValidatingOverlay'
 import { SecurityLogOverlay } from '@/components/security/SecurityLogOverlay'
 import { SecurityTopBar } from '@/components/security/SecurityTopBar'
 import { useAuth } from '@/contexts/AuthProvider'
-import { useSecurityOfflineContext } from '@/contexts/SecurityOfflineContext'
-import { useHardwareScanner } from '@/hooks/security/useHardwareScanner'
 import { useSecurityScan } from '@/hooks/security/useSecurityScan'
 
 export function SecurityScanPage() {
   const { user } = useAuth()
-  const { refreshMeta } = useSecurityOfflineContext()
   const navigate = useNavigate()
   const location = useLocation()
   const logOpen = location.pathname === '/security/log'
@@ -32,21 +30,13 @@ export function SecurityScanPage() {
     resetScan,
     recordCheckpoint,
     alertWarden,
-  } = useSecurityScan({
-    userId: user?.id,
-    onAfterRecord: () => {
-      void refreshMeta()
-    },
-    onAfterValidate: () => {
-      void refreshMeta()
-    },
-  })
+  } = useSecurityScan({ userId: user?.id })
 
   const showMainPanel = phase !== 'ready-next' && phase !== 'success-flash'
   const showScanner = phase === 'scanning'
   const showResult = phase === 'result'
   const showValidating = phase === 'validating'
-  const wedgeEnabled =
+  const captureEnabled =
     !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next')
 
   const handleHardwareScan = useCallback(
@@ -60,7 +50,6 @@ export function SecurityScanPage() {
 
       if (phase === 'ready-next') {
         resetScan()
-        // Let React apply "scanning" before validating so the result panel mounts cleanly.
         window.setTimeout(() => {
           void processScan(trimmed)
         }, 0)
@@ -71,11 +60,6 @@ export function SecurityScanPage() {
     },
     [phase, processScan, resetScan],
   )
-
-  useHardwareScanner({
-    enabled: wedgeEnabled,
-    onScan: handleHardwareScan,
-  })
 
   function openLog() {
     navigate('/security/log')
@@ -152,15 +136,17 @@ export function SecurityScanPage() {
               <>
                 <HardwareScannerPanel active={scannerActive && !logOpen} />
 
-                <div className="security-scan-dock">
+                <div className="security-scan-dock space-y-3">
+                  <HardwareScannerCapture
+                    enabled={captureEnabled}
+                    onScan={handleHardwareScan}
+                  />
+
                   <p className="text-center text-sm font-medium text-slate-800">
                     Scan the student&apos;s pass QR with the desktop scanner
                   </p>
-                  <p className="mt-1 text-center text-xs text-slate-500">
-                    Keep this window focused. Student details open automatically after a scan.
-                  </p>
 
-                  <div className="mt-3">
+                  <div>
                     {!manualOpen ? (
                       <button
                         type="button"
@@ -209,7 +195,7 @@ export function SecurityScanPage() {
                     )}
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
                     <span className="security-info-pill">
                       <ShieldCheck className="h-3 w-3 text-emerald-600" strokeWidth={2} />
                       Approved passes only
@@ -228,6 +214,10 @@ export function SecurityScanPage() {
           <div className="security-scan-card overflow-hidden">
             <HardwareScannerPanel active={!logOpen} className="min-h-[min(36dvh,16rem)]" />
             <div className="space-y-3 p-4 sm:p-5">
+              <HardwareScannerCapture
+                enabled={captureEnabled}
+                onScan={handleHardwareScan}
+              />
               <p className="dashboard-muted text-center text-sm">{successMessage}</p>
               <p className="text-center text-sm font-medium text-slate-800">
                 Scan the next pass with the desktop scanner, or tap below

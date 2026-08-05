@@ -64,7 +64,7 @@ export function useSecurityScan({
       setPhase('result')
       onAfterValidate?.()
 
-      if (validation.requiresWardenAlert && validation.pass && !validation.offline) {
+      if (validation.requiresWardenAlert && validation.pass) {
         void alertWardenOverdue(validation.pass, {
           overdueMs: validation.overdueMs,
           extensionPending: validation.extensionPending,
@@ -100,9 +100,7 @@ export function useSecurityScan({
       if (!target) return
 
       setSubmitting(true)
-      const { error, gateLogs } = await recordGateCheckpoint(result.pass.id, target, {
-        scannedBy: userId,
-      })
+      const { error, gateLogs } = await recordGateCheckpoint(result.pass.id, target)
       setSubmitting(false)
 
       if (error) {
