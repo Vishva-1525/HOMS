@@ -56,23 +56,30 @@ export function useSecurityScan({
     setResult(null)
 
     try {
-      let validation = await validateScanInput(trimmed)
+      const validation = await validateScanInput(trimmed)
 
-      if (validation.requiresWardenAlert && validation.pass) {
-        const { error } = await alertWardenOverdue(validation.pass, {
-          overdueMs: validation.overdueMs,
-          extensionPending: validation.extensionPending,
-        })
-        validation = {
-          ...validation,
-          wardenNotified: !error,
-          reason: error ? `Warden alert failed: ${error}` : validation.reason,
-        }
-      }
-
+      // Always show the student/result panel immediately — do not block the UI
+      // waiting for optional warden notifications.
       setResult(validation)
       setPhase('result')
       onAfterValidate?.()
+
+      if (validation.requiresWardenAlert && validation.pass && !validation.offline) {
+        void alertWardenOverdue(validation.pass, {
+          overdueMs: validation.overdueMs,
+          extensionPending: validation.extensionPending,
+        }).then(({ error }) => {
+          setResult((prev) => {
+            if (!prev || prev.pass?.id !== validation.pass?.id) return prev
+            return {
+              ...prev,
+              wardenNotified: !error,
+              reason: error ? `Warden alert failed: ${error}` : prev.reason,
+            }
+          })
+        })
+      }
+
       return validation
     } catch {
       const failed: ScanValidationResult = {
@@ -84,7 +91,7 @@ export function useSecurityScan({
       setPhase('result')
       return failed
     }
-  }, [])
+  }, [onAfterValidate])
 
   const recordCheckpoint = useCallback(
     async (checkpoint?: GateCheckpoint) => {

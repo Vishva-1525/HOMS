@@ -7,11 +7,13 @@ import { ScanValidatingOverlay } from '@/components/security/ScanValidatingOverl
 import { SecurityLogOverlay } from '@/components/security/SecurityLogOverlay'
 import { SecurityTopBar } from '@/components/security/SecurityTopBar'
 import { useAuth } from '@/contexts/AuthProvider'
+import { useSecurityOfflineContext } from '@/contexts/SecurityOfflineContext'
 import { useHardwareScanner } from '@/hooks/security/useHardwareScanner'
 import { useSecurityScan } from '@/hooks/security/useSecurityScan'
 
 export function SecurityScanPage() {
   const { user } = useAuth()
+  const { refreshMeta } = useSecurityOfflineContext()
   const navigate = useNavigate()
   const location = useLocation()
   const logOpen = location.pathname === '/security/log'
@@ -30,7 +32,15 @@ export function SecurityScanPage() {
     resetScan,
     recordCheckpoint,
     alertWarden,
-  } = useSecurityScan({ userId: user?.id })
+  } = useSecurityScan({
+    userId: user?.id,
+    onAfterRecord: () => {
+      void refreshMeta()
+    },
+    onAfterValidate: () => {
+      void refreshMeta()
+    },
+  })
 
   const showMainPanel = phase !== 'ready-next' && phase !== 'success-flash'
   const showScanner = phase === 'scanning'
@@ -41,13 +51,23 @@ export function SecurityScanPage() {
 
   const handleHardwareScan = useCallback(
     (raw: string) => {
+      const trimmed = raw.trim()
+      if (!trimmed) return
+
+      setManualId('')
+      setManualError(null)
+      setManualOpen(false)
+
       if (phase === 'ready-next') {
-        setManualId('')
-        setManualError(null)
-        setManualOpen(false)
         resetScan()
+        // Let React apply "scanning" before validating so the result panel mounts cleanly.
+        window.setTimeout(() => {
+          void processScan(trimmed)
+        }, 0)
+        return
       }
-      void processScan(raw)
+
+      void processScan(trimmed)
     },
     [phase, processScan, resetScan],
   )
@@ -136,6 +156,9 @@ export function SecurityScanPage() {
                   <p className="text-center text-sm font-medium text-slate-800">
                     Scan the student&apos;s pass QR with the desktop scanner
                   </p>
+                  <p className="mt-1 text-center text-xs text-slate-500">
+                    Keep this window focused. Student details open automatically after a scan.
+                  </p>
 
                   <div className="mt-3">
                     {!manualOpen ? (
@@ -159,6 +182,7 @@ export function SecurityScanPage() {
                             onChange={(e) => setManualId(e.target.value)}
                             placeholder="Pass UUID, entry code, or QR JSON…"
                             autoFocus
+                            data-manual-scan-entry="true"
                             className="h-11 flex-1 rounded-xl border border-slate-200/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
                           />
                           <button

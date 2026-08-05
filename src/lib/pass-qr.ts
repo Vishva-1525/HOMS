@@ -79,7 +79,12 @@ export function parsePassQrValue(raw: string): ScannedPassQrPayload | null {
 export function parseScanInput(
   raw: string,
 ): { outpass_id?: string; entry_code?: string; reg_number?: string; kind: ScanInputKind } | null {
-  const trimmed = raw.trim()
+  // Hardware scanners often append CR/LF; some wrap UUIDs in braces/quotes.
+  let trimmed = raw
+    .replace(/^\uFEFF/, '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .trim()
+  trimmed = trimmed.replace(/^["'{[<]+/, '').replace(/["'}>\]]+$/, '').trim()
   if (!trimmed) return null
 
   try {
@@ -93,6 +98,14 @@ export function parseScanInput(
     }
   } catch {
     // not JSON - try UUID or entry code below
+  }
+
+  // Extract embedded UUID if scanner prefixed junk (e.g. symbology id).
+  const uuidMatch = trimmed.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i,
+  )
+  if (uuidMatch) {
+    return { outpass_id: uuidMatch[0], kind: 'outpass_id' }
   }
 
   if (UUID_PATTERN.test(trimmed)) {

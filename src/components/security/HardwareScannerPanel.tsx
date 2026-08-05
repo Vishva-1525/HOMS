@@ -41,7 +41,7 @@ export function HardwareScannerPanel({ active, className }: HardwareScannerPanel
           </p>
           <p className="mt-2 text-sm leading-relaxed text-white/85">
             {active
-              ? 'Use the desktop QR scanner on the student’s pass. Scan is accepted automatically.'
+              ? 'Aim the desktop QR scanner at the pass. Keep this window focused — student details open automatically.'
               : 'Return to this screen to scan the next pass.'}
           </p>
         </div>
