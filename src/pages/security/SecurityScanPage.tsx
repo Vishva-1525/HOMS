@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
 import { Keyboard, ShieldCheck } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { QrScanner } from '@/components/security/QrScanner'
+import { HardwareScannerCapture } from '@/components/security/HardwareScannerCapture'
+import { HardwareScannerPanel } from '@/components/security/HardwareScannerPanel'
 import { ScanResultPanel } from '@/components/security/ScanResultPanel'
 import { ScanValidatingOverlay } from '@/components/security/ScanValidatingOverlay'
 import { SecurityLogOverlay } from '@/components/security/SecurityLogOverlay'
@@ -35,10 +36,10 @@ export function SecurityScanPage() {
   const showScanner = phase === 'scanning'
   const showResult = phase === 'result'
   const showValidating = phase === 'validating'
-  const cameraActive =
+  const captureEnabled =
     !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next')
 
-  const handleScan = useCallback(
+  const handleHardwareScan = useCallback(
     (raw: string) => {
       const trimmed = raw.trim()
       if (!trimmed) return
@@ -133,11 +134,16 @@ export function SecurityScanPage() {
 
             {showScanner && (
               <>
-                <QrScanner active={cameraActive && scannerActive} onScan={handleScan} />
+                <HardwareScannerPanel active={scannerActive && !logOpen} />
 
                 <div className="security-scan-dock space-y-3">
+                  <HardwareScannerCapture
+                    enabled={captureEnabled}
+                    onScan={handleHardwareScan}
+                  />
+
                   <p className="text-center text-sm font-medium text-slate-800">
-                    Hold the student pass QR in the live scanner view
+                    Hold the student phone QR under the Brontix X3 window
                   </p>
 
                   <div>
@@ -206,11 +212,15 @@ export function SecurityScanPage() {
       {phase === 'ready-next' && (
         <div className="flex flex-1 flex-col justify-end px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:mx-auto sm:w-full sm:max-w-lg sm:px-4 sm:pb-5 sm:pt-3">
           <div className="security-scan-card overflow-hidden">
-            <QrScanner active={cameraActive} onScan={handleScan} />
+            <HardwareScannerPanel active={!logOpen} className="min-h-[min(36dvh,16rem)]" />
             <div className="space-y-3 p-4 sm:p-5">
+              <HardwareScannerCapture
+                enabled={captureEnabled}
+                onScan={handleHardwareScan}
+              />
               <p className="dashboard-muted text-center text-sm">{successMessage}</p>
               <p className="text-center text-sm font-medium text-slate-800">
-                Scan the next pass, or tap below
+                Scan the next pass with the Brontix X3, or tap below
               </p>
               <button
                 type="button"
