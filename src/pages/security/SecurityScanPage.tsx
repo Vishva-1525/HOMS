@@ -46,24 +46,29 @@ export function SecurityScanPage() {
   const showScanner = phase === 'scanning'
   const showResult = phase === 'result'
   const showValidating = phase === 'validating'
-  const wedgeEnabled =
-    !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next')
 
   const handleHardwareScan = useCallback(
     (raw: string) => {
-      if (phase === 'ready-next') {
+      const trimmed = raw.trim()
+      if (!trimmed) return
+
+      // Always clear ready-next / manual UI before processing so the next
+      // wedge burst is not blocked by stale phase state.
+      if (phase === 'ready-next' || manualOpen) {
         setManualId('')
         setManualError(null)
         setManualOpen(false)
-        resetScan()
+        if (phase === 'ready-next') resetScan()
       }
-      void processScan(raw)
+      void processScan(trimmed)
     },
-    [phase, processScan, resetScan],
+    [manualOpen, phase, processScan, resetScan],
   )
 
   useHardwareScanner({
-    enabled: wedgeEnabled,
+    // Pause capture while the log overlay or manual text field is open so
+    // focus is not stolen from the typed lookup form.
+    enabled: !logOpen && !manualOpen && (phase === 'scanning' || phase === 'ready-next'),
     onScan: handleHardwareScan,
   })
 
@@ -169,6 +174,7 @@ export function SecurityScanPage() {
                             onChange={(e) => setManualId(e.target.value)}
                             placeholder="Pass UUID, entry code, or QR JSON…"
                             autoFocus
+                            data-manual-scan-entry="true"
                             className="h-11 flex-1 rounded-xl border border-slate-200/80 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none ring-[#1A5CA0] focus:ring-2"
                           />
                           <button
