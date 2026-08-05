@@ -7,11 +7,13 @@ import { ScanValidatingOverlay } from '@/components/security/ScanValidatingOverl
 import { SecurityLogOverlay } from '@/components/security/SecurityLogOverlay'
 import { SecurityTopBar } from '@/components/security/SecurityTopBar'
 import { useAuth } from '@/contexts/AuthProvider'
+import { useSecurityOfflineContext } from '@/contexts/SecurityOfflineContext'
 import { useHardwareScanner } from '@/hooks/security/useHardwareScanner'
 import { useSecurityScan } from '@/hooks/security/useSecurityScan'
 
 export function SecurityScanPage() {
   const { user } = useAuth()
+  const { refreshMeta } = useSecurityOfflineContext()
   const navigate = useNavigate()
   const location = useLocation()
   const logOpen = location.pathname === '/security/log'
@@ -30,7 +32,15 @@ export function SecurityScanPage() {
     resetScan,
     recordCheckpoint,
     alertWarden,
-  } = useSecurityScan({ userId: user?.id })
+  } = useSecurityScan({
+    userId: user?.id,
+    onAfterRecord: () => {
+      void refreshMeta()
+    },
+    onAfterValidate: () => {
+      void refreshMeta()
+    },
+  })
 
   const showMainPanel = phase !== 'ready-next' && phase !== 'success-flash'
   const showScanner = phase === 'scanning'

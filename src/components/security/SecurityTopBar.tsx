@@ -1,8 +1,9 @@
-import { ClipboardList, LogOut } from 'lucide-react'
+import { ClipboardList, CloudOff, LogOut, RefreshCw } from 'lucide-react'
 import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import { useAuth } from '@/contexts/AuthProvider'
+import { useSecurityOfflineContext } from '@/contexts/SecurityOfflineContext'
 import { SVCE_APP_SHORT } from '@/lib/branding'
 import { cn } from '@/lib/utils'
 
@@ -39,9 +40,11 @@ function HeaderAction({
 
 export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
   const { profile, signOut } = useAuth()
+  const { online, pendingCount, prefetching, syncing, prefetch, sync } = useSecurityOfflineContext()
 
   return (
-    <header className="glass-nav sticky top-0 z-30 flex shrink-0 items-center justify-between gap-2 px-3 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] sm:px-5">
+    <header className="glass-nav sticky top-0 z-30 flex shrink-0 flex-col">
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] sm:px-5">
       <div className="flex min-w-0 items-center gap-2">
         <SvceEmblem size="sm" withRing />
         <div className="min-w-0 leading-tight">
@@ -60,6 +63,49 @@ export function SecurityTopBar({ onLogClick }: SecurityTopBarProps) {
         <HeaderAction onClick={() => signOut()} label="Sign out" icon={LogOut} />
         <UserAvatar name={profile?.full_name ?? 'Guard'} size="sm" />
       </div>
+      </div>
+
+      {(!online || pendingCount > 0) && (
+        <div
+          className={cn(
+            'flex items-center justify-between gap-2 border-t px-3 py-1.5 text-xs sm:px-5',
+            online ? 'border-amber-200/80 bg-amber-50 text-amber-900' : 'border-slate-200/80 bg-slate-100 text-slate-800',
+          )}
+        >
+          <div className="flex min-w-0 items-center gap-1.5">
+            {!online && <CloudOff className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />}
+            <span className="truncate font-medium">
+              {!online
+                ? 'Offline mode — scans saved locally'
+                : `${pendingCount} scan${pendingCount === 1 ? '' : 's'} waiting to sync`}
+            </span>
+          </div>
+          {online && pendingCount > 0 && (
+            <button
+              type="button"
+              onClick={() => void sync()}
+              disabled={syncing}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+            >
+              <RefreshCw className={cn('h-3 w-3', syncing && 'animate-spin')} />
+              Sync
+            </button>
+          )}
+          {online && pendingCount === 0 && prefetching && (
+            <span className="shrink-0 text-slate-500">Updating cache…</span>
+          )}
+          {online && !prefetching && (
+            <button
+              type="button"
+              onClick={() => void prefetch()}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 font-semibold hover:bg-white/60"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Refresh
+            </button>
+          )}
+        </div>
+      )}
     </header>
   )
 }

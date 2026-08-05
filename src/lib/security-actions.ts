@@ -1,21 +1,19 @@
 import {
-  evaluateEntryScan,
-  formatOverdueDuration,
-  isQrEligibleStatus,
-} from '@/lib/pass-filters'
-import {
   GATE_CHECKPOINT_LABELS,
   buildCheckpointProgress,
-  checkpointToEventType,
   getNextCheckpoint,
   isCheckpointCycleComplete,
   type GateCheckpoint,
 } from '@/lib/gate-checkpoints'
-import {
-  isMultiDailyScanPass,
-  isPassWithinValidityWindow,
-} from '@/lib/pass-multi-scan'
+import { formatOverdueDuration } from '@/lib/pass-filters'
 import { parseScanInput } from '@/lib/pass-qr'
+import { isOnline } from '@/lib/network-status'
+import { isTransientNetworkError } from '@/lib/network-error'
+import {
+  recordGateCheckpointOffline,
+  validatePassScanOffline,
+  validateScanInputOffline,
+} from '@/lib/offline/security-offline'
 import { supabase } from '@/lib/supabase'
 import { getStudentName, getStudentReg } from '@/lib/warden'
 import {
@@ -51,6 +49,8 @@ export interface ScanValidationResult {
   requiresWardenAlert?: boolean
   wardenNotified?: boolean
   scannerNames?: Record<string, string>
+  /** True when result was resolved from local offline cache. */
+  offline?: boolean
 }
 
 /** @deprecated Prefer getNextCheckpoint from gate-checkpoints. */
@@ -163,6 +163,23 @@ async function fetchStudentAdmissionNoForPass(
 }
 
 export async function validateScanInput(raw: string): Promise<ScanValidationResult> {
+  if (!isOnline()) {
+    const offline = await validateScanInputOffline(raw)
+    return { ...offline, offline: true }
+  }
+
+  try {
+    return await validateScanInputOnline(raw)
+  } catch (err) {
+    if (isTransientNetworkError(err)) {
+      const offline = await validateScanInputOffline(raw)
+      return { ...offline, offline: true }
+    }
+    throw err
+  }
+}
+
+async function validateScanInputOnline(raw: string): Promise<ScanValidationResult> {
   const parsed = parseScanInput(raw)
   if (!parsed) {
     return {
@@ -192,135 +209,68 @@ export async function validateScanInput(raw: string): Promise<ScanValidationResu
 
   const scannerNames = await fetchScannerNames(gateLogs)
   const studentAdmissionNo = await fetchStudentAdmissionNoForPass(pass)
-  const multi = isMultiDailyScanPass(pass)
 
-  const base = {
+  return validatePassScanOffline(
+    parsed,
     pass,
     gateLogs,
     extensions,
     studentAdmissionNo,
     scannerNames,
-  }
-
-  if (!isQrEligibleStatus(pass.status)) {
-    return { ...base, kind: 'invalid', scanPhase: 'exit', reason: 'This pass is not active.' }
-  }
-
-  if (parsed.reg_number && getStudentReg(pass.students) !== parsed.reg_number) {
-    return {
-      ...base,
-      kind: 'invalid',
-      scanPhase: 'exit',
-      reason: 'Registration number does not match.',
-    }
-  }
-
-  if (multi && !isPassWithinValidityWindow(pass)) {
-    const now = Date.now()
-    const reason =
-      now < new Date(pass.departure_at).getTime()
-        ? 'Internship QR is not valid before departure.'
-        : 'Internship QR has expired. Student must renew the pass.'
-    return { ...base, kind: 'invalid', scanPhase: 'exit', reason }
-  }
-
-  const nextCheckpoint = getNextCheckpoint(pass.id, gateLogs, { multiDaily: multi })
-
-  if (!nextCheckpoint) {
-    return {
-      ...base,
-      kind: 'cycle-complete',
-      scanPhase: 'entry',
-      nextCheckpoint: null,
-      nextAction: null,
-      reason: multi
-        ? 'All four gate scans already recorded for today.'
-        : 'Pass trip already completed (Hostel Gate Entry done).',
-    }
-  }
-
-  const scanPhase = checkpointToEventType(nextCheckpoint)
-  const isReturnLeg = nextCheckpoint === 'main_entry' || nextCheckpoint === 'hostel_entry'
-
-  if (nextCheckpoint === 'hostel_exit' || nextCheckpoint === 'main_exit') {
-    if (!multi && Date.now() > new Date(pass.return_by).getTime()) {
-      return {
-        ...base,
-        kind: 'invalid',
-        scanPhase: 'exit',
-        nextCheckpoint,
-        nextAction: nextCheckpoint,
-        reason: 'This pass has expired.',
-      }
-    }
-    return {
-      ...base,
-      kind: 'valid',
-      scanPhase,
-      nextCheckpoint,
-      nextAction: nextCheckpoint,
-    }
-  }
-
-  // Return legs (main/hostel entry) - allow late return with warnings
-  const entry = evaluateEntryScan(pass, extensions)
-
-  if (entry.kind === 'valid' || !isReturnLeg) {
-    return {
-      ...base,
-      kind: 'valid',
-      scanPhase,
-      nextCheckpoint,
-      nextAction: nextCheckpoint,
-      extensionApproved: entry.extensionApproved,
-      overdueMs: 0,
-      requiresWardenAlert: false,
-    }
-  }
-
-  if (entry.kind === 'late-entry') {
-    return {
-      ...base,
-      kind: 'late-entry',
-      scanPhase,
-      nextCheckpoint,
-      nextAction: nextCheckpoint,
-      extensionPending: entry.extensionPending,
-      overdueMs: entry.overdueMs,
-      requiresWardenAlert: false,
-    }
-  }
-
-  return {
-    ...base,
-    kind: 'overdue-entry',
-    scanPhase,
-    nextCheckpoint,
-    nextAction: nextCheckpoint,
-    extensionPending: entry.extensionPending,
-    overdueMs: entry.overdueMs,
-    requiresWardenAlert: entry.requiresWardenAlert,
-  }
+  )
 }
 
 export async function recordGateCheckpoint(
   outpassId: string,
   checkpoint: GateCheckpoint,
-): Promise<{ error?: string; gateLogs?: GateLog[] }> {
-  const { error } = await supabase.rpc('record_gate_scan', {
-    p_outpass_id: outpassId,
-    p_checkpoint: checkpoint,
-  })
-
-  if (error) {
-    return { error: error.message }
+  options?: { scannedBy?: string },
+): Promise<{ error?: string; gateLogs?: GateLog[]; offline?: boolean }> {
+  if (!isOnline()) {
+    if (!options?.scannedBy) {
+      return { error: 'Guard session required for offline recording.' }
+    }
+    const offlineResult = await recordGateCheckpointOffline(
+      outpassId,
+      checkpoint,
+      options.scannedBy,
+    )
+    if ('error' in offlineResult) {
+      return { error: offlineResult.error }
+    }
+    return { gateLogs: offlineResult.gateLogs, offline: true }
   }
 
-  const { gateLogs: updatedLogs, error: fetchError } = await fetchPassWithLogs(outpassId)
-  if (fetchError) {
-    return { gateLogs: updatedLogs, error: fetchError }
+  try {
+    const { error } = await supabase.rpc('record_gate_scan', {
+      p_outpass_id: outpassId,
+      p_checkpoint: checkpoint,
+    })
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    const { gateLogs: updatedLogs, error: fetchError } = await fetchPassWithLogs(outpassId)
+    if (fetchError) {
+      return { gateLogs: updatedLogs, error: fetchError }
+    }
+    return { gateLogs: updatedLogs }
+  } catch (err) {
+    if (isTransientNetworkError(err) && options?.scannedBy) {
+      const offlineResult = await recordGateCheckpointOffline(
+        outpassId,
+        checkpoint,
+        options.scannedBy,
+      )
+      if ('error' in offlineResult) {
+        return { error: offlineResult.error }
+      }
+      return { gateLogs: offlineResult.gateLogs, offline: true }
+    }
+    return {
+      error: err instanceof Error ? err.message : 'Failed to record gate scan.',
+    }
   }
-  return { gateLogs: updatedLogs }
 }
 
 /** @deprecated Use recordGateCheckpoint */
@@ -328,9 +278,8 @@ export async function recordGateEvent(
   outpassId: string,
   scannedBy: string,
   checkpoint: GateCheckpoint,
-): Promise<{ error?: string; gateLogs?: GateLog[] }> {
-  void scannedBy
-  return recordGateCheckpoint(outpassId, checkpoint)
+): Promise<{ error?: string; gateLogs?: GateLog[]; offline?: boolean }> {
+  return recordGateCheckpoint(outpassId, checkpoint, { scannedBy })
 }
 
 export function getScanProgress(passId: string, gateLogs: GateLog[], multiDaily = false) {

@@ -18,9 +18,16 @@ export type SecurityScanPhase =
 interface UseSecurityScanOptions {
   userId: string | undefined
   onRecorded?: (checkpoint: GateCheckpoint) => void
+  onAfterRecord?: () => void
+  onAfterValidate?: () => void
 }
 
-export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) {
+export function useSecurityScan({
+  userId,
+  onRecorded,
+  onAfterRecord,
+  onAfterValidate,
+}: UseSecurityScanOptions) {
   const [phase, setPhase] = useState<SecurityScanPhase>('scanning')
   const [result, setResult] = useState<ScanValidationResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -65,6 +72,7 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
 
       setResult(validation)
       setPhase('result')
+      onAfterValidate?.()
       return validation
     } catch {
       const failed: ScanValidationResult = {
@@ -85,7 +93,9 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
       if (!target) return
 
       setSubmitting(true)
-      const { error, gateLogs } = await recordGateCheckpoint(result.pass.id, target)
+      const { error, gateLogs } = await recordGateCheckpoint(result.pass.id, target, {
+        scannedBy: userId,
+      })
       setSubmitting(false)
 
       if (error) {
@@ -112,12 +122,20 @@ export function useSecurityScan({ userId, onRecorded }: UseSecurityScanOptions) 
         return
       }
 
+      if (gateLogs) {
+        setResult({
+          ...result,
+          gateLogs,
+        })
+      }
+
       setLastRecordedCheckpoint(target)
       onRecorded?.(target)
+      onAfterRecord?.()
       setPhase('success-flash')
       window.setTimeout(() => setPhase('ready-next'), 2000)
     },
-    [userId, result, onRecorded],
+    [userId, result, onRecorded, onAfterRecord],
   )
 
   const alertWarden = useCallback(async () => {
