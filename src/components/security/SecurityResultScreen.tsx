@@ -130,6 +130,11 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
           ? 'Ready for next gate scan'
           : 'Scan next student'}
       </button>
+      {approved && !cycleComplete && (
+        <p className="mt-2 max-w-lg text-center text-xs font-medium text-white/80">
+          Same QR · scan again at the next gate. Returns to ready automatically.
+        </p>
+      )}
     </div>
   )
 }
