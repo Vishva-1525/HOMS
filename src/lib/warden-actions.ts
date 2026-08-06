@@ -9,8 +9,9 @@ export async function approveOutpassRequest(
   remarks: string,
   options?: { skipNotificationFlush?: boolean },
 ): Promise<{ error: string | null }> {
-  const qrCodeData = buildPassQrValue(request)
   const entryCode = generateEntryCode()
+  // Store the same short code the QR encodes so gate scan matches manual entry.
+  const qrCodeData = buildPassQrValue({ ...request, entry_code: entryCode })
 
   const { error } = await supabase
     .from('outpass_requests')

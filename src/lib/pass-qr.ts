@@ -25,12 +25,38 @@ export function buildPassQrPayload(
   }
 }
 
-/** QR encodes only the outpass UUID - gate lookup loads full pass details from the DB. */
-export function buildPassQrValue(pass: OutpassRequest): string {
+const ENTRY_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+const ENTRY_CODE_PATTERN = /^[A-Z0-9]{6,10}$/i
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+const COMPACT_UUID_PATTERN = /^[0-9a-f]{32}$/i
+
+const HYPHENATED_UUID_RE =
+  /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i
+
+/**
+ * Gate QR payload. Prefer the short entry code (same value shown for manual
+ * entry) — USB wedge scanners often drop UUID hyphens and fail the UUID path.
+ * Falls back to outpass id for legacy passes without an entry code.
+ */
+export function buildPassQrValue(
+  pass: Pick<OutpassRequest, 'id' | 'entry_code' | 'qr_code_data'>,
+): string {
+  const entry = pass.entry_code?.trim()
+  if (entry && ENTRY_CODE_PATTERN.test(entry)) {
+    return entry.toUpperCase()
+  }
+
+  const stored = pass.qr_code_data?.trim()
+  if (stored) {
+    if (ENTRY_CODE_PATTERN.test(stored)) return stored.toUpperCase()
+    if (UUID_PATTERN.test(stored) || COMPACT_UUID_PATTERN.test(stored)) return stored
+  }
+
   return pass.id
 }
-
-const ENTRY_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 export function generateEntryCode(length = 8): string {
   let code = ''
@@ -39,11 +65,6 @@ export function generateEntryCode(length = 8): string {
   }
   return code
 }
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
-const ENTRY_CODE_PATTERN = /^[A-Z0-9]{6,10}$/i
 
 export type ScanInputKind = 'outpass_id' | 'entry_code'
 
@@ -75,11 +96,24 @@ export function parsePassQrValue(raw: string): ScannedPassQrPayload | null {
   }
 }
 
-/** Accepts full QR JSON, raw outpass UUID, or entry code for manual entry. */
+/** Re-insert hyphens when a scanner strips them from a UUID. */
+export function normalizeCompactUuid(raw: string): string | null {
+  const compact = raw.replace(/[^0-9a-f]/gi, '')
+  if (!COMPACT_UUID_PATTERN.test(compact)) return null
+  return [
+    compact.slice(0, 8),
+    compact.slice(8, 12),
+    compact.slice(12, 16),
+    compact.slice(16, 20),
+    compact.slice(20),
+  ].join('-')
+}
+
+/** Accepts entry code (preferred QR), UUID, compact UUID, or legacy QR JSON. */
 export function parseScanInput(
   raw: string,
 ): { outpass_id?: string; entry_code?: string; reg_number?: string; kind: ScanInputKind } | null {
-  // Hardware scanners often append CR/LF; some wrap UUIDs in braces/quotes.
+  // Hardware scanners often append CR/LF; some wrap values in braces/quotes.
   let trimmed = raw
     .replace(/^\uFEFF/, '')
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
@@ -97,13 +131,17 @@ export function parseScanInput(
       }
     }
   } catch {
-    // not JSON - try UUID or entry code below
+    // not JSON - try entry code / UUID below
   }
 
-  // Extract embedded UUID if scanner prefixed junk (e.g. symbology id).
-  const uuidMatch = trimmed.match(
-    /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i,
-  )
+  const compactAlpha = trimmed.replace(/\s+/g, '')
+
+  // Prefer short entry codes — this is what the QR now encodes.
+  if (ENTRY_CODE_PATTERN.test(compactAlpha)) {
+    return { entry_code: compactAlpha.toUpperCase(), kind: 'entry_code' }
+  }
+
+  const uuidMatch = trimmed.match(HYPHENATED_UUID_RE)
   if (uuidMatch) {
     return { outpass_id: uuidMatch[0], kind: 'outpass_id' }
   }
@@ -112,9 +150,9 @@ export function parseScanInput(
     return { outpass_id: trimmed, kind: 'outpass_id' }
   }
 
-  const normalized = trimmed.replace(/\s+/g, '').toUpperCase()
-  if (ENTRY_CODE_PATTERN.test(normalized)) {
-    return { entry_code: normalized, kind: 'entry_code' }
+  const fromCompact = normalizeCompactUuid(compactAlpha)
+  if (fromCompact) {
+    return { outpass_id: fromCompact, kind: 'outpass_id' }
   }
 
   return null

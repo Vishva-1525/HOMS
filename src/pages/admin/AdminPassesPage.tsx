@@ -418,7 +418,14 @@ export function AdminPassesPage() {
               {qrPass.student_name} · {qrPass.reg_number}
             </p>
             <div className="rounded-xl border bg-white p-4">
-              <QRCodeCanvas value={buildPassQrValue(qrPass.pass)} size={180} level="H" />
+              <QRCodeCanvas
+                value={buildPassQrValue(qrPass.pass)}
+                size={200}
+                level="M"
+                includeMargin
+                fgColor="#000000"
+                bgColor="#FFFFFF"
+              />
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type FormEvent } from 'react'
+import { normalizeCompactUuid } from '@/lib/pass-qr'
 import { cn } from '@/lib/utils'
 
 const MIN_SCAN_LENGTH = 4
@@ -23,13 +24,16 @@ function extractScanPayload(raw: string): string | null {
   const trimmed = raw.replace(/[\u0000-\u001F\u007F]/g, '').trim()
   if (!trimmed) return null
 
+  const compact = trimmed.replace(/\s+/g, '')
+  if (/^[A-Z0-9]{6,10}$/i.test(compact)) return compact.toUpperCase()
+
   const uuid = trimmed.match(UUID_RE)
   if (uuid) return uuid[0]
 
-  if (trimmed.startsWith('{') && trimmed.includes('outpass_id')) return trimmed
+  const fromCompact = normalizeCompactUuid(compact)
+  if (fromCompact) return fromCompact
 
-  const compact = trimmed.replace(/\s+/g, '')
-  if (/^[A-Z0-9]{6,10}$/i.test(compact)) return compact.toUpperCase()
+  if (trimmed.startsWith('{') && trimmed.includes('outpass_id')) return trimmed
 
   return null
 }

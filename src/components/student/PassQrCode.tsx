@@ -86,9 +86,10 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
         <QRCodeCanvas
           ref={canvasRef}
           value={qrValue}
-          size={200}
-          level="H"
-          fgColor="#1A5CA0"
+          size={220}
+          level="M"
+          includeMargin
+          fgColor="#000000"
           bgColor="#FFFFFF"
         />
         {multiDaily && (
@@ -118,13 +119,13 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
       {entryCode && (
         <div className="w-full rounded-xl border border-[#1A5CA0]/20 bg-[#1A5CA0]/5 px-4 py-3 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Alternate entry code
+            Gate entry code
           </p>
           <p className="mt-1 font-mono text-2xl font-bold tracking-[0.2em] text-[#1A5CA0]">
             {entryCode}
           </p>
           <p className="mt-1 text-xs text-slate-600">
-            Show this code at the gate if QR scanning fails.
+            Encoded in the QR above — type this at the gate if the scanner fails.
           </p>
           <Button
             type="button"
