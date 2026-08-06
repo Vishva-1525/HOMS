@@ -1,33 +1,16 @@
-import { useEffect, useState } from 'react'
 import { Download, Share, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { isIosDevice, isStandalonePwa } from '@/lib/push-notifications'
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
+import { usePwaInstall } from '@/hooks/usePwaInstall'
 
 const DISMISS_KEY = 'homs-install-dismissed'
 
 export function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const { canInstall, isStandalone, isIos, promptInstall } = usePwaInstall()
   const [dismissed, setDismissed] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
-  const [isIos, setIsIos] = useState(false)
 
   useEffect(() => {
-    setIsStandalone(isStandalonePwa())
-    setIsIos(isIosDevice())
     setDismissed(localStorage.getItem(DISMISS_KEY) === '1')
-
-    function handleBeforeInstall(event: Event) {
-      event.preventDefault()
-      setDeferredPrompt(event as BeforeInstallPromptEvent)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
   }, [])
 
   function dismiss() {
@@ -70,7 +53,7 @@ export function InstallPrompt() {
     )
   }
 
-  if (!deferredPrompt) return null
+  if (!canInstall) return null
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-lg rounded-xl border border-[#BFDBFE] bg-white p-4 shadow-lg md:bottom-6 md:left-auto">
@@ -88,9 +71,8 @@ export function InstallPrompt() {
               type="button"
               size="sm"
               className="bg-[#1A5CA0] text-white hover:bg-[#154a85]"
-              onClick={async () => {
-                await deferredPrompt.prompt()
-                setDeferredPrompt(null)
+              onClick={() => {
+                void promptInstall()
               }}
             >
               Install

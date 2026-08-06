@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { isIosDevice, isStandalonePwa } from '@/lib/push-notifications'
 
 export interface BeforeInstallPromptEvent extends Event {
@@ -6,34 +6,71 @@ export interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+type Listener = () => void
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null
+const listeners = new Set<Listener>()
+let listening = false
+
+function emit() {
+  for (const listener of listeners) listener()
+}
+
+function ensureListening() {
+  if (listening || typeof window === 'undefined') return
+  listening = true
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault()
+    deferredPrompt = event as BeforeInstallPromptEvent
+    emit()
+  })
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null
+    emit()
+  })
+}
+
+function subscribe(listener: Listener) {
+  ensureListening()
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+function getSnapshot() {
+  return deferredPrompt
+}
+
+function getServerSnapshot() {
+  return null
+}
+
 export function usePwaInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const promptEvent = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const [isStandalone, setIsStandalone] = useState(false)
   const [isIos, setIsIos] = useState(false)
 
   useEffect(() => {
+    ensureListening()
     setIsStandalone(isStandalonePwa())
     setIsIos(isIosDevice())
-
-    function handleBeforeInstall(event: Event) {
-      event.preventDefault()
-      setDeferredPrompt(event as BeforeInstallPromptEvent)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
   }, [])
 
   async function promptInstall(): Promise<'accepted' | 'dismissed' | 'unavailable'> {
     if (!deferredPrompt) return 'unavailable'
-    await deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    if (outcome === 'accepted') setDeferredPrompt(null)
+    const current = deferredPrompt
+    await current.prompt()
+    const { outcome } = await current.userChoice
+    deferredPrompt = null
+    emit()
     return outcome
   }
 
   return {
-    canInstall: Boolean(deferredPrompt),
+    canInstall: Boolean(promptEvent) && !isStandalone,
     isStandalone,
     isIos,
     promptInstall,
