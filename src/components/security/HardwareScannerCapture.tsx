@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 const MIN_SCAN_LENGTH = 4
-const IDLE_SUBMIT_MS = 280
-const DEDUPE_MS = 800
+const IDLE_SUBMIT_MS = 220
+const DEDUPE_MS = 900
 
 function isManualEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -11,12 +11,6 @@ function isManualEntryTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest('[data-manual-scan-entry="true"]'))
 }
 
-function isCaptureInput(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  return target.dataset.hardwareScannerCapture === 'true'
-}
-
-/** Map legacy keyCode / code → character for scanners that send Unidentified keys. */
 function charFromKeyboardEvent(event: KeyboardEvent): string | null {
   if (event.key === 'Enter' || event.key === 'Tab' || event.key === 'Escape') return null
   if (event.key === 'Backspace') return null
@@ -60,7 +54,7 @@ interface HardwareScannerCaptureProps {
 }
 
 /**
- * Desk USB HID wedge capture + editable field for paste/manual typing.
+ * Desk USB HID wedge: document-level capture (Unidentified keys) + Check pass button.
  */
 export function HardwareScannerCapture({
   enabled,
@@ -97,13 +91,13 @@ export function HardwareScannerCapture({
     function syncDisplay(value: string) {
       bufferRef.current = value
       setDisplayValue(value)
+      if (inputRef.current) inputRef.current.value = value
     }
 
     function flush(raw?: string) {
       clearIdleTimer()
       const value = (raw ?? bufferRef.current).trim()
       syncDisplay('')
-      if (inputRef.current) inputRef.current.value = ''
       if (value.length < MIN_SCAN_LENGTH) return
 
       const now = Date.now()
@@ -149,27 +143,19 @@ export function HardwareScannerCapture({
         || event.code === 'NumpadEnter'
         || event.code === 'Tab'
       ) {
-        const value = isCaptureInput(event.target)
-          ? (inputRef.current?.value || bufferRef.current)
-          : bufferRef.current
-        if (value.trim().length >= MIN_SCAN_LENGTH) {
+        if (bufferRef.current.trim().length >= MIN_SCAN_LENGTH) {
           event.preventDefault()
           event.stopPropagation()
-          flush(value)
+          flush(bufferRef.current)
         }
         return
       }
 
       if (event.key === 'Escape') {
         syncDisplay('')
-        if (inputRef.current) inputRef.current.value = ''
         clearIdleTimer()
         return
       }
-
-      // Native typing into the capture field — let the browser update the input,
-      // then mirror into the buffer on input events.
-      if (isCaptureInput(event.target)) return
 
       if (event.key === 'Backspace' || event.keyCode === 8) {
         event.preventDefault()
@@ -180,6 +166,8 @@ export function HardwareScannerCapture({
 
       const ch = charFromKeyboardEvent(event)
       if (!ch) return
+
+      // Always capture at document level — Unidentified HID keys never fill <input>.
       event.preventDefault()
       event.stopPropagation()
       appendChar(ch)
@@ -205,7 +193,7 @@ export function HardwareScannerCapture({
     document.addEventListener('paste', onPaste, true)
     document.addEventListener('pointerdown', onPointerDown, true)
     window.addEventListener('focus', focusCapture)
-    const focusInterval = window.setInterval(focusCapture, 2000)
+    const focusInterval = window.setInterval(focusCapture, 1500)
 
     return () => {
       document.removeEventListener('keydown', onKeyDown, true)
@@ -219,7 +207,7 @@ export function HardwareScannerCapture({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const value = (inputRef.current?.value || bufferRef.current || displayValue).trim()
+    const value = (bufferRef.current || displayValue || inputRef.current?.value || '').trim()
     if (value.length < MIN_SCAN_LENGTH) return
     const now = Date.now()
     if (now - lastScanAtRef.current < DEDUPE_MS) return
@@ -242,42 +230,48 @@ export function HardwareScannerCapture({
         ref={inputRef}
         type="text"
         name="hardware-scanner"
-        defaultValue=""
+        value={displayValue}
+        readOnly
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
         enterKeyHint="go"
         data-hardware-scanner-capture="true"
-        placeholder="Scan QR or type entry code, then Enter"
-        onInput={(event) => {
-          const value = (event.target as HTMLInputElement).value
-          bufferRef.current = value
-          setDisplayValue(value)
-          if (idleTimerRef.current != null) window.clearTimeout(idleTimerRef.current)
-          idleTimerRef.current = window.setTimeout(() => {
-            if (looksComplete(bufferRef.current)) {
-              const now = Date.now()
-              if (now - lastScanAtRef.current < DEDUPE_MS) return
-              lastScanAtRef.current = now
-              const payload = bufferRef.current.trim()
-              bufferRef.current = ''
-              setDisplayValue('')
-              if (inputRef.current) inputRef.current.value = ''
-              onScanRef.current(payload)
-            }
-          }, IDLE_SUBMIT_MS)
-        }}
-        className="h-12 w-full rounded-xl border border-[#1A5CA0]/35 bg-white px-3 font-mono text-base text-slate-900 shadow-sm outline-none ring-[#1A5CA0] placeholder:font-sans placeholder:text-slate-400 focus:ring-2"
+        placeholder="Waiting for desk scanner or paste code…"
+        className={cn(
+          'h-12 w-full rounded-xl border bg-white px-3 font-mono text-base text-slate-900 shadow-sm outline-none placeholder:font-sans placeholder:text-slate-400 focus:ring-2',
+          displayValue
+            ? 'border-emerald-500 ring-2 ring-emerald-400/40'
+            : 'border-[#1A5CA0]/35 ring-[#1A5CA0]',
+        )}
       />
-      <button
-        type="submit"
-        className="h-11 w-full rounded-xl bg-[#1A5CA0] text-sm font-bold text-white active:scale-[0.99]"
-      >
-        Check pass
-      </button>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          data-manual-scan-entry="true"
+          placeholder="Or type entry code here"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 font-mono text-sm text-white placeholder:font-sans placeholder:text-white/40 outline-none focus:ring-2 focus:ring-white/30"
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return
+            event.preventDefault()
+            const value = (event.target as HTMLInputElement).value.trim()
+            if (value.length < MIN_SCAN_LENGTH) return
+            ;(event.target as HTMLInputElement).value = ''
+            onScanRef.current(value)
+          }}
+        />
+        <button
+          type="submit"
+          className="h-11 shrink-0 rounded-xl bg-[#1A5CA0] px-4 text-sm font-bold text-white"
+        >
+          Check
+        </button>
+      </div>
       <p className="text-center text-[11px] text-slate-500">
-        USB desk scanner types here automatically — or type/paste the entry code and press Check pass
+        {displayValue
+          ? `Receiving scan… ${displayValue.length} characters`
+          : 'USB reader types above automatically · or type code and press Enter / Check'}
       </p>
     </form>
   )

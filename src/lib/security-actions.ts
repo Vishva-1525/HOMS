@@ -2,8 +2,6 @@ import {
   GATE_CHECKPOINT_LABELS,
   GATE_CHECKPOINT_SHORT_LABELS,
   GATE_CHECKPOINTS,
-  checkpointIndex,
-  getNextCheckpoint,
   type GateCheckpoint,
 } from '@/lib/gate-checkpoints'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
@@ -15,7 +13,7 @@ import {
 } from '@/lib/student-details'
 import { supabase } from '@/lib/supabase'
 import { getStudentAvatarUrl, getStudentName, getStudentReg } from '@/lib/warden'
-import type { GateLog, OutpassWithStudent } from '@/lib/types'
+import type { OutpassWithStudent } from '@/lib/types'
 
 export type SecurityScanOutcome = 'approved' | 'denied'
 
@@ -36,7 +34,6 @@ export interface SecurityScanResult {
   photoUrl: string | null
   checkpointLabel?: string
   checkpoint?: GateCheckpoint
-  /** 1–4 after a successful gate scan */
   step?: number
   totalSteps?: number
   cycleComplete?: boolean
@@ -44,37 +41,35 @@ export interface SecurityScanResult {
   progress?: SecurityGateProgressItem[]
 }
 
-async function fetchPassBundle(outpassId: string): Promise<{
+type RecordNextGateScanResponse = {
+  ok?: boolean
+  checkpoint?: GateCheckpoint
+  step?: number
+  total_steps?: number
+  cycle_complete?: boolean
+  completed?: string[]
+  next_checkpoint?: GateCheckpoint | null
+}
+
+async function fetchPass(outpassId: string): Promise<{
   pass: OutpassWithStudent | null
-  gateLogs: GateLog[]
   error?: string
 }> {
-  const [passResult, logsResult] = await Promise.all([
-    supabase.from('outpass_requests').select('*').eq('id', outpassId).maybeSingle(),
-    supabase
-      .from('gate_logs')
-      .select('*')
-      .eq('outpass_id', outpassId)
-      .order('scanned_at', { ascending: false }),
-  ])
+  const passResult = await supabase
+    .from('outpass_requests')
+    .select('*')
+    .eq('id', outpassId)
+    .maybeSingle()
 
   if (passResult.error) {
-    return { pass: null, gateLogs: [], error: passResult.error.message }
-  }
-  if (logsResult.error) {
-    return { pass: null, gateLogs: [], error: logsResult.error.message }
+    return { pass: null, error: passResult.error.message }
   }
 
   const raw = passResult.data as OutpassWithStudent | null
-  if (!raw) {
-    return { pass: null, gateLogs: (logsResult.data ?? []) as GateLog[] }
-  }
+  if (!raw) return { pass: null }
 
   const profile = await fetchStudentProfileById(raw.student_id)
-  return {
-    pass: { ...raw, students: profile },
-    gateLogs: (logsResult.data ?? []) as GateLog[],
-  }
+  return { pass: { ...raw, students: profile } }
 }
 
 async function resolveOutpassId(
@@ -87,13 +82,10 @@ async function resolveOutpassId(
     })
     if (!error && data) return data as string
 
-    // Fallback: match stored qr_code_data / entry_code via table read.
     const { data: row } = await supabase
       .from('outpass_requests')
       .select('id')
-      .or(
-        `entry_code.eq.${parsed.entry_code},qr_code_data.eq.${parsed.entry_code}`,
-      )
+      .or(`entry_code.eq.${parsed.entry_code},qr_code_data.eq.${parsed.entry_code}`)
       .in('status', ['approved', 'extended'])
       .limit(1)
       .maybeSingle()
@@ -131,8 +123,22 @@ function identityFromPass(
   }
 }
 
+function buildProgress(
+  recorded: GateCheckpoint,
+  completed: string[],
+): SecurityGateProgressItem[] {
+  const doneSet = new Set(completed)
+  doneSet.add(recorded)
+  return GATE_CHECKPOINTS.map((cp) => ({
+    checkpoint: cp,
+    label: GATE_CHECKPOINT_SHORT_LABELS[cp],
+    done: doneSet.has(cp),
+    justRecorded: cp === recorded,
+  }))
+}
+
 /**
- * Online-only: validate QR, auto-record the next of 4 gate checkpoints when allowed.
+ * Online-only: validate QR, then let the DB record the next of 4 gate checkpoints.
  */
 export async function processSecurityScan(raw: string): Promise<SecurityScanResult> {
   const parsed = parseScanInput(raw)
@@ -148,13 +154,9 @@ export async function processSecurityScan(raw: string): Promise<SecurityScanResu
     )
   }
 
-  const { pass, gateLogs, error } = await fetchPassBundle(outpassId)
-  if (error) {
-    return denied('Lookup failed', error)
-  }
-  if (!pass) {
-    return denied('Pass not found', 'No approved pass matches this QR.')
-  }
+  const { pass, error } = await fetchPass(outpassId)
+  if (error) return denied('Lookup failed', error)
+  if (!pass) return denied('Pass not found', 'No approved pass matches this QR.')
 
   const admissionNo =
     (await fetchAdmissionNoByStudentId(pass.student_id, getStudentReg(pass.students)))
@@ -181,61 +183,46 @@ export async function processSecurityScan(raw: string): Promise<SecurityScanResu
     )
   }
 
-  const nextCheckpoint = getNextCheckpoint(pass.id, gateLogs, { multiDaily: multi })
-  if (!nextCheckpoint) {
-    return denied(
-      'Already complete',
-      multi
-        ? 'All four gate scans are done for today.'
-        : 'This trip is already complete.',
-      identity,
-    )
-  }
-
-  if (
-    (nextCheckpoint === 'hostel_exit' || nextCheckpoint === 'main_exit')
-    && !multi
-    && Date.now() > new Date(pass.return_by).getTime()
-  ) {
-    return denied('Pass expired', 'Return time has passed. Exit is not allowed.', identity)
-  }
-
-  const { error: recordError } = await supabase.rpc('record_gate_scan', {
+  const { data, error: recordError } = await supabase.rpc('record_next_gate_scan', {
     p_outpass_id: pass.id,
-    p_checkpoint: nextCheckpoint,
   })
 
   if (recordError) {
     const msg = recordError.message
-    if (/already scanned|already recorded|cycle/i.test(msg)) {
+    if (/already completed|already recorded for today|trip already completed/i.test(msg)) {
+      return denied('Already complete', msg, identity)
+    }
+    if (/already scanned/i.test(msg)) {
       return denied('Already scanned', msg, identity)
     }
-    if (/sequence|must|next required/i.test(msg)) {
-      return denied('Wrong gate order', msg, identity)
+    if (/expired/i.test(msg)) {
+      return denied('Pass expired', msg, identity)
     }
     return denied('Could not record', msg, identity)
   }
 
-  const step = checkpointIndex(nextCheckpoint) + 1
-  const cycleComplete = nextCheckpoint === 'hostel_entry'
-  const following = GATE_CHECKPOINTS[step] ?? null
+  const payload = (data ?? {}) as RecordNextGateScanResponse
+  const checkpoint = payload.checkpoint
+  if (!checkpoint || !GATE_CHECKPOINTS.includes(checkpoint)) {
+    return denied('Could not record', 'Server did not return a gate checkpoint.', identity)
+  }
+
+  const step = payload.step ?? GATE_CHECKPOINTS.indexOf(checkpoint) + 1
+  const cycleComplete = Boolean(payload.cycle_complete ?? checkpoint === 'hostel_entry')
+  const next = payload.next_checkpoint ?? null
+  const completed = Array.isArray(payload.completed) ? payload.completed : [checkpoint]
 
   return {
     outcome: 'approved',
     title: cycleComplete ? 'Trip complete' : 'Approved',
-    detail: `${GATE_CHECKPOINT_LABELS[nextCheckpoint]} · scan ${step} of 4`,
+    detail: `${GATE_CHECKPOINT_LABELS[checkpoint]} · scan ${step} of 4`,
     ...identity,
-    checkpoint: nextCheckpoint,
-    checkpointLabel: GATE_CHECKPOINT_LABELS[nextCheckpoint],
+    checkpoint,
+    checkpointLabel: GATE_CHECKPOINT_LABELS[checkpoint],
     step,
     totalSteps: 4,
     cycleComplete,
-    nextGateLabel: following ? GATE_CHECKPOINT_LABELS[following] : undefined,
-    progress: GATE_CHECKPOINTS.map((cp, index) => ({
-      checkpoint: cp,
-      label: GATE_CHECKPOINT_SHORT_LABELS[cp],
-      done: index < step,
-      justRecorded: index === step - 1,
-    })),
+    nextGateLabel: next ? GATE_CHECKPOINT_LABELS[next] : undefined,
+    progress: buildProgress(checkpoint, completed),
   }
 }

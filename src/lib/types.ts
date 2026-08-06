@@ -324,6 +324,10 @@ export interface Database {
         Args: { p_outpass_id: string; p_checkpoint: GateCheckpoint }
         Returns: Json
       }
+      record_next_gate_scan: {
+        Args: { p_outpass_id: string }
+        Returns: Json
+      }
     }
   }
 }

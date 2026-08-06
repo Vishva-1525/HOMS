@@ -3,13 +3,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseCameraQrScannerOptions {
   enabled: boolean
+  /** Bump to force a fresh camera session after each successful scan. */
+  sessionKey?: number
   onScan: (raw: string) => void
 }
 
 /**
- * Live camera preview + continuous QR decode (backup to hardware wedge scanner).
+ * Live camera preview + continuous QR decode.
  */
-export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOptions) {
+export function useCameraQrScanner({
+  enabled,
+  sessionKey = 0,
+  onScan,
+}: UseCameraQrScannerOptions) {
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
   const videoRef = useCallback((node: HTMLVideoElement | null) => {
     setVideoEl(node)
@@ -45,8 +51,8 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
     setError(null)
 
     const reader = new BrowserQRCodeReader(undefined, {
-      delayBetweenScanAttempts: 250,
-      delayBetweenScanSuccess: 2000,
+      delayBetweenScanAttempts: 200,
+      delayBetweenScanSuccess: 1500,
     })
 
     void (async () => {
@@ -55,7 +61,7 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
           {
             audio: false,
             video: {
-              facingMode: { ideal: 'environment' },
+              facingMode: { ideal: 'user' },
               width: { ideal: 1280 },
               height: { ideal: 720 },
             },
@@ -66,7 +72,11 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
             const text = result?.getText()?.trim()
             if (!text) return
             handledRef.current = true
-            controls.stop()
+            try {
+              controls.stop()
+            } catch {
+              // ignore
+            }
             onScanRef.current(text)
           },
         )
@@ -93,7 +103,7 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
       controlsRef.current?.stop()
       controlsRef.current = null
     }
-  }, [enabled, videoEl])
+  }, [enabled, videoEl, sessionKey])
 
   return { videoRef, error, starting }
 }
