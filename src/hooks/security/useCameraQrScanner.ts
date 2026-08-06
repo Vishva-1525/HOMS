@@ -1,5 +1,9 @@
-import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  startQrScannerEngine,
+  type QrScannerEngineControls,
+} from '@/lib/qr-scanner-engine'
+import { scanDebug } from '@/lib/security-scan-debug'
 
 interface UseCameraQrScannerOptions {
   enabled: boolean
@@ -12,10 +16,8 @@ interface UseCameraQrScannerOptions {
  * Developer-testing camera QR decode.
  * Production gates use the desk scanner; this path must still support repeated scans.
  *
- * Root-cause fix for one-shot failure:
- * - Do not latch forever if the parent rejects the scan (inFlight).
- * - Always tear down and restart when `enabled`/`sessionKey` change.
- * - Prefer a cooldown over a permanent stop while still enabled.
+ * Uses startQrScannerEngine (own getUserMedia + frame wait + canvas/BarcodeDetector)
+ * instead of ZXing decodeFromConstraints, which often shows preview but never decodes.
  */
 export function useCameraQrScanner({
   enabled,
@@ -27,7 +29,7 @@ export function useCameraQrScanner({
     setVideoEl(node)
   }, [])
 
-  const controlsRef = useRef<IScannerControls | null>(null)
+  const controlsRef = useRef<QrScannerEngineControls | null>(null)
   const onScanRef = useRef(onScan)
   const [error, setError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
@@ -40,12 +42,6 @@ export function useCameraQrScanner({
     function stopEverything() {
       controlsRef.current?.stop()
       controlsRef.current = null
-      if (videoEl?.srcObject) {
-        for (const track of (videoEl.srcObject as MediaStream).getTracks()) {
-          track.stop()
-        }
-        videoEl.srcObject = null
-      }
     }
 
     if (!enabled || !videoEl) {
@@ -59,53 +55,53 @@ export function useCameraQrScanner({
 
     setStarting(true)
     setError(null)
-
-    const reader = new BrowserQRCodeReader(undefined, {
-      delayBetweenScanAttempts: 200,
-      delayBetweenScanSuccess: 1200,
-    })
+    scanDebug('Camera starting', { sessionKey })
 
     void (async () => {
       try {
-        const controls = await reader.decodeFromConstraints(
-          {
-            audio: false,
-            video: {
-              // Laptops used for testing usually only have a front camera.
-              facingMode: { ideal: 'user' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          },
-          videoEl,
-          (result, _err, controls) => {
+        const controls = await startQrScannerEngine({
+          video: videoEl,
+          onDecode: (text) => {
             if (cancelled) return
-            const text = result?.getText()?.trim()
-            if (!text) return
+            const value = text.trim()
+            if (!value) return
+            scanDebug('Camera Detected QR', value)
             // Pause this session; parent bumps sessionKey after the result dwell.
             try {
-              controls.stop()
+              controlsRef.current?.stop()
             } catch {
               // ignore
             }
-            onScanRef.current(text)
+            controlsRef.current = null
+            onScanRef.current(value)
           },
-        )
+          onError: (message) => {
+            if (cancelled) return
+            scanDebug('Camera engine error', message)
+            setError(message)
+          },
+        })
 
         if (cancelled) {
           controls.stop()
           return
         }
+
         controlsRef.current = controls
         setStarting(false)
+        scanDebug('Camera ready', {
+          label: controls.cameraLabel,
+          deviceId: controls.deviceId,
+        })
       } catch (err) {
         if (cancelled) return
         setStarting(false)
         const message = err instanceof Error ? err.message : 'Camera unavailable'
+        scanDebug('Camera start failed', message)
         setError(
           /Permission|NotAllowed/i.test(message)
             ? 'Camera permission denied.'
-            : 'Camera unavailable.',
+            : message || 'Camera unavailable.',
         )
       }
     })()

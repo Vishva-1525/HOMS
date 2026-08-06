@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { processSecurityScan, type SecurityScanResult } from '@/lib/security-actions'
+import { scanDebug } from '@/lib/security-scan-debug'
 
 export type SecurityScanPhase = 'ready' | 'validating' | 'result'
 export type SecurityScanMode = 'desk' | 'camera'
@@ -37,17 +38,23 @@ export function useSecurityScanController() {
 
   const submitScan = useCallback(async (raw: string): Promise<boolean> => {
     const value = raw.trim()
-    if (!value || inFlightRef.current) return false
+    if (!value || inFlightRef.current) {
+      scanDebug('Verification skipped', { empty: !value, inFlight: inFlightRef.current })
+      return false
+    }
 
     clearDwellTimer()
     inFlightRef.current = true
     setPhase('validating')
     setResult(null)
+    scanDebug('Verification Started', value)
 
     try {
       const next = await processSecurityScan(value)
+      scanDebug('API Response', { outcome: next.outcome, title: next.title })
       setResult(next)
       setPhase('result')
+      scanDebug('Dashboard Updated')
       // Production: auto-return to ready so the next desk scan needs no click.
       dwellTimerRef.current = window.setTimeout(() => {
         dwellTimerRef.current = null
@@ -55,10 +62,12 @@ export function useSecurityScanController() {
         setResult(null)
         setPhase('ready')
         setCameraSession((n) => n + 1)
+        scanDebug('Ready for next scan')
       }, RESULT_DWELL_MS)
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not reach the server.'
+      scanDebug('API failed', message)
       setResult({
         outcome: 'denied',
         title: 'Scan failed',
@@ -75,6 +84,7 @@ export function useSecurityScanController() {
         setResult(null)
         setPhase('ready')
         setCameraSession((n) => n + 1)
+        scanDebug('Ready for next scan')
       }, RESULT_DWELL_MS)
       return true
     } finally {

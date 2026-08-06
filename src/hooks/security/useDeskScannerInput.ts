@@ -1,4 +1,5 @@
 import { useEffect, useRef, type FormEvent, type RefObject } from 'react'
+import { scanDebug } from '@/lib/security-scan-debug'
 
 const MIN_LENGTH = 4
 const IDLE_SUBMIT_MS = 250
@@ -41,6 +42,26 @@ function charFromEvent(event: KeyboardEvent): string | null {
   return null
 }
 
+function isTerminator(event: KeyboardEvent): boolean {
+  return (
+    event.key === 'Enter'
+    || event.key === 'Tab'
+    || event.keyCode === 13
+    || event.code === 'Enter'
+    || event.code === 'NumpadEnter'
+    || event.code === 'Tab'
+  )
+}
+
+/** Keys that often do not insert into a focused <input> on macOS/Chrome HID wedges. */
+function isNonInsertingHidKey(event: KeyboardEvent): boolean {
+  return (
+    event.key === 'Unidentified'
+    || event.key === 'Process'
+    || event.key === 'Dead'
+  )
+}
+
 interface UseDeskScannerInputOptions {
   enabled: boolean
   onScan: (raw: string) => void
@@ -56,8 +77,10 @@ export interface DeskScannerInputApi {
  *
  * 1. Keep a real editable <input> focused — normal wedges type into it.
  * 2. Idle-submit complete entry codes / UUIDs from the input value.
- * 3. Document-level backup for Unidentified HID keys when focus drifts.
- * 4. Enter / Tab submits.
+ * 3. Reconstruct Unidentified HID keys even while the input is focused
+ *    (browser does not insert those into input.value).
+ * 4. Document-level backup when focus drifts.
+ * 5. Enter / Tab submits.
  */
 export function useDeskScannerInput({
   enabled,
@@ -88,24 +111,43 @@ export function useDeskScannerInput({
       }
     }
 
-    function emit(raw: string) {
+    function emit(raw: string, source: string) {
       clearIdle()
       const value = raw.trim()
       bufferRef.current = ''
       if (inputRef.current) inputRef.current.value = ''
-      if (value.length < MIN_LENGTH) return
+      if (value.length < MIN_LENGTH) {
+        scanDebug('Hardware emit skipped (too short)', { source, value })
+        return
+      }
 
       const now = Date.now()
-      if (now - lastScanAtRef.current < DEDUPE_MS) return
+      if (now - lastScanAtRef.current < DEDUPE_MS) {
+        scanDebug('Hardware emit skipped (dedupe)', { source, value })
+        return
+      }
       lastScanAtRef.current = now
+      scanDebug('Hardware Input Received', { source, value })
       onScanRef.current(value)
     }
 
     function scheduleIdle() {
       clearIdle()
       idleTimerRef.current = window.setTimeout(() => {
-        if (looksComplete(bufferRef.current)) emit(bufferRef.current)
+        if (looksComplete(bufferRef.current)) {
+          emit(bufferRef.current, 'idle')
+        }
       }, IDLE_SUBMIT_MS)
+    }
+
+    function appendChar(ch: string) {
+      bufferRef.current += ch
+      if (inputRef.current) inputRef.current.value = bufferRef.current
+      scanDebug('Keyboard Event Fired', {
+        appended: ch,
+        buffer: bufferRef.current,
+      })
+      scheduleIdle()
     }
 
     function focusInput() {
@@ -126,32 +168,14 @@ export function useDeskScannerInput({
     function onKeyDown(event: KeyboardEvent) {
       if (event.ctrlKey || event.metaKey || event.altKey) return
 
-      const terminator =
-        event.key === 'Enter'
-        || event.key === 'Tab'
-        || event.keyCode === 13
-        || event.code === 'Enter'
-        || event.code === 'NumpadEnter'
-        || event.code === 'Tab'
+      const onOurInput = isOurInput(event.target)
 
-      // Native path: wedge is typing into our focused input — do not preventDefault.
-      if (isOurInput(event.target)) {
-        if (terminator) {
-          const value = inputRef.current?.value || bufferRef.current
-          if (value.trim().length >= MIN_LENGTH) {
-            event.preventDefault()
-            emit(value)
-          }
-        }
-        return
-      }
-
-      // Focus drifted. Reconstruct wedge keystrokes at document level.
-      if (terminator) {
-        if (bufferRef.current.trim().length >= MIN_LENGTH) {
+      if (isTerminator(event)) {
+        const value = (inputRef.current?.value || bufferRef.current).trim()
+        if (value.length >= MIN_LENGTH) {
           event.preventDefault()
-          event.stopPropagation()
-          emit(bufferRef.current)
+          if (!onOurInput) event.stopPropagation()
+          emit(value, onOurInput ? 'enter-focused' : 'enter-document')
         }
         return
       }
@@ -164,25 +188,43 @@ export function useDeskScannerInput({
       }
 
       if (event.key === 'Backspace' || event.keyCode === 8) {
-        event.preventDefault()
-        bufferRef.current = bufferRef.current.slice(0, -1)
-        if (inputRef.current) inputRef.current.value = bufferRef.current
-        scheduleIdle()
+        if (!onOurInput) {
+          event.preventDefault()
+          bufferRef.current = bufferRef.current.slice(0, -1)
+          if (inputRef.current) inputRef.current.value = bufferRef.current
+          scheduleIdle()
+        }
         return
       }
 
+      // Focused input + normal printable key: let the browser insert; onInput syncs.
+      if (onOurInput && event.key.length === 1 && !isNonInsertingHidKey(event)) {
+        return
+      }
+
+      // Unidentified HID (focused or not) and drifted focus: reconstruct.
       const ch = charFromEvent(event)
-      if (!ch) return
+      if (!ch) {
+        if (isNonInsertingHidKey(event)) {
+          scanDebug('Keyboard Event Fired (no char)', {
+            key: event.key,
+            code: event.code,
+            keyCode: event.keyCode,
+            focused: onOurInput,
+          })
+        }
+        return
+      }
+
       event.preventDefault()
-      event.stopPropagation()
-      bufferRef.current += ch
-      if (inputRef.current) inputRef.current.value = bufferRef.current
-      scheduleIdle()
+      if (!onOurInput) event.stopPropagation()
+      appendChar(ch)
     }
 
     function onInput() {
       const value = inputRef.current?.value ?? ''
       bufferRef.current = value
+      scanDebug('Native input value', value)
       scheduleIdle()
     }
 
@@ -191,7 +233,7 @@ export function useDeskScannerInput({
       if (!text.trim()) return
       if (isOurInput(event.target)) return // native paste + onInput idle submit
       event.preventDefault()
-      emit(text)
+      emit(text, 'paste')
     }
 
     function onPointerDown(event: PointerEvent) {
@@ -202,6 +244,7 @@ export function useDeskScannerInput({
     }
 
     focusInput()
+    scanDebug('Desk scanner listeners attached')
 
     const input = inputRef.current
     input?.addEventListener('input', onInput)
@@ -231,6 +274,7 @@ export function useDeskScannerInput({
     const now = Date.now()
     if (now - lastScanAtRef.current < DEDUPE_MS) return
     lastScanAtRef.current = now
+    scanDebug('Manual Entry Submitted', value)
     onScanRef.current(value)
   }
 
