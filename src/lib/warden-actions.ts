@@ -26,7 +26,7 @@ export async function approveOutpassRequest(
     .eq('id', request.id)
 
   if (!error && !options?.skipNotificationFlush) {
-    void flushNotificationOutbox()
+    await flushNotificationOutbox()
   }
 
   return { error: error?.message ?? null }
@@ -48,7 +48,7 @@ export async function rejectOutpassRequest(
     .eq('id', request.id)
 
   if (!error && !options?.skipNotificationFlush) {
-    void flushNotificationOutbox()
+    await flushNotificationOutbox()
   }
 
   return { error: error?.message ?? null }

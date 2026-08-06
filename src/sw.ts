@@ -35,19 +35,40 @@ interface PushPayload {
   body?: string
   url?: string
   type?: string
+  notificationId?: string
 }
 
 self.addEventListener('push', (event) => {
-  const payload: PushPayload = event.data ? event.data.json() : {}
+  // Always show a system notification — this is what wakes locked / closed phones.
+  let payload: PushPayload = {}
+  try {
+    payload = event.data ? (event.data.json() as PushPayload) : {}
+  } catch {
+    try {
+      const text = event.data?.text()
+      if (text) payload = { body: text }
+    } catch {
+      /* ignore malformed payloads */
+    }
+  }
+
   const title = payload.title ?? 'HOMS - SVCE Hostel'
+  const tag = payload.notificationId
+    ? `homs-${payload.notificationId}`
+    : (payload.type ?? 'homs-notification')
+
   const options: NotificationOptions & { renotify?: boolean; vibrate?: number[] } = {
     body: payload.body ?? 'You have a new update.',
     icon: '/pwa-icon-192.png',
     badge: '/pwa-icon-192.png',
-    tag: payload.type ?? 'homs-notification',
+    tag,
     renotify: true,
-    data: { url: payload.url ?? '/' },
+    data: {
+      url: payload.url ?? '/',
+      notificationId: payload.notificationId,
+    },
     vibrate: [120, 60, 120],
+    requireInteraction: payload.type === 'pending' || payload.type === 'approved',
   }
 
   event.waitUntil(self.registration.showNotification(title, options))
@@ -76,6 +97,17 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       return self.clients.openWindow(targetUrl)
+    }),
+  )
+})
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  // Browser rotated the push subscription — ask open clients to re-subscribe.
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        client.postMessage({ type: 'homs-push-subscription-changed' })
+      }
     }),
   )
 })

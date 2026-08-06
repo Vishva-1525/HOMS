@@ -143,7 +143,7 @@ export function StudentNewRequestPage() {
       return
     }
 
-    void flushNotificationOutbox()
+    await flushNotificationOutbox()
 
     setForm(INITIAL_NEW_REQUEST_FORM)
     void refetchStudentData()

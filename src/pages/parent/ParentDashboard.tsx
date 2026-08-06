@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react'
 import { ParentAlertsList, ParentStatusBanner, ParentWardHeader } from '@/components/parent/ParentWardPanels'
 import { ParentPassTable } from '@/components/parent/ParentPassTable'
+import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
 import { StatCard } from '@/components/ui/StatCard'
 import { Spinner } from '@/components/ui/spinner'
 import { useParentData } from '@/hooks/parent/useParentData'
@@ -55,6 +56,8 @@ export function ParentDashboard() {
       </div>
 
       <ParentWardHeader ward={activeWard} wards={wards} onSelectWard={selectWard} />
+
+      <PushPermissionBanner compact />
 
       <ParentStatusBanner status={wardStatus} />
 

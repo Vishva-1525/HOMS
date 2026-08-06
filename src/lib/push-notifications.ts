@@ -78,14 +78,21 @@ async function upsertPushSubscription(
     { onConflict: 'user_id,endpoint' },
   )
 
-  return !error
+  if (error) {
+    console.error('Failed to save push subscription', error.message)
+    return false
+  }
+  return true
 }
 
 export async function subscribeToPush(userId: string): Promise<boolean> {
   if (!isPushSupported()) return false
 
   const vapidKey = getVapidPublicKey()
-  if (!vapidKey) return false
+  if (!vapidKey) {
+    console.warn('VITE_VAPID_PUBLIC_KEY is not set — cannot subscribe to Web Push')
+    return false
+  }
 
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return false
@@ -93,13 +100,23 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
   const registration = await registerServiceWorker()
   if (!registration) return false
 
+  const applicationServerKey = urlBase64ToUint8Array(vapidKey) as BufferSource
+
   let subscription = await registration.pushManager.getSubscription()
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
-    })
+  if (subscription) {
+    // Re-subscribe if the existing subscription was created with a different VAPID key.
+    try {
+      await subscription.unsubscribe()
+    } catch {
+      /* ignore */
+    }
+    subscription = null
   }
+
+  subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey,
+  })
 
   return upsertPushSubscription(userId, subscription)
 }
@@ -162,21 +179,31 @@ export function showLocalNotification(
 
 export async function requestNotificationDispatch(notificationId: string): Promise<void> {
   try {
-    await supabase.functions.invoke('notification-dispatch', {
+    const { error } = await supabase.functions.invoke('notification-dispatch', {
       body: { notification_id: notificationId },
     })
-  } catch {
-    // Server dispatch may already be in flight via outbox trigger.
+    if (error) console.warn('notification-dispatch failed', error.message)
+  } catch (err) {
+    console.warn('notification-dispatch invoke error', err)
   }
 }
 
-/** Flush pending outbox so push is sent immediately after approve/reject. */
+/** Flush pending outbox so push is sent even when the recipient's app is closed. */
 export async function flushNotificationOutbox(): Promise<void> {
   try {
-    await supabase.functions.invoke('notification-dispatch', {
+    const { error } = await supabase.functions.invoke('notification-dispatch', {
       body: { flush: true },
     })
-  } catch {
-    // Best-effort; outbox may still be processed by DB trigger / later flush.
+    if (error) {
+      console.warn('notification-dispatch flush failed', error.message)
+      // One retry for transient gateway / cold-start failures.
+      await new Promise((r) => setTimeout(r, 800))
+      const retry = await supabase.functions.invoke('notification-dispatch', {
+        body: { flush: true },
+      })
+      if (retry.error) console.warn('notification-dispatch flush retry failed', retry.error.message)
+    }
+  } catch (err) {
+    console.warn('notification-dispatch flush error', err)
   }
 }

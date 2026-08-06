@@ -154,7 +154,7 @@ export function ExtensionRequestsPage() {
     setFadingIds((prev) => new Set(prev).add(id))
     setSubmitting(false)
     closeDrawer()
-    void flushNotificationOutbox()
+    await flushNotificationOutbox()
 
     window.setTimeout(() => {
       setFadingIds((prev) => {

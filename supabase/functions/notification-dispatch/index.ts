@@ -121,11 +121,16 @@ async function dispatchOne(
       .select('endpoint, p256dh, auth')
       .eq('user_id', notification.user_id)
 
+    if (!subscriptions?.length) {
+      console.warn('No push subscriptions for user', notification.user_id)
+    }
+
     const payload = JSON.stringify({
       title,
       body: notification.message,
       url,
       type: notification.type,
+      notificationId: notification.id,
     })
 
     for (const sub of subscriptions ?? []) {
@@ -139,6 +144,7 @@ async function dispatchOne(
           {
             TTL: 60 * 60 * 24,
             urgency: notification.type === 'pending' || notification.type === 'approved'
+              || notification.type === 'rejected' || notification.type === 'overdue'
               ? 'high'
               : 'normal',
           },
@@ -157,6 +163,8 @@ async function dispatchOne(
         }
       }
     }
+  } else {
+    console.warn('VAPID keys missing — background Web Push skipped')
   }
 
   let smsSent = false

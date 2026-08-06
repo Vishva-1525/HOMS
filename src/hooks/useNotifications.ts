@@ -46,16 +46,14 @@ export function useNotifications() {
 
       const url = getNotificationUrl(role, item)
 
-      // Foreground: instant alert via service worker (Realtime is faster than server push).
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        showLocalNotification(
-          getNotificationTitle(item.type),
-          item.message,
-          url,
-          item.id,
-        )
-      }
-      // Background / closed: server push from outbox dispatch reaches the device.
+      // Realtime path: show a system notification whenever the client receives the row
+      // (foreground or backgrounded tab). Fully closed apps rely on server Web Push.
+      showLocalNotification(
+        getNotificationTitle(item.type),
+        item.message,
+        url,
+        item.id,
+      )
     },
     [role],
   )

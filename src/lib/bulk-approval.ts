@@ -25,7 +25,7 @@ export async function bulkApproveOutpassRequests(
   }
 
   if (succeeded > 0) {
-    void flushNotificationOutbox()
+    await flushNotificationOutbox()
   }
 
   return { succeeded, failed: requests.length - succeeded, errors }
@@ -48,7 +48,7 @@ export async function bulkRejectOutpassRequests(
   }
 
   if (succeeded > 0) {
-    void flushNotificationOutbox()
+    await flushNotificationOutbox()
   }
 
   return { succeeded, failed: requests.length - succeeded, errors }

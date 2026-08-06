@@ -20,15 +20,16 @@ export function usePushNotifications() {
   const [standalone, setStandalone] = useState(() =>
     typeof window !== 'undefined' ? isStandalonePwa() : false,
   )
+  const [lastError, setLastError] = useState<string | null>(null)
 
   const refreshState = useCallback(() => {
     setStandalone(isStandalonePwa())
-    if (!isPushSupported()) {
-      setState('unsupported')
-      return
-    }
     if (!getVapidPublicKey()) {
       setState('default')
+      return
+    }
+    if (!isPushSupported()) {
+      setState('unsupported')
       return
     }
     setState(Notification.permission as PushPermissionState)
@@ -54,21 +55,43 @@ export function usePushNotifications() {
       void refreshPushSubscription(userId)
     }
 
+    function onSwMessage(event: MessageEvent) {
+      if (event.data?.type !== 'homs-push-subscription-changed') return
+      void subscribeToPush(userId).then((ok) => {
+        if (ok) setState('granted')
+      })
+    }
+
     window.addEventListener('focus', onVisible)
     document.addEventListener('visibilitychange', onVisible)
+    navigator.serviceWorker?.addEventListener('message', onSwMessage)
     return () => {
       window.removeEventListener('focus', onVisible)
       document.removeEventListener('visibilitychange', onVisible)
+      navigator.serviceWorker?.removeEventListener('message', onSwMessage)
     }
   }, [user, standalone])
 
   async function enablePush(): Promise<boolean> {
     if (!user) return false
     setEnabling(true)
+    setLastError(null)
     try {
       const ok = await subscribeToPush(user.id)
       refreshState()
+      if (!ok) {
+        setLastError(
+          getVapidPublicKey()
+            ? 'Could not enable notifications. Check browser permission and try again.'
+            : 'Push is not configured on this deployment (missing VAPID public key).',
+        )
+      }
       return ok
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not enable notifications.'
+      setLastError(message)
+      refreshState()
+      return false
     } finally {
       setEnabling(false)
     }
@@ -83,6 +106,7 @@ export function usePushNotifications() {
   return {
     state,
     enabling,
+    lastError,
     isSupported: isPushSupported(),
     hasVapidKey: Boolean(getVapidPublicKey()),
     iosNeedsInstall: isIosDevice() && !standalone,
