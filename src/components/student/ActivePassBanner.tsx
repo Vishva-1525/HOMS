@@ -5,15 +5,14 @@ import { PassQrSheet } from '@/components/student/PassQrSheet'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useQrUnlockCountdown } from '@/hooks/useQrUnlockCountdown'
 import { formatReturnTime } from '@/lib/outpass'
-import type { OutpassRequest, Student, GateLog } from '@/lib/types'
+import type { OutpassRequest, Student } from '@/lib/types'
 
 interface ActivePassBannerProps {
   pass: OutpassRequest
   student: Student | null
-  gateLogs?: GateLog[]
 }
 
-export function ActivePassBanner({ pass, student, gateLogs = [] }: ActivePassBannerProps) {
+export function ActivePassBanner({ pass, student }: ActivePassBannerProps) {
   const countdown = useCountdown(pass.return_by)
   const unlock = useQrUnlockCountdown(pass)
   const [qrOpen, setQrOpen] = useState(false)
@@ -66,7 +65,7 @@ export function ActivePassBanner({ pass, student, gateLogs = [] }: ActivePassBan
         )}
       </div>
 
-      <PassQrSheet open={qrOpen} pass={pass} gateLogs={gateLogs} onClose={() => setQrOpen(false)} />
+      <PassQrSheet open={qrOpen} pass={pass} onClose={() => setQrOpen(false)} />
     </>
   )
 }

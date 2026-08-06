@@ -1,21 +1,18 @@
 import { useRef } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { Copy, Share2 } from 'lucide-react'
-import { GateCheckpointProgress } from '@/components/shared/GateCheckpointProgress'
+import { Share2 } from 'lucide-react'
 import { PassQrPlaceholder } from '@/components/student/PassQrPlaceholder'
 import { Button } from '@/components/ui/button'
 import { useQrUnlockCountdown } from '@/hooks/useQrUnlockCountdown'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
-import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
 import { buildPassQrValue } from '@/lib/pass-qr'
-import type { GateLog, OutpassRequest } from '@/lib/types'
+import type { OutpassRequest } from '@/lib/types'
 
 interface PassQrCodeProps {
   pass: OutpassRequest
-  gateLogs?: GateLog[]
 }
 
-export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
+export function PassQrCode({ pass }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const unlock = useQrUnlockCountdown(pass)
 
@@ -41,7 +38,6 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
 
   const qrValue = buildPassQrValue(pass)
   const entryCode = pass.entry_code
-  const multiDaily = isMultiDailyScanPass(pass)
 
   async function getQrBlob(): Promise<Blob | null> {
     const canvas = canvasRef.current
@@ -75,11 +71,6 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
     await downloadQr()
   }
 
-  async function copyEntryCode() {
-    if (!entryCode) return
-    await navigator.clipboard.writeText(entryCode)
-  }
-
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex flex-col items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-white p-4 shadow-md">
@@ -92,28 +83,6 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
           fgColor="#000000"
           bgColor="#FFFFFF"
         />
-        {multiDaily && (
-          <p className="max-w-[220px] text-center text-xs text-slate-600">
-            Valid for daily 4-step gate scans until{' '}
-            {new Date(pass.return_by).toLocaleString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </p>
-        )}
-      </div>
-
-      <div className="w-full rounded-xl border border-slate-200/80 bg-slate-50/90 p-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Gate scan progress
-        </p>
-        <GateCheckpointProgress
-          passId={pass.id}
-          gateLogs={gateLogs}
-          multiDaily={multiDaily}
-        />
       </div>
 
       {entryCode && (
@@ -124,16 +93,6 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
           <p className="mt-1 font-mono text-2xl font-bold tracking-[0.2em] text-[#1A5CA0]">
             {entryCode}
           </p>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="mt-2"
-            onClick={copyEntryCode}
-          >
-            <Copy className="h-3.5 w-3.5" />
-            Copy code
-          </Button>
         </div>
       )}
 

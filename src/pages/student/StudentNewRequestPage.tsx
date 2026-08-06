@@ -179,7 +179,7 @@ export function StudentNewRequestPage() {
         }
       />
 
-      <form onSubmit={handleSubmit} className="glass-panel space-y-5 p-5 pb-6" noValidate>
+      <form onSubmit={handleSubmit} className="glass-panel space-y-5 p-5 pb-6 scroll-smooth" noValidate>
         <PassTypeSelector
           value={form.passType}
           onChange={(type) => updateField('passType', type)}

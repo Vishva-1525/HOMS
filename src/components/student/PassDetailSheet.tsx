@@ -202,7 +202,7 @@ export function PassDetailSheet({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 py-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+          <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth px-5 py-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <PassTypeBadge type={pass.pass_type} />
               <StatusBadge status={displayStatus} label={statusLabel} />
@@ -271,7 +271,7 @@ export function PassDetailSheet({
                 <p className="mb-3 text-center text-sm font-medium text-[#1A1A2E]">
                   Scan at gate
                 </p>
-                <PassQrCode pass={pass} gateLogs={gateLogs} />
+                <PassQrCode pass={pass} />
               </div>
             ) : null}
 

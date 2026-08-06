@@ -78,7 +78,7 @@ export function StudentPassesPage() {
 
       <PassFilterChips value={filter} onChange={setFilter} />
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3 scroll-smooth">
         {filteredPasses.length === 0 ? (
           <div className="glass-panel border-dashed p-8 text-center text-sm text-slate-700">
             No passes match this filter.
@@ -116,7 +116,6 @@ export function StudentPassesPage() {
         <PassQrSheet
           open={Boolean(qrPass)}
           pass={qrPass}
-          gateLogs={gateLogs}
           onClose={() => setQrPass(null)}
         />
       )}

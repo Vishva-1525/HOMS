@@ -1,15 +1,14 @@
 import { X } from 'lucide-react'
 import { PassQrCode } from '@/components/student/PassQrCode'
-import type { GateLog, OutpassRequest } from '@/lib/types'
+import type { OutpassRequest } from '@/lib/types'
 
 interface PassQrSheetProps {
   open: boolean
   pass: OutpassRequest
-  gateLogs?: GateLog[]
   onClose: () => void
 }
 
-export function PassQrSheet({ open, pass, gateLogs = [], onClose }: PassQrSheetProps) {
+export function PassQrSheet({ open, pass, onClose }: PassQrSheetProps) {
   if (!open) return null
 
   return (
@@ -20,7 +19,7 @@ export function PassQrSheet({ open, pass, gateLogs = [], onClose }: PassQrSheetP
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="dashboard-surface qr-pass-modal relative z-10 w-full max-w-sm rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:rounded-2xl">
+      <div className="dashboard-surface qr-pass-modal relative z-10 max-h-[min(92dvh,40rem)] w-full max-w-sm overflow-y-auto overscroll-contain scroll-smooth rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:rounded-2xl">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h3 className="dashboard-heading text-lg font-semibold">Your pass QR</h3>
           <button
@@ -32,7 +31,7 @@ export function PassQrSheet({ open, pass, gateLogs = [], onClose }: PassQrSheetP
             <X className="h-5 w-5" strokeWidth={1.75} />
           </button>
         </div>
-        <PassQrCode pass={pass} gateLogs={gateLogs} />
+        <PassQrCode pass={pass} />
       </div>
     </div>
   )

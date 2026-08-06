@@ -10,7 +10,7 @@ interface DashboardBackgroundProps {
 }
 
 const PHOTO_TRANSITION =
-  'pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat bg-scroll transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)] motion-reduce:transition-none md:bg-fixed'
+  'pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat bg-scroll transition-opacity duration-[900ms] ease-[cubic-bezier(0.45,0,0.2,1)] motion-reduce:transition-none'
 
 export function DashboardBackground({ children, className, style }: DashboardBackgroundProps) {
   const { isDark } = useTheme()

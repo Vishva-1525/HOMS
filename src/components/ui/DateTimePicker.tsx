@@ -322,7 +322,7 @@ export function DateTimePicker({
               id={id}
               role="listbox"
               aria-label="Select time"
-              className="-mx-0.5 flex gap-1.5 overflow-x-auto px-1 py-1 scroll-px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="-mx-0.5 flex gap-1.5 overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-1 scroll-px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {timeSlots.map((slot) => {
                 const isSelected =

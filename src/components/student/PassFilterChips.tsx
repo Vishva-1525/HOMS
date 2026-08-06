@@ -8,7 +8,7 @@ interface PassFilterChipsProps {
 
 export function PassFilterChips({ value, onChange }: PassFilterChipsProps) {
   return (
-    <div className="-mx-1 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 scrollbar-none">
       {PASS_FILTERS.map((filter) => (
         <button
           key={filter.id}

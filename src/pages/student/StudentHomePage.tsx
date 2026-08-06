@@ -134,7 +134,7 @@ export function StudentHomePage() {
       />
 
       {activePass && (
-        <ActivePassBanner pass={activePass} student={student} gateLogs={gateLogs} />
+        <ActivePassBanner pass={activePass} student={student} />
       )}
 
       {extensionEligiblePass && (
