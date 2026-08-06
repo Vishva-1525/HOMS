@@ -3,34 +3,41 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseCameraQrScannerOptions {
   enabled: boolean
-  /** Bump to force a fresh camera session after each successful scan. */
-  sessionKey?: number
+  /** Increment to force a clean camera restart after each completed scan. */
+  sessionKey: number
   onScan: (raw: string) => void
 }
 
 /**
- * Live camera preview + continuous QR decode.
+ * Developer-testing camera QR decode.
+ * Production gates use the desk scanner; this path must still support repeated scans.
+ *
+ * Root-cause fix for one-shot failure:
+ * - Do not latch forever if the parent rejects the scan (inFlight).
+ * - Always tear down and restart when `enabled`/`sessionKey` change.
+ * - Prefer a cooldown over a permanent stop while still enabled.
  */
 export function useCameraQrScanner({
   enabled,
-  sessionKey = 0,
+  sessionKey,
   onScan,
 }: UseCameraQrScannerOptions) {
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
   const videoRef = useCallback((node: HTMLVideoElement | null) => {
     setVideoEl(node)
   }, [])
+
   const controlsRef = useRef<IScannerControls | null>(null)
   const onScanRef = useRef(onScan)
-  const handledRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
   onScanRef.current = onScan
 
   useEffect(() => {
-    if (!enabled) {
-      handledRef.current = false
+    let cancelled = false
+
+    function stopEverything() {
       controlsRef.current?.stop()
       controlsRef.current = null
       if (videoEl?.srcObject) {
@@ -39,20 +46,23 @@ export function useCameraQrScanner({
         }
         videoEl.srcObject = null
       }
-      setStarting(false)
-      return
     }
 
-    if (!videoEl) return
+    if (!enabled || !videoEl) {
+      stopEverything()
+      setStarting(false)
+      return () => {
+        cancelled = true
+        stopEverything()
+      }
+    }
 
-    let cancelled = false
-    handledRef.current = false
     setStarting(true)
     setError(null)
 
     const reader = new BrowserQRCodeReader(undefined, {
       delayBetweenScanAttempts: 200,
-      delayBetweenScanSuccess: 1500,
+      delayBetweenScanSuccess: 1200,
     })
 
     void (async () => {
@@ -61,6 +71,7 @@ export function useCameraQrScanner({
           {
             audio: false,
             video: {
+              // Laptops used for testing usually only have a front camera.
               facingMode: { ideal: 'user' },
               width: { ideal: 1280 },
               height: { ideal: 720 },
@@ -68,10 +79,10 @@ export function useCameraQrScanner({
           },
           videoEl,
           (result, _err, controls) => {
-            if (cancelled || handledRef.current) return
+            if (cancelled) return
             const text = result?.getText()?.trim()
             if (!text) return
-            handledRef.current = true
+            // Pause this session; parent bumps sessionKey after the result dwell.
             try {
               controls.stop()
             } catch {
@@ -80,6 +91,7 @@ export function useCameraQrScanner({
             onScanRef.current(text)
           },
         )
+
         if (cancelled) {
           controls.stop()
           return
@@ -92,16 +104,15 @@ export function useCameraQrScanner({
         const message = err instanceof Error ? err.message : 'Camera unavailable'
         setError(
           /Permission|NotAllowed/i.test(message)
-            ? 'Camera permission denied. Use the desktop QR scanner, or allow camera access.'
-            : 'Camera unavailable. Use the desktop QR scanner instead.',
+            ? 'Camera permission denied.'
+            : 'Camera unavailable.',
         )
       }
     })()
 
     return () => {
       cancelled = true
-      controlsRef.current?.stop()
-      controlsRef.current = null
+      stopEverything()
     }
   }, [enabled, videoEl, sessionKey])
 

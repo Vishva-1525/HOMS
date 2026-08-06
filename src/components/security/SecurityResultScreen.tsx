@@ -127,9 +127,12 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
         className="mt-6 h-14 w-full max-w-lg rounded-2xl bg-white text-base font-bold text-slate-900 shadow-lg active:scale-[0.98] sm:h-16 sm:text-lg"
       >
         {approved && !cycleComplete
-          ? 'Ready for next gate scan'
-          : 'Scan next student'}
+          ? 'Next gate ready'
+          : 'Next student ready'}
       </button>
+      <p className="mt-2 max-w-lg text-center text-xs text-white/75">
+        Returns to ready automatically — or tap to continue now
+      </p>
     </div>
   )
 }

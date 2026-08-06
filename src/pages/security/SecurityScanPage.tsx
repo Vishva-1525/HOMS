@@ -1,75 +1,49 @@
-import { useCallback, useRef, useState } from 'react'
 import { Camera, LogOut, ScanBarcode } from 'lucide-react'
-import { HardwareScannerCapture } from '@/components/security/HardwareScannerCapture'
-import { HardwareScannerPanel } from '@/components/security/HardwareScannerPanel'
+import { DeskScannerPanel } from '@/components/security/DeskScannerPanel'
 import { SecurityCameraPanel } from '@/components/security/SecurityCameraPanel'
 import { SecurityResultScreen } from '@/components/security/SecurityResultScreen'
 import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useCameraQrScanner } from '@/hooks/security/useCameraQrScanner'
-import { processSecurityScan, type SecurityScanResult } from '@/lib/security-actions'
+import { useSecurityScanController } from '@/hooks/security/useSecurityScanController'
 import { SVCE_APP_SHORT } from '@/lib/branding'
 import { cn } from '@/lib/utils'
 
-type Phase = 'scanning' | 'validating' | 'result'
-type ScanMode = 'hardware' | 'camera'
-
+/**
+ * Security gate scanner.
+ *
+ * Production primary input = USB desk reader (keyboard wedge).
+ * Phone camera = developer testing only.
+ * Manual entry shares the same desk input field / Check pass button.
+ *
+ * All three call `submitScan` → `processSecurityScan` (single verification pipeline).
+ */
 export function SecurityScanPage() {
   const { profile, signOut } = useAuth()
-  const [phase, setPhase] = useState<Phase>('scanning')
-  const [mode, setMode] = useState<ScanMode>('hardware')
-  const [result, setResult] = useState<SecurityScanResult | null>(null)
-  const [cameraSession, setCameraSession] = useState(0)
-  const inFlightRef = useRef(false)
-
-  const handleScan = useCallback(async (raw: string) => {
-    if (!raw.trim() || inFlightRef.current) return
-    inFlightRef.current = true
-    setPhase('validating')
-    setResult(null)
-    try {
-      const next = await processSecurityScan(raw)
-      setResult(next)
-      setPhase('result')
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not reach the server.'
-      setResult({
-        outcome: 'denied',
-        title: 'Scan failed',
-        detail: message,
-        studentName: '-',
-        regNumber: '-',
-        admissionNo: '-',
-        photoUrl: null,
-      })
-      setPhase('result')
-    } finally {
-      inFlightRef.current = false
-    }
-  }, [])
-
-  function reset() {
-    inFlightRef.current = false
-    setResult(null)
-    setPhase('scanning')
-    if (mode === 'camera') {
-      setCameraSession((n) => n + 1)
-    }
-  }
-
-  const listening = phase === 'scanning'
+  const {
+    phase,
+    mode,
+    result,
+    listening,
+    cameraSession,
+    submitScan,
+    goReady,
+    selectMode,
+  } = useSecurityScanController()
 
   const { videoRef, error: cameraError, starting } = useCameraQrScanner({
     enabled: listening && mode === 'camera',
     sessionKey: cameraSession,
-    onScan: (raw) => void handleScan(raw),
+    onScan: (raw) => {
+      void submitScan(raw)
+    },
   })
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-[#0B1220] text-white">
       {phase === 'result' && result && (
         <div className="absolute inset-0 z-50">
-          <SecurityResultScreen result={result} onScanNext={reset} />
+          <SecurityResultScreen result={result} onScanNext={goReady} />
         </div>
       )}
 
@@ -85,7 +59,9 @@ export function SecurityScanPage() {
           <SvceEmblem size="sm" withRing />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-xs font-semibold">{SVCE_APP_SHORT}</p>
-            <p className="truncate text-[10px] text-white/60">Gate security · 4-step</p>
+            <p className="truncate text-[10px] text-white/60">
+              Gate security · desk scanner primary
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -108,10 +84,10 @@ export function SecurityScanPage() {
         <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
           <button
             type="button"
-            onClick={() => setMode('hardware')}
+            onClick={() => selectMode('desk')}
             className={cn(
               'inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition',
-              mode === 'hardware'
+              mode === 'desk'
                 ? 'bg-white text-slate-900 shadow'
                 : 'text-white/75 hover:bg-white/5',
             )}
@@ -121,10 +97,7 @@ export function SecurityScanPage() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setMode('camera')
-              setCameraSession((n) => n + 1)
-            }}
+            onClick={() => selectMode('camera')}
             className={cn(
               'inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition',
               mode === 'camera'
@@ -133,20 +106,17 @@ export function SecurityScanPage() {
             )}
           >
             <Camera className="h-4 w-4" strokeWidth={2} />
-            Phone camera
+            Test camera
           </button>
         </div>
 
-        {mode === 'hardware' ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
-            <div className="border-b border-white/10 bg-slate-950/80 px-3 py-3">
-              <HardwareScannerCapture
-                enabled={listening}
-                onScan={(raw) => void handleScan(raw)}
-              />
-            </div>
-            <HardwareScannerPanel active={listening} />
-          </div>
+        {mode === 'desk' ? (
+          <DeskScannerPanel
+            enabled={listening}
+            onScan={(raw) => {
+              void submitScan(raw)
+            }}
+          />
         ) : (
           <>
             <SecurityCameraPanel
@@ -155,7 +125,7 @@ export function SecurityScanPage() {
               error={cameraError}
             />
             <p className="mt-3 text-center text-sm text-white/65">
-              After each gate result, tap Ready for next gate scan — same QR, next checkpoint.
+              Developer testing only. Production gates use the USB desk reader.
             </p>
           </>
         )}
