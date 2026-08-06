@@ -82,10 +82,6 @@ const AdminReportsPage = lazyPage(
   () => import('@/pages/admin/AdminReportsPage'),
   'AdminReportsPage',
 )
-const AdminCalendarPage = lazyPage(
-  () => import('@/pages/admin/AdminCalendarPage'),
-  'AdminCalendarPage',
-)
 const NotificationsPage = lazyPage(
   () => import('@/pages/shared/NotificationsPage'),
   'NotificationsPage',
@@ -180,9 +176,7 @@ export default function App() {
                   <Route path="/admin/students" element={<AdminStudentsPage />} />
                   <Route path="/admin/staff" element={<AdminStaffPage />} />
                   <Route path="/admin/passes" element={<AdminPassesPage />} />
-                  <Route path="/admin/calendar" element={<AdminCalendarPage />} />
                   <Route path="/admin/reports" element={<AdminReportsPage />} />
-                  <Route path="/admin/account" element={<UserSettingsPage />} />
                   <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 </Route>
               </Route>
