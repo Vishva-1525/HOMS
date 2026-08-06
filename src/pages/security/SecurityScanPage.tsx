@@ -128,13 +128,13 @@ export function SecurityScanPage() {
 
             {mode === 'hardware' ? (
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
-                <HardwareScannerPanel active={hardwareActive} />
-                <div className="border-t border-white/10 bg-slate-950/80 px-3 py-3">
+                <div className="border-b border-white/10 bg-slate-950/80 px-3 py-3">
                   <HardwareScannerCapture
                     enabled={hardwareActive}
                     onScan={(raw) => void handleScan(raw)}
                   />
                 </div>
+                <HardwareScannerPanel active={hardwareActive} />
               </div>
             ) : (
               <>
