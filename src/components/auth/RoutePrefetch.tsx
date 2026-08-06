@@ -32,6 +32,9 @@ export function RoutePrefetch() {
     } else if (role === 'parent') {
       warm(() => import('@/components/layout/ParentShell'))
       warm(() => import('@/pages/parent/ParentDashboard'))
+    } else if (role === 'security_guard') {
+      warm(() => import('@/components/layout/SecurityShell'))
+      warm(() => import('@/pages/security/SecurityScanPage'))
     }
   }, [role, loading])
 

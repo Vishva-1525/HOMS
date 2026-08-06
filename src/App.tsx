@@ -94,9 +94,10 @@ const UserSettingsPage = lazyPage(
   () => import('@/pages/shared/UserSettingsPage'),
   'UserSettingsPage',
 )
-const AccessUnavailablePage = lazyPage(
-  () => import('@/pages/AccessUnavailablePage'),
-  'AccessUnavailablePage',
+const SecurityShell = lazyPage(() => import('@/components/layout/SecurityShell'), 'SecurityShell')
+const SecurityScanPage = lazyPage(
+  () => import('@/pages/security/SecurityScanPage'),
+  'SecurityScanPage',
 )
 const ComponentGalleryPage = lazyPage(
   () => import('@/pages/dev/ComponentGalleryPage'),
@@ -123,7 +124,9 @@ export default function App() {
               <Route path="/" element={<RoleRedirect />} />
 
               <Route element={<ProtectedRoute allowedRoles={['security_guard']} />}>
-                <Route path="/access-unavailable" element={<AccessUnavailablePage />} />
+                <Route element={<SecurityShell />}>
+                  <Route path="/security/scan" element={<SecurityScanPage />} />
+                </Route>
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['student']} />}>

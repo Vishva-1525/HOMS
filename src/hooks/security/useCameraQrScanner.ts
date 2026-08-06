@@ -1,0 +1,97 @@
+import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
+import { useEffect, useRef, useState } from 'react'
+
+interface UseCameraQrScannerOptions {
+  enabled: boolean
+  onScan: (raw: string) => void
+}
+
+/**
+ * Live camera preview + continuous QR decode (backup to hardware wedge scanner).
+ */
+export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOptions) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const controlsRef = useRef<IScannerControls | null>(null)
+  const onScanRef = useRef(onScan)
+  const handledRef = useRef(false)
+  const [error, setError] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
+
+  onScanRef.current = onScan
+
+  useEffect(() => {
+    if (!enabled) {
+      handledRef.current = false
+      controlsRef.current?.stop()
+      controlsRef.current = null
+      const video = videoRef.current
+      if (video?.srcObject) {
+        for (const track of (video.srcObject as MediaStream).getTracks()) {
+          track.stop()
+        }
+        video.srcObject = null
+      }
+      return
+    }
+
+    const video = videoRef.current
+    if (!video) return
+
+    let cancelled = false
+    handledRef.current = false
+    setStarting(true)
+    setError(null)
+
+    const reader = new BrowserQRCodeReader(undefined, {
+      delayBetweenScanAttempts: 250,
+      delayBetweenScanSuccess: 2000,
+    })
+
+    void (async () => {
+      try {
+        const controls = await reader.decodeFromConstraints(
+          {
+            audio: false,
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          },
+          video,
+          (result, _err, controls) => {
+            if (cancelled || handledRef.current) return
+            const text = result?.getText()?.trim()
+            if (!text) return
+            handledRef.current = true
+            controls.stop()
+            onScanRef.current(text)
+          },
+        )
+        if (cancelled) {
+          controls.stop()
+          return
+        }
+        controlsRef.current = controls
+        setStarting(false)
+      } catch (err) {
+        if (cancelled) return
+        setStarting(false)
+        const message = err instanceof Error ? err.message : 'Camera unavailable'
+        setError(
+          /Permission|NotAllowed/i.test(message)
+            ? 'Camera permission denied. Use the desktop QR scanner, or allow camera access.'
+            : 'Camera unavailable. Use the desktop QR scanner instead.',
+        )
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      controlsRef.current?.stop()
+      controlsRef.current = null
+    }
+  }, [enabled])
+
+  return { videoRef, error, starting }
+}

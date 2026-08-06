@@ -3,7 +3,7 @@ import type { Profile, UserRole } from '@/lib/types'
 export const ROLE_DASHBOARD_PATHS: Record<UserRole, string> = {
   student: '/student/dashboard',
   warden: '/warden/dashboard',
-  security_guard: '/access-unavailable',
+  security_guard: '/security/scan',
   parent: '/parent/dashboard',
   admin: '/admin/dashboard',
 }
