@@ -63,28 +63,33 @@ export function useSystemSettings() {
     setError(null)
     setSaved(false)
 
-    const updates = DEFAULT_KEYS.map((key) => ({
-      key,
-      value: draft[key] ?? settings[key] ?? '',
-    }))
+    try {
+      const updates = DEFAULT_KEYS.map((key) => ({
+        key,
+        value: draft[key] ?? settings[key] ?? '',
+      }))
 
-    for (const { key, value } of updates) {
-      const { error: updateError } = await supabase
-        .from('system_settings')
-        .upsert({ key, value }, { onConflict: 'key' })
+      for (const { key, value } of updates) {
+        const { error: updateError } = await supabase
+          .from('system_settings')
+          .upsert({ key, value }, { onConflict: 'key' })
 
-      if (updateError) {
-        setError(updateError.message)
-        setSaving(false)
-        return
+        if (updateError) {
+          throw new Error(updateError.message)
+        }
       }
-    }
 
-    setSettings({ ...draft })
-    invalidateQrAvailabilityCache()
-    setSaving(false)
-    setSaved(true)
-    window.setTimeout(() => setSaved(false), 4000)
+      setSettings({ ...draft })
+      invalidateQrAvailabilityCache()
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 4000)
+    } catch (err) {
+      const message = formatNetworkError(err, 'Failed to save settings.')
+      setError(message)
+      throw err instanceof Error ? err : new Error(message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return {
