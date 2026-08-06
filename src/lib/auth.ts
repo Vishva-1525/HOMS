@@ -82,6 +82,32 @@ export async function updatePassword(newPassword: string) {
   if (error) throw error
 }
 
+/** Re-check the signed-in user's password before sensitive profile changes. */
+export async function verifyCurrentPassword(email: string, password: string) {
+  const trimmedEmail = email.trim().toLowerCase()
+  if (!trimmedEmail || !password) {
+    throw new Error('Enter your current password to continue.')
+  }
+
+  let { error } = await supabase.auth.signInWithPassword({
+    email: trimmedEmail,
+    password,
+  })
+
+  // Student default passwords use register numbers (often uppercase in imports).
+  if (error && password !== password.toUpperCase()) {
+    const retry = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password: password.toUpperCase(),
+    })
+    error = retry.error
+  }
+
+  if (error) {
+    throw new Error('Current password is incorrect.')
+  }
+}
+
 export async function markPasswordChanged(userId: string) {
   const { error } = await supabase
     .from('profiles')

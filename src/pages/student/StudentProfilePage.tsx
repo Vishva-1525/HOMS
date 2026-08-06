@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useStudentDataContext } from '@/contexts/StudentDataContext'
+import { verifyCurrentPassword } from '@/lib/auth'
 import { formatBlockLabel } from '@/lib/block-display'
 import { getPasswordStrength } from '@/lib/password-strength'
 
@@ -49,6 +50,7 @@ export function StudentProfilePage() {
   const { user, profile, changePassword, updatePhone, refreshProfile } = useAuth()
   const { student, loading, error, refetch } = useStudentDataContext()
   const [phone, setPhone] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
@@ -83,7 +85,20 @@ export function StudentProfilePage() {
       return
     }
 
-    if (password || confirmPassword || needsPassword) {
+    const phoneChanging = Boolean(nextPhone && nextPhone !== currentPhone)
+    const passwordChanging = Boolean(password || confirmPassword || needsPassword)
+
+    if (!phoneChanging && !passwordChanging) {
+      setFormError('Change your phone or password, then enter your current password to save.')
+      return
+    }
+
+    if (!currentPassword.trim()) {
+      setFormError('Enter your current password to save profile changes.')
+      return
+    }
+
+    if (passwordChanging) {
       const strength = getPasswordStrength(password)
       if (strength.level === 'weak') {
         setFormError(
@@ -97,15 +112,23 @@ export function StudentProfilePage() {
       }
     }
 
+    const email = user?.email?.trim()
+    if (!email) {
+      setFormError('Could not verify your account email. Sign out and sign in again.')
+      return
+    }
+
     setSubmitting(true)
     try {
-      if (nextPhone && nextPhone !== currentPhone) {
+      await verifyCurrentPassword(email, currentPassword)
+      if (phoneChanging) {
         await updatePhone(nextPhone)
       }
       if (password) {
         await changePassword(password)
       }
       await refreshProfile()
+      setCurrentPassword('')
       setPassword('')
       setConfirmPassword('')
       setPhone('')
@@ -242,6 +265,18 @@ export function StudentProfilePage() {
             Parent phone (read-only)
           </p>
           <p className="mt-1 text-sm font-medium text-slate-900">{parentPhone || '-'}</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="current-password">Current password</Label>
+          <PasswordInput
+            id="current-password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            disabled={submitting}
+            required
+          />
         </div>
 
         <div className="space-y-2">
