@@ -111,9 +111,6 @@ export function AdminStaffEditDrawer({
                       ))}
                     </select>
                   )}
-                  <p className="text-xs text-slate-500">
-                    Or enter block number manually (must match student records exactly).
-                  </p>
                   <Input
                     value={assignment}
                     onChange={(e) => setAssignment(e.target.value)}

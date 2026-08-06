@@ -168,9 +168,6 @@ export function AdminPassesPage() {
     <div className="space-y-6">
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-2xl md:text-3xl">All Passes</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
-          View and manage all outpass requests
-        </p>
       </div>
 
       {error && (

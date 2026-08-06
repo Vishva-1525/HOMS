@@ -29,10 +29,9 @@ export function WardenAvailabilityPanel({
           <p className="text-sm font-medium text-[var(--glass-fg)]">Coverage mode</p>
         </div>
         <p className="mt-1.5 pl-3.5 text-xs leading-relaxed text-[var(--glass-fg-muted)]">
-          You receive escalated requests for {scope.gender} hostel blocks when an RT is on leave.
           {scope.escalatedBlocks.length === 0
-            ? ' No blocks are escalated right now.'
-            : ` Active: ${scope.escalatedBlocks.join(', ')}.`}
+            ? 'No blocks escalated'
+            : `Active: ${scope.escalatedBlocks.join(', ')}`}
         </p>
       </div>
     )
@@ -81,13 +80,11 @@ export function WardenAvailabilityPanel({
               {onDuty ? 'On duty' : 'On leave'}
             </p>
           </div>
-          <p className="mt-1 pl-3.5 text-xs leading-relaxed text-[var(--glass-fg-muted)]">
-            {onDuty
-              ? 'New requests for your block are assigned to you. Set leave when unavailable.'
-              : `Superior wardens are covering your block${
-                  scope.unavailableReason ? ` · ${scope.unavailableReason}` : ''
-                }`}
-          </p>
+          {!onDuty && scope.unavailableReason && (
+            <p className="mt-1 pl-3.5 text-xs leading-relaxed text-[var(--glass-fg-muted)]">
+              {scope.unavailableReason}
+            </p>
+          )}
         </div>
 
         {onDuty ? (

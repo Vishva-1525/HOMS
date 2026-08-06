@@ -52,9 +52,6 @@ export function ParentDashboard() {
     <div className="space-y-6">
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-xl md:text-2xl">Parent Dashboard</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm">
-          Live status and notifications for your ward&apos;s hostel outpass activity
-        </p>
       </div>
 
       <ParentWardHeader ward={activeWard} wards={wards} onSelectWard={selectWard} />

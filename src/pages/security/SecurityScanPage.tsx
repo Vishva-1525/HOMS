@@ -59,9 +59,6 @@ export function SecurityScanPage() {
           <SvceEmblem size="sm" withRing />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-xs font-semibold">{SVCE_APP_SHORT}</p>
-            <p className="truncate text-[10px] text-white/60">
-              Gate security · desk scanner primary
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -118,16 +115,11 @@ export function SecurityScanPage() {
             }}
           />
         ) : (
-          <>
-            <SecurityCameraPanel
-              videoRef={videoRef}
-              starting={starting}
-              error={cameraError}
-            />
-            <p className="mt-3 text-center text-sm text-white/65">
-              Developer testing only. Production gates use the USB desk reader.
-            </p>
-          </>
+          <SecurityCameraPanel
+            videoRef={videoRef}
+            starting={starting}
+            error={cameraError}
+          />
         )}
       </main>
     </div>

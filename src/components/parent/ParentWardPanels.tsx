@@ -111,9 +111,6 @@ export function ParentAlertsList({ alerts }: { alerts: ParentAlert[] }) {
     <div className="dashboard-surface overflow-hidden">
       <div className="border-b border-slate-200/80 px-4 py-3 sm:px-5">
         <h2 className="dashboard-heading text-sm">Notifications &amp; activity</h2>
-        <p className="dashboard-muted mt-0.5 text-xs">
-          Pass updates, gate exit/entry, extensions, and overdue alerts
-        </p>
       </div>
 
       {alerts.length === 0 ? (

@@ -57,10 +57,6 @@ export function WardenStudentsPage() {
       <div className="dashboard-page-header flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="dashboard-heading text-2xl md:text-3xl">Students</h1>
-          <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
-            Import students from CSV or Excel
-            {block ? ` for ${formatBlockLabel(block)}` : ''}.
-          </p>
         </div>
         <Button
           type="button"
@@ -96,22 +92,15 @@ export function WardenStudentsPage() {
           <span className="dashboard-section-accent" aria-hidden />
           Bulk import
         </h2>
-        <p className="dashboard-muted text-sm leading-relaxed">
-          Upload a <span className="font-semibold text-slate-800">.csv</span> or{' '}
-          <span className="font-semibold text-slate-800">.xlsx</span> file with columns: Email, Reg
-          Number, Full Name, Parent Phone, Year (Room, Block, and Department are optional).
-        </p>
         {blockLoading ? (
           <p className="py-2 text-sm text-slate-600">Loading your block assignment…</p>
         ) : block ? (
           <p className="rounded-xl border border-[#1A5CA0]/20 bg-[#EBF3FF]/70 px-3 py-2 text-sm text-[#0D3F72]">
-            Your assigned block is <span className="font-semibold">{formatBlockLabel(block)}</span>.
-            Empty Block values in the file will be filled with this assignment.
+            Assigned block: <span className="font-semibold">{formatBlockLabel(block)}</span>
           </p>
         ) : (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-            No hostel block is assigned to your account yet. Imports will use the Block column from
-            the file as-is. Ask an admin to set your block assignment if needed.
+            No hostel block assigned yet
           </p>
         )}
         <Button

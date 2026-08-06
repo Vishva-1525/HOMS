@@ -32,15 +32,9 @@ export function GateCheckpointProgress({
   className,
 }: GateCheckpointProgressProps) {
   const items = buildCheckpointProgress(passId, gateLogs, { multiDaily })
-  const next = items.find((item) => item.status === 'current')
 
   return (
     <div className={cn('space-y-2', className)}>
-      {!compact && next && (
-        <p className="rounded-lg border border-[#BFDBFE] bg-[#EBF3FF] px-3 py-2 text-xs font-semibold text-[#0D3F72]">
-          Next: present QR at {next.label}
-        </p>
-      )}
       <ul className={cn('space-y-1.5', compact && 'space-y-1')}>
         {items.map((item) => (
           <li

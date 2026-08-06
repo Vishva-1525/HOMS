@@ -124,9 +124,6 @@ export function PassQrCode({ pass, gateLogs = [] }: PassQrCodeProps) {
           <p className="mt-1 font-mono text-2xl font-bold tracking-[0.2em] text-[#1A5CA0]">
             {entryCode}
           </p>
-          <p className="mt-1 text-xs text-slate-600">
-            Encoded in the QR above — type this at the gate if the scanner fails.
-          </p>
           <Button
             type="button"
             variant="secondary"

@@ -3,14 +3,12 @@ import { cn } from '@/lib/utils'
 interface StudentDashboardStatCardProps {
   label: string
   value: number | string
-  subtext: string
   valueClassName?: string
 }
 
 export function StudentDashboardStatCard({
   label,
   value,
-  subtext,
   valueClassName,
 }: StudentDashboardStatCardProps) {
   return (
@@ -25,7 +23,6 @@ export function StudentDashboardStatCard({
       >
         {value}
       </p>
-      <p className="dashboard-muted mt-2 text-xs leading-relaxed">{subtext}</p>
     </div>
   )
 }
@@ -45,23 +42,20 @@ export function StudentDashboardStats({
 }: StudentDashboardStatsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StudentDashboardStatCard label="Total Outpasses" value={total} subtext="this semester" />
+      <StudentDashboardStatCard label="Total Outpasses" value={total} />
       <StudentDashboardStatCard
         label="Approved"
         value={approved}
-        subtext="passes"
         valueClassName="text-emerald-700"
       />
       <StudentDashboardStatCard
         label="Pending"
         value={pending}
-        subtext="awaiting approval"
         valueClassName="text-amber-700"
       />
       <StudentDashboardStatCard
         label="Rejected"
         value={rejected}
-        subtext="passes"
         valueClassName="text-red-700"
       />
     </div>

@@ -25,7 +25,6 @@ interface DateTimePickerProps {
   max?: string
   disabled?: boolean
   error?: string
-  hint?: string
   calendarMap: Map<string, AcademicCalendarDay>
   calendarLoading?: boolean
   /**
@@ -91,7 +90,6 @@ export function DateTimePicker({
   max,
   disabled,
   error,
-  hint,
   calendarMap,
   calendarLoading,
   requireAcademicDay = false,
@@ -206,8 +204,6 @@ export function DateTimePicker({
         {label}
       </Label>
 
-      {hint && <p className="text-xs leading-relaxed text-slate-600">{hint}</p>}
-
       <div
         className={cn(
           'rounded-xl liquid-glass p-3',
@@ -280,11 +276,6 @@ export function DateTimePicker({
                 )
               })}
             </div>
-            <p className="mt-2 text-[11px] text-slate-500">
-              {requireAcademicDay
-                ? 'Working days and study holidays only.'
-                : 'Any date can be selected.'}
-            </p>
             {rangeLabel && (
               <p className="mt-1 text-[11px] font-medium text-[#0D3F72]">
                 Available: {rangeLabel}

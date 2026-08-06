@@ -130,9 +130,6 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
           ? 'Exit — next gate'
           : 'Exit — scan next student'}
       </button>
-      <p className="mt-2 max-w-lg text-center text-xs text-white/75">
-        Stays on screen for 10 seconds, then returns automatically — or tap Exit to scan now
-      </p>
     </div>
   )
 }

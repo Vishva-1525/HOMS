@@ -24,9 +24,6 @@ export function AppDownloadCard({ className }: { className?: string }) {
           </div>
           <div>
             <h2 className="dashboard-heading text-base font-semibold">Download HOMS app</h2>
-            <p className="dashboard-muted mt-0.5 text-sm">
-              Install on your phone for faster access and push notifications.
-            </p>
           </div>
         </div>
       </div>

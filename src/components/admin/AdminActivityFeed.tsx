@@ -16,7 +16,6 @@ export function AdminActivityFeed({ onStudentClick }: AdminActivityFeedProps) {
           <span className="dashboard-section-accent" aria-hidden />
           Live activity
         </h2>
-        <p className="dashboard-muted mt-1 text-xs sm:text-sm">Last 30 events across the system</p>
       </div>
 
       {loading ? (

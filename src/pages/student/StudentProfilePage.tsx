@@ -235,9 +235,6 @@ export function StudentProfilePage() {
             onChange={(e) => setPhone(e.target.value)}
             disabled={submitting}
           />
-          <p className="text-xs text-slate-600">
-            This is your number. Parent phone below is fixed and cannot be edited.
-          </p>
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5">

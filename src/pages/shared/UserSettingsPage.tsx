@@ -17,7 +17,6 @@ export function UserSettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Settings"
-        subtitle="App install and account preferences"
       />
 
       <div className="glass-panel flex items-center gap-4 p-5">

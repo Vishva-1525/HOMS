@@ -6,22 +6,18 @@ import { cn } from '@/lib/utils'
 
 const PASS_OPTIONS: {
   type: Exclude<PassType, 'night_pass'>
-  description: string
   icon: typeof Sun
 }[] = [
   {
     type: 'outpass',
-    description: 'Day trip - within 24 hours',
     icon: Sun,
   },
   {
     type: 'staypass',
-    description: 'Overnight or longer - no max duration',
     icon: Moon,
   },
   {
     type: 'special_pass',
-    description: 'Internship / events - purpose-based',
     icon: Briefcase,
   },
 ]
@@ -57,7 +53,7 @@ export function PassTypeSelector({ value, onChange, error, disabled }: PassTypeS
       {selected && (
         <div className="flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg-muted)] px-3 py-2.5">
           <selected.icon className="h-5 w-5 shrink-0 text-[#0D3F72]" strokeWidth={1.5} />
-          <p className="text-xs text-slate-600">{selected.description}</p>
+          <p className="text-sm font-semibold text-slate-900">{PASS_TYPE_LABELS[selected.type]}</p>
         </div>
       )}
 

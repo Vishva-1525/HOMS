@@ -27,9 +27,6 @@ export function AdminDashboard() {
     <div className="space-y-6 sm:space-y-8">
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-2xl md:text-3xl">Admin Dashboard</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
-          Real-time operations and historical analytics
-        </p>
       </div>
 
       {error && (

@@ -65,9 +65,6 @@ export function HolidayCalendarPanel({ className }: { className?: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--glass-fg)]">Holiday calendar</h2>
-          <p className="mt-0.5 text-xs text-[var(--glass-fg-muted)]">
-            Weekends and India / Tamil Nadu public holidays
-          </p>
         </div>
         <select
           value={year}

@@ -160,9 +160,6 @@ export function AdminCalendarPage() {
       <div className="dashboard-page-header flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="dashboard-heading text-2xl md:text-3xl">Holiday management</h1>
-          <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">
-            Manage holidays, working days, study holidays, and exam days
-          </p>
         </div>
         <Button type="button" size="sm" onClick={() => openCreate()}>
           <Plus className="mr-1.5 h-4 w-4" />
@@ -189,7 +186,6 @@ export function AdminCalendarPage() {
             onSelectDate={handleSelectDate}
             mode="browse"
             title="Month view"
-            helperText="Today has a blue ring and marker. Selected dates use the primary highlight. Tap a date to add or edit an entry."
           />
           <div
             className={cn(

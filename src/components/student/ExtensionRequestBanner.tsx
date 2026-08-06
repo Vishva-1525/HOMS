@@ -20,9 +20,8 @@ export function ExtensionRequestBanner({ pass, onRequestExtension }: ExtensionRe
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-950">Need more time?</p>
-          <p className="dashboard-muted mt-0.5 text-xs leading-relaxed">
-            Request a pass extension before your return deadline (
-            {formatReturnTime(pass.return_by)}).
+          <p className="dashboard-muted mt-0.5 text-xs">
+            Return by {formatReturnTime(pass.return_by)}
           </p>
         </div>
         <ChevronRight

@@ -15,7 +15,6 @@ export function NotificationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Notifications"
-        subtitle="Alerts for outpass requests, approvals, and updates."
         actions={
           unreadCount > 0 ? (
             <button

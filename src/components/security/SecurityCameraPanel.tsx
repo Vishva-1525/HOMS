@@ -52,17 +52,8 @@ export function SecurityCameraPanel({
             <ScanBarcode className="mx-auto h-10 w-10 text-white/80" strokeWidth={1.75} />
             <p className="text-sm font-semibold text-white">Camera unavailable</p>
             <p className="text-sm leading-relaxed text-white/75">{error}</p>
-            <p className="text-xs text-white/55">
-              You can still scan with the desktop QR reader.
-            </p>
           </div>
         </div>
-      )}
-
-      {!starting && !error && (
-        <p className="pointer-events-none absolute left-0 right-0 top-4 text-center text-xs font-medium tracking-wide text-white/85">
-          Hold the pass QR in front of this camera
-        </p>
       )}
     </div>
   )

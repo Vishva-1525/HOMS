@@ -37,7 +37,6 @@ export function AdminSettingsPage() {
     <div className="space-y-6">
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-2xl md:text-3xl">Settings</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm sm:text-[15px]">System-wide configuration</p>
       </div>
 
       {error && (

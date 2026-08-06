@@ -38,9 +38,6 @@ export function ParentHistoryPage() {
     <div className="space-y-6">
       <div className="dashboard-page-header">
         <h1 className="dashboard-heading text-xl md:text-2xl">Pass History</h1>
-        <p className="dashboard-subheading mt-1.5 text-sm">
-          Complete outpass history with gate exit and entry times, sorted newest first
-        </p>
       </div>
 
       <ParentWardHeader ward={activeWard} wards={wards} onSelectWard={selectWard} />

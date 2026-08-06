@@ -1,4 +1,4 @@
-import { ScanBarcode, ShieldCheck, Usb } from 'lucide-react'
+import { ScanBarcode } from 'lucide-react'
 import { GATE_CHECKPOINT_SHORT_LABELS, GATE_CHECKPOINTS } from '@/lib/gate-checkpoints'
 import { useDeskScannerInput } from '@/hooks/security/useDeskScannerInput'
 import { cn } from '@/lib/utils'
@@ -46,9 +46,6 @@ export function DeskScannerPanel({ enabled, onScan }: DeskScannerPanelProps) {
         >
           Check pass
         </button>
-        <p className="text-center text-[11px] text-slate-500">
-          Keep this window focused. The USB reader types here automatically.
-        </p>
       </form>
 
       <div
@@ -74,9 +71,6 @@ export function DeskScannerPanel({ enabled, onScan }: DeskScannerPanelProps) {
             <p className="text-lg font-bold text-white">
               {enabled ? 'Ready for desk scan' : 'Paused'}
             </p>
-            <p className="mt-1.5 text-sm text-white/85">
-              Same QR for all four gates, in order. No click needed between students.
-            </p>
           </div>
           <ol className="w-full space-y-1 rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 text-left">
             {GATE_CHECKPOINTS.map((cp, index) => (
@@ -88,16 +82,6 @@ export function DeskScannerPanel({ enabled, onScan }: DeskScannerPanelProps) {
               </li>
             ))}
           </ol>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
-              <Usb className="h-3 w-3" aria-hidden />
-              USB desk reader
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
-              <ShieldCheck className="h-3 w-3" aria-hidden />
-              Production primary
-            </span>
-          </div>
         </div>
       </div>
     </div>

@@ -133,9 +133,6 @@ export function PassListFilters({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="dashboard-heading text-sm font-semibold">Filters</h2>
-          <p className="dashboard-muted mt-0.5 text-xs">
-            Double-click an active chip to remove that filter
-          </p>
         </div>
         {hasActiveFilters && (
           <Button

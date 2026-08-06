@@ -22,7 +22,6 @@ interface AcademicCalendarPickerProps {
   /** glass = student DateTimePicker-style chrome (used on RT/warden home) */
   variant?: 'default' | 'glass'
   title?: string
-  helperText?: string
 }
 
 const LEGEND_TYPES: AcademicDayType[] = [
@@ -73,7 +72,6 @@ export function AcademicCalendarPicker({
   mode = 'picker',
   variant = 'default',
   title = 'Academic calendar',
-  helperText,
 }: AcademicCalendarPickerProps) {
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date()
@@ -110,14 +108,6 @@ export function AcademicCalendarPicker({
   function setYear(nextYear: number) {
     setViewMonth((prev) => new Date(nextYear, prev.getMonth(), 1))
   }
-
-  const resolvedHelper =
-    helperText ??
-    (browse
-      ? 'Tap a date to inspect holidays and working days.'
-      : onSelectDate
-        ? 'Tap a working day or study holiday to select your date.'
-        : 'Select departure/return dates on working days or study holidays only.')
 
   return (
     <div className={cn(!glass && (compact ? 'p-0' : 'academic-calendar-panel'), glass && 'p-0')}>
@@ -325,14 +315,6 @@ export function AcademicCalendarPicker({
               )
             })}
           </div>
-          <p
-            className={cn(
-              'mt-2 text-[11px] leading-relaxed',
-              glass ? 'text-slate-500' : 'dashboard-muted mt-4 sm:text-xs',
-            )}
-          >
-            {resolvedHelper}
-          </p>
         </>
       )}
     </div>

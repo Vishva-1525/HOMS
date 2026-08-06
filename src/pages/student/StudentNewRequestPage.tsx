@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label'
 import { useStudentPassLimits } from '@/hooks/useStudentPassLimits'
 import {
   INITIAL_NEW_REQUEST_FORM,
-  getPassTypeDurationHint,
   getReturnDatetimeBounds,
   isNewRequestFormDirty,
   validateNewRequestForm,
@@ -45,7 +44,6 @@ export function StudentNewRequestPage() {
     () => getReturnDatetimeBounds(form.passType, form.departureAt, form.specialPurpose, passLimits),
     [form.passType, form.departureAt, form.specialPurpose, passLimits],
   )
-  const durationHint = getPassTypeDurationHint(form.passType, form.specialPurpose, passLimits)
 
   function updateField<K extends keyof NewRequestFormValues>(
     key: K,
@@ -159,7 +157,6 @@ export function StudentNewRequestPage() {
           <CheckCircle className="h-9 w-9 text-[#2E8B44]" strokeWidth={1.5} />
         </div>
         <h1 className="dashboard-heading mt-5 text-xl font-semibold">Request submitted!</h1>
-        <p className="dashboard-subheading mt-2 text-sm">Your warden will review it shortly.</p>
         <Button
           type="button"
           className="mt-8 w-full max-w-xs"
@@ -249,7 +246,6 @@ export function StudentNewRequestPage() {
             min={departureMin}
             disabled={submitting || !form.passType}
             error={errors.departureAt}
-            hint={!form.passType ? 'Select a pass type first.' : undefined}
             calendarMap={EMPTY_CALENDAR}
             requireAcademicDay={false}
           />
@@ -273,13 +269,6 @@ export function StudentNewRequestPage() {
             max={returnBounds.max}
             disabled={submitting || !form.passType || !form.departureAt}
             error={errors.returnBy}
-            hint={
-              !form.passType
-                ? 'Select a pass type first.'
-                : !form.departureAt
-                  ? 'Select departure first.'
-                  : (durationHint ?? undefined)
-            }
             calendarMap={EMPTY_CALENDAR}
             requireAcademicDay={false}
           />

@@ -400,10 +400,6 @@ export function BulkStudentUploadModal({
               />
               <span>
                 <span className="block text-sm font-semibold text-slate-900">Append &amp; Update</span>
-                <span className="mt-0.5 block text-xs text-slate-600">
-                  Adds new students and updates room, block, department, and year for existing register
-                  numbers.
-                </span>
               </span>
             </label>
 
@@ -425,14 +421,10 @@ export function BulkStudentUploadModal({
               />
               <span>
                 <span className="block text-sm font-semibold text-slate-900">New Academic Year</span>
-                <span className="mt-0.5 block text-xs text-slate-600">
-                  Archives all current students, then imports only this list as active.
-                </span>
                 {importMode === 'replace' && (
                   <span className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-800">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    Soft-delete runs once on the first batch only. Later batches append so prior chunks
-                    stay active.
+                    Soft-delete runs once on the first batch only
                   </span>
                 )}
               </span>
@@ -442,13 +434,11 @@ export function BulkStudentUploadModal({
         ) : (
           <div className="rounded-xl border border-[#1A5CA0]/20 bg-[#EBF3FF]/70 px-3 py-2.5 text-sm text-[#0D3F72]">
             <p className="font-semibold">Append &amp; update</p>
-            <p className="mt-0.5 text-xs text-[#0D3F72]/90">
-              New students are added and existing register numbers are updated.
-              Default password for each student is their register/admission number.
-              {forcedHostelBlock?.trim()
-                ? ` Imported students will be assigned to block “${forcedHostelBlock.trim()}”.`
-                : ''}
-            </p>
+            {forcedHostelBlock?.trim() ? (
+              <p className="mt-0.5 text-xs text-[#0D3F72]/90">
+                Block: {forcedHostelBlock.trim()}
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -514,13 +504,6 @@ export function BulkStudentUploadModal({
             <p className="mt-3 text-sm font-medium text-slate-900">
               {fileName ?? 'Drag & drop CSV or Excel (.xlsx) here, or click to browse'}
             </p>
-            <p className="mt-1 text-xs text-slate-600">
-              Required: Email, Reg Number, Full Name, Parent Phone, Year · Optional: Room, Block,
-              Department
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Accepts .csv and .xlsx · Large files upload in batches of {CHUNK_SIZE}.
-            </p>
             <input
               ref={inputRef}
               type="file"
@@ -569,11 +552,6 @@ export function BulkStudentUploadModal({
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            {submitting && !chunkFail && (
-              <p className="text-[11px] text-slate-600">
-                Please keep this window open until the run finishes.
-              </p>
-            )}
           </div>
         )}
 
@@ -581,10 +559,6 @@ export function BulkStudentUploadModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
             <p className="font-semibold">
               {parseWarnings.length} row{parseWarnings.length === 1 ? '' : 's'} skipped
-            </p>
-            <p className="mt-0.5 text-xs text-amber-900/90">
-              These rows are missing Register Number (or other required fields) in the spreadsheet.
-              You can still import the valid rows; fix the skipped ones and re-import later.
             </p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
               {parseWarnings.slice(0, 8).map((warning) => (
