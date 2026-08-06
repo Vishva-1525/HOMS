@@ -208,7 +208,6 @@
   .glass-panel-strong .dashboard-heading,
   .academic-calendar-panel .dashboard-heading,
   .dashboard-loading-panel .dashboard-heading,
-  .security-scan-card .dashboard-heading,
   .dashboard-section-bar .dashboard-heading {
     @apply text-slate-950;
     text-shadow: none;
@@ -221,7 +220,6 @@
   .glass-panel-strong .dashboard-subheading,
   .academic-calendar-panel .dashboard-subheading,
   .dashboard-loading-panel .dashboard-subheading,
-  .security-scan-card .dashboard-subheading,
   .dashboard-section-bar .dashboard-subheading {
     @apply text-slate-700;
     text-shadow: none;
@@ -234,7 +232,6 @@
   .glass-panel-strong .dashboard-muted,
   .academic-calendar-panel .dashboard-muted,
   .dashboard-loading-panel .dashboard-muted,
-  .security-scan-card .dashboard-muted,
   .dashboard-section-bar .dashboard-muted {
     @apply text-slate-600;
     text-shadow: none;
@@ -493,39 +490,6 @@
     @apply text-slate-600;
   }
 
-  .security-scan-card {
-    @apply rounded-2xl ring-1 ring-[#d5dde8];
-    border: 1px solid var(--glass-border-strong);
-    background: var(--glass-bg-strong);
-    color: var(--glass-fg);
-    box-shadow: var(--glass-shadow);
-  }
-
-  .security-scan-dock {
-    @apply shrink-0 border-t px-3 py-3 sm:px-5 sm:py-4;
-    border-color: var(--glass-border);
-    background: var(--glass-bg-strong);
-  }
-
-  .security-info-pill {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-sm;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    color: var(--glass-fg-muted);
-  }
-
-  .security-action-btn {
-    @apply h-12 w-full rounded-xl text-sm font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:text-base;
-  }
-
-  .security-identity-card {
-    @apply rounded-2xl p-4;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    color: var(--glass-fg);
-    box-shadow: var(--glass-shadow);
-  }
-
   /* Dark mode solid surfaces */
   html.dark .dashboard-shell .glass-panel,
   html.dark .dashboard-shell .glass-panel-strong,
@@ -534,8 +498,6 @@
   html.dark .dashboard-shell .dashboard-surface,
   html.dark .dashboard-shell .dashboard-surface-muted,
   html.dark .dashboard-shell .dashboard-loading-panel,
-  html.dark .dashboard-shell .security-scan-card,
-  html.dark .dashboard-shell .security-identity-card,
   html.dark .dashboard-shell .academic-calendar-panel,
   html.dark .dashboard-shell .liquid-glass,
   html.dark .login-glass-card {
@@ -549,15 +511,13 @@
   html.dark .dashboard-shell .dashboard-page-header,
   html.dark .dashboard-shell .dashboard-surface,
   html.dark .dashboard-shell .dashboard-loading-panel,
-  html.dark .dashboard-shell .security-scan-card,
   html.dark .dashboard-shell .glass-nav {
     border-color: var(--glass-border-strong) !important;
     background: var(--glass-bg-strong) !important;
   }
 
   html.dark .dashboard-shell .dashboard-surface-muted,
-  html.dark .dashboard-shell .dashboard-section-bar,
-  html.dark .dashboard-shell .security-scan-dock {
+  html.dark .dashboard-shell .dashboard-section-bar {
     border-color: var(--glass-border) !important;
     background: var(--glass-bg-muted) !important;
     color: var(--glass-fg) !important;
@@ -854,29 +814,6 @@
   }
   to {
     transform: translateY(0);
-  }
-}
-
-@keyframes securityScanLine {
-  0%,
-  100% {
-    top: 10%;
-    opacity: 0.35;
-  }
-  50% {
-    top: 90%;
-    opacity: 1;
-  }
-}
-
-@keyframes securitySuccessPop {
-  0% {
-    transform: scale(0.85);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
   }
 }
 

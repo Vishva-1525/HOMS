@@ -30,7 +30,6 @@ function lazyPage<T extends Record<string, unknown>>(
 /* Role shells - split so student clients never download admin/warden page graphs */
 const StudentShell = lazyPage(() => import('@/components/layout/StudentShell'), 'StudentShell')
 const WardenShell = lazyPage(() => import('@/components/layout/WardenShell'), 'WardenShell')
-const SecurityShell = lazyPage(() => import('@/components/layout/SecurityShell'), 'SecurityShell')
 const ParentShell = lazyPage(() => import('@/components/layout/ParentShell'), 'ParentShell')
 const AppShell = lazyPage(() => import('@/components/layout/AppShell'), 'AppShell')
 
@@ -63,10 +62,6 @@ const WardenStudentsPage = lazyPage(
   'WardenStudentsPage',
 )
 const ReportsPage = lazyPage(() => import('@/pages/warden/ReportsPage'), 'ReportsPage')
-const SecurityScanPage = lazyPage(
-  () => import('@/pages/security/SecurityScanPage'),
-  'SecurityScanPage',
-)
 const ParentDashboard = lazyPage(() => import('@/pages/parent/ParentDashboard'), 'ParentDashboard')
 const ParentHistoryPage = lazyPage(
   () => import('@/pages/parent/ParentHistoryPage'),
@@ -99,9 +94,9 @@ const UserSettingsPage = lazyPage(
   () => import('@/pages/shared/UserSettingsPage'),
   'UserSettingsPage',
 )
-const SecuritySettingsPage = lazyPage(
-  () => import('@/pages/security/SecuritySettingsPage'),
-  'SecuritySettingsPage',
+const AccessUnavailablePage = lazyPage(
+  () => import('@/pages/AccessUnavailablePage'),
+  'AccessUnavailablePage',
 )
 const ComponentGalleryPage = lazyPage(
   () => import('@/pages/dev/ComponentGalleryPage'),
@@ -126,6 +121,10 @@ export default function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
               <Route path="/" element={<RoleRedirect />} />
+
+              <Route element={<ProtectedRoute allowedRoles={['security_guard']} />}>
+                <Route path="/access-unavailable" element={<AccessUnavailablePage />} />
+              </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['student']} />}>
                 <Route
@@ -160,14 +159,6 @@ export default function App() {
                   <Route path="/warden/reports" element={<ReportsPage />} />
                   <Route path="/warden/settings" element={<UserSettingsPage />} />
                   <Route path="/warden/notifications" element={<NotificationsPage />} />
-                </Route>
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['security_guard']} />}>
-                <Route element={<SecurityShell />}>
-                  <Route path="/security/scan" element={<SecurityScanPage />} />
-                  <Route path="/security/log" element={<SecurityScanPage />} />
-                  <Route path="/security/settings" element={<SecuritySettingsPage />} />
                 </Route>
               </Route>
 

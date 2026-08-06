@@ -29,9 +29,6 @@ export function RoutePrefetch() {
       warm(() => import('@/components/layout/StudentShell'))
       warm(() => import('@/pages/student/StudentHomePage'))
       warm(() => import('@/pages/student/StudentPassesPage'))
-    } else if (role === 'security_guard') {
-      warm(() => import('@/components/layout/SecurityShell'))
-      warm(() => import('@/pages/security/SecurityScanPage'))
     } else if (role === 'parent') {
       warm(() => import('@/components/layout/ParentShell'))
       warm(() => import('@/pages/parent/ParentDashboard'))

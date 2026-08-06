@@ -63,12 +63,6 @@ html.dark .dashboard-shell .dashboard-filter-chip-active {
   box-shadow: none;
 }
 
-html.dark .dashboard-shell .security-info-pill {
-  border-color: var(--glass-border);
-  background: var(--glass-bg-muted);
-  color: #cbd5e1;
-}
-
 html.dark .dashboard-shell .theme-toggle,
 html.dark .dashboard-shell .glass-nav button {
   color: #e2e8f0;

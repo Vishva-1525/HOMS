@@ -1,7 +1,6 @@
 import type { UserRole } from '@/lib/types'
 import { adminNav } from './adminNav'
 import { parentNav } from './parentNav'
-import { securityNav } from './securityNav'
 import { studentNav } from './studentNav'
 import type { NavConfig } from './types'
 import { wardenNav } from './wardenNav'
@@ -9,7 +8,7 @@ import { wardenNav } from './wardenNav'
 const NAV_BY_ROLE: Record<UserRole, NavConfig> = {
   student: studentNav,
   warden: wardenNav,
-  security_guard: securityNav,
+  security_guard: [],
   parent: parentNav,
   admin: adminNav,
 }
@@ -33,5 +32,5 @@ export function getBreadcrumbLabel(pathname: string, nav: NavConfig): string {
 }
 
 export * from './types'
-export { studentNav, wardenNav, securityNav, parentNav, adminNav }
+export { studentNav, wardenNav, parentNav, adminNav }
 export { getRoleDisplayLabel } from './types'

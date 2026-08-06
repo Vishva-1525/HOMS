@@ -25,7 +25,7 @@ export function AppDownloadCard({ className }: { className?: string }) {
           <div>
             <h2 className="dashboard-heading text-base font-semibold">Download HOMS app</h2>
             <p className="dashboard-muted mt-0.5 text-sm">
-              Install on your phone for faster access and offline gate scanning.
+              Install on your phone for faster access and push notifications.
             </p>
           </div>
         </div>
@@ -89,7 +89,7 @@ export function AppDownloadCard({ className }: { className?: string }) {
             ? 'After downloading, open the APK file and allow installation from this source if prompted.'
             : mobile
               ? 'Use “Install from browser” on Android Chrome, or download the APK and transfer it to an Android device.'
-              : 'Download the APK and install it on an Android phone or tablet. Security gate scanners can use the desktop site in a browser.'}
+              : 'Download the APK and install it on an Android phone or tablet. Desktop browsers can continue using the web app.'}
         </p>
       </div>
     </section>
