@@ -1,9 +1,9 @@
-import type { RefObject } from 'react'
+import type { Ref } from 'react'
 import { Loader2, ScanBarcode } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SecurityCameraPanelProps {
-  videoRef: RefObject<HTMLVideoElement | null>
+  videoRef: Ref<HTMLVideoElement>
   starting: boolean
   error: string | null
   className?: string

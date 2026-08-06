@@ -1,5 +1,5 @@
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseCameraQrScannerOptions {
   enabled: boolean
@@ -10,7 +10,10 @@ interface UseCameraQrScannerOptions {
  * Live camera preview + continuous QR decode (backup to hardware wedge scanner).
  */
 export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOptions) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
+  const videoRef = useCallback((node: HTMLVideoElement | null) => {
+    setVideoEl(node)
+  }, [])
   const controlsRef = useRef<IScannerControls | null>(null)
   const onScanRef = useRef(onScan)
   const handledRef = useRef(false)
@@ -24,18 +27,17 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
       handledRef.current = false
       controlsRef.current?.stop()
       controlsRef.current = null
-      const video = videoRef.current
-      if (video?.srcObject) {
-        for (const track of (video.srcObject as MediaStream).getTracks()) {
+      if (videoEl?.srcObject) {
+        for (const track of (videoEl.srcObject as MediaStream).getTracks()) {
           track.stop()
         }
-        video.srcObject = null
+        videoEl.srcObject = null
       }
+      setStarting(false)
       return
     }
 
-    const video = videoRef.current
-    if (!video) return
+    if (!videoEl) return
 
     let cancelled = false
     handledRef.current = false
@@ -58,7 +60,7 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
               height: { ideal: 720 },
             },
           },
-          video,
+          videoEl,
           (result, _err, controls) => {
             if (cancelled || handledRef.current) return
             const text = result?.getText()?.trim()
@@ -91,7 +93,7 @@ export function useCameraQrScanner({ enabled, onScan }: UseCameraQrScannerOption
       controlsRef.current?.stop()
       controlsRef.current = null
     }
-  }, [enabled])
+  }, [enabled, videoEl])
 
   return { videoRef, error, starting }
 }

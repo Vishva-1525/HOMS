@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Camera, LogOut, ScanBarcode } from 'lucide-react'
 import { HardwareScannerCapture } from '@/components/security/HardwareScannerCapture'
 import { HardwareScannerPanel } from '@/components/security/HardwareScannerPanel'
@@ -13,13 +13,6 @@ import { cn } from '@/lib/utils'
 
 type Phase = 'scanning' | 'validating' | 'result'
 type ScanMode = 'hardware' | 'camera'
-
-/** Brief pause so the same physical scan cannot double-submit. */
-const RESCAN_COOLDOWN_MS = 900
-/** Mid-trip: return to ready so the next of 4 gates can scan without tapping. */
-const AUTO_READY_AFTER_GATE_MS = 2200
-/** Trip complete / denied: slightly longer so the result is readable. */
-const AUTO_READY_AFTER_DONE_MS = 3500
 
 export function SecurityScanPage() {
   const { profile, signOut } = useAuth()
@@ -37,11 +30,12 @@ export function SecurityScanPage() {
       const next = await processSecurityScan(raw)
       setResult(next)
       setPhase('result')
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not reach the server.'
       setResult({
         outcome: 'denied',
         title: 'Scan failed',
-        detail: 'Could not reach the server. Check internet and try again.',
+        detail: message,
         studentName: '-',
         regNumber: '-',
         admissionNo: '-',
@@ -49,10 +43,7 @@ export function SecurityScanPage() {
       })
       setPhase('result')
     } finally {
-      // Allow the next gate scan while the profile result is still visible.
-      window.setTimeout(() => {
-        inFlightRef.current = false
-      }, RESCAN_COOLDOWN_MS)
+      inFlightRef.current = false
     }
   }, [])
 
@@ -62,47 +53,15 @@ export function SecurityScanPage() {
     setPhase('scanning')
   }
 
-  // After a gate is recorded, auto-return to ready so guards can scan the same
-  // QR again for the next of the four checkpoints without pressing a button.
-  useEffect(() => {
-    if (phase !== 'result' || !result) return
-
-    const midTrip = result.outcome === 'approved' && !result.cycleComplete
-    const delay = midTrip ? AUTO_READY_AFTER_GATE_MS : AUTO_READY_AFTER_DONE_MS
-
-    const timer = window.setTimeout(() => {
-      setResult(null)
-      setPhase('scanning')
-      inFlightRef.current = false
-    }, delay)
-
-    return () => window.clearTimeout(timer)
-  }, [phase, result])
-
-  const hardwareListening =
-    mode === 'hardware' && (phase === 'scanning' || phase === 'result')
+  const scanning = phase === 'scanning'
 
   const { videoRef, error: cameraError, starting } = useCameraQrScanner({
-    enabled: mode === 'camera' && phase === 'scanning',
+    enabled: scanning && mode === 'camera',
     onScan: (raw) => void handleScan(raw),
   })
 
-  // Hidden hardware capture stays mounted on the result screen.
-  const hardwareCapture = (
-    <HardwareScannerCapture
-      enabled={hardwareListening}
-      onScan={(raw) => void handleScan(raw)}
-      className={phase === 'result' ? 'sr-only' : undefined}
-    />
-  )
-
   if (phase === 'result' && result) {
-    return (
-      <>
-        {mode === 'hardware' && hardwareCapture}
-        <SecurityResultScreen result={result} onScanNext={reset} />
-      </>
-    )
+    return <SecurityResultScreen result={result} onScanNext={reset} />
   }
 
   return (
@@ -171,9 +130,12 @@ export function SecurityScanPage() {
             {mode === 'hardware' ? (
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
                 <div className="border-b border-white/10 bg-slate-950/80 px-3 py-3">
-                  {hardwareCapture}
+                  <HardwareScannerCapture
+                    enabled={scanning}
+                    onScan={(raw) => void handleScan(raw)}
+                  />
                 </div>
-                <HardwareScannerPanel active={phase === 'scanning'} />
+                <HardwareScannerPanel active={scanning} />
               </div>
             ) : (
               <>

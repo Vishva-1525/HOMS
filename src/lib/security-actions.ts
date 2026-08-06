@@ -85,8 +85,20 @@ async function resolveOutpassId(
     const { data, error } = await supabase.rpc('get_outpass_id_by_entry_code', {
       p_entry_code: parsed.entry_code,
     })
-    if (error || !data) return null
-    return data as string
+    if (!error && data) return data as string
+
+    // Fallback: match stored qr_code_data / entry_code via table read.
+    const { data: row } = await supabase
+      .from('outpass_requests')
+      .select('id')
+      .or(
+        `entry_code.eq.${parsed.entry_code},qr_code_data.eq.${parsed.entry_code}`,
+      )
+      .in('status', ['approved', 'extended'])
+      .limit(1)
+      .maybeSingle()
+
+    return row?.id ?? null
   }
   return null
 }
