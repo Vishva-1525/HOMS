@@ -29,7 +29,12 @@ const BulkStudentUploadModal = lazy(() =>
   })),
 )
 
-export function AdminStudentsPage() {
+interface AdminStudentsPageProps {
+  /** Bulk import stays admin-only when wardens reuse this page. */
+  allowBulkImport?: boolean
+}
+
+export function AdminStudentsPage({ allowBulkImport = true }: AdminStudentsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const {
     students: studentsFromHook,
@@ -173,22 +178,24 @@ export function AdminStudentsPage() {
             {summary.active} students · {summary.outside} currently out · {summary.overdue} overdue
           </p>
         </div>
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          className="shrink-0 gap-1.5 self-start"
-          onClick={() => {
-            setImportBanner(null)
-            setImportOpen(true)
-          }}
-        >
-          <Upload className="h-4 w-4" />
-          Import students
-        </Button>
+        {allowBulkImport && (
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="shrink-0 gap-1.5 self-start"
+            onClick={() => {
+              setImportBanner(null)
+              setImportOpen(true)
+            }}
+          >
+            <Upload className="h-4 w-4" />
+            Import students
+          </Button>
+        )}
       </div>
 
-      {importBanner && (
+      {allowBulkImport && importBanner && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           <span>{importBanner}</span>
           <button
@@ -354,17 +361,19 @@ export function AdminStudentsPage() {
         onSave={updateStudent}
       />
 
-      <Suspense fallback={null}>
-        {importOpen && (
-          <BulkStudentUploadModal
-            open={importOpen}
-            onClose={() => setImportOpen(false)}
-            onSuccess={(result) => {
-              void handleImportSuccess(result)
-            }}
-          />
-        )}
-      </Suspense>
+      {allowBulkImport && (
+        <Suspense fallback={null}>
+          {importOpen && (
+            <BulkStudentUploadModal
+              open={importOpen}
+              onClose={() => setImportOpen(false)}
+              onSuccess={(result) => {
+                void handleImportSuccess(result)
+              }}
+            />
+          )}
+        </Suspense>
+      )}
     </div>
   )
 }

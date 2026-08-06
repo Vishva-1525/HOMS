@@ -57,11 +57,6 @@ const PendingRequestsPage = lazyPage(
 )
 const StudentsOutPage = lazyPage(() => import('@/pages/warden/StudentsOutPage'), 'StudentsOutPage')
 const WardenHomePage = lazyPage(() => import('@/pages/warden/WardenHomePage'), 'WardenHomePage')
-const WardenStudentsPage = lazyPage(
-  () => import('@/pages/warden/WardenStudentsPage'),
-  'WardenStudentsPage',
-)
-const ReportsPage = lazyPage(() => import('@/pages/warden/ReportsPage'), 'ReportsPage')
 const ParentDashboard = lazyPage(() => import('@/pages/parent/ParentDashboard'), 'ParentDashboard')
 const ParentHistoryPage = lazyPage(
   () => import('@/pages/parent/ParentHistoryPage'),
@@ -152,10 +147,15 @@ export default function App() {
                 >
                   <Route path="/warden/dashboard" element={<WardenHomePage />} />
                   <Route path="/warden/pending" element={<PendingRequestsPage />} />
-                  <Route path="/warden/students" element={<WardenStudentsPage />} />
+                  <Route
+                    path="/warden/students"
+                    element={<AdminStudentsPage allowBulkImport={false} />}
+                  />
                   <Route path="/warden/out" element={<StudentsOutPage />} />
                   <Route path="/warden/extensions" element={<ExtensionRequestsPage />} />
-                  <Route path="/warden/reports" element={<ReportsPage />} />
+                  <Route path="/warden/staff" element={<AdminStaffPage />} />
+                  <Route path="/warden/passes" element={<AdminPassesPage />} />
+                  <Route path="/warden/reports" element={<AdminReportsPage />} />
                   <Route path="/warden/settings" element={<UserSettingsPage />} />
                   <Route path="/warden/notifications" element={<NotificationsPage />} />
                 </Route>

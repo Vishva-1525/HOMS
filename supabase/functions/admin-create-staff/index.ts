@@ -74,8 +74,8 @@ Deno.serve(async (req) => {
       .eq('id', userData.user.id)
       .maybeSingle()
 
-    if (profile?.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Forbidden: admin role required' }), {
+    if (profile?.role !== 'admin' && profile?.role !== 'warden') {
+      return new Response(JSON.stringify({ error: 'Forbidden: admin or warden role required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

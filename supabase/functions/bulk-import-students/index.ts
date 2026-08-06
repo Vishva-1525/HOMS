@@ -257,48 +257,24 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     const role = profile?.role as string | undefined
-    if (role !== 'admin' && role !== 'warden') {
-      return jsonResponse({ success: false, error: 'Forbidden: admin or warden role required' })
+    if (role !== 'admin') {
+      return jsonResponse({ success: false, error: 'Forbidden: admin role required' })
     }
 
     const body = await req.json() as {
       importMode?: ImportMode
       students?: StudentImportRow[]
-      /** Optional: force hostel_block for every imported row (used by wardens). */
+      /** Optional: force hostel_block for every imported row. */
       forcedHostelBlock?: string
     }
 
     let importMode: ImportMode = body.importMode === 'replace' ? 'replace' : 'append'
-    if (importMode === 'replace' && role !== 'admin') {
-      return jsonResponse({
-        success: false,
-        error: 'Only admins can use New Academic Year (replace) import mode.',
-      })
-    }
 
     let students = Array.isArray(body.students) ? body.students : []
     const forcedBlock = String(body.forcedHostelBlock ?? '').trim()
 
-    if (role === 'warden') {
-      const { data: assignment } = await admin
-        .from('staff_assignments')
-        .select('assignment_value')
-        .eq('profile_id', userData.user.id)
-        .eq('assignment_type', 'block')
-        .maybeSingle()
-
-      const wardenBlock = String(assignment?.assignment_value ?? forcedBlock).trim()
-      if (wardenBlock) {
-        students = students.map((row) => ({
-          ...row,
-          hostel_block: wardenBlock,
-        }))
-      }
-    } else if (forcedBlock) {
-      students = students.map((row) => ({
-        ...row,
-        hostel_block: row.hostel_block?.trim() || forcedBlock,
-      }))
+    if (forcedBlock) {
+      students = students.map((row) => ({ ...row, hostel_block: forcedBlock }))
     }
 
     if (students.length === 0) {
