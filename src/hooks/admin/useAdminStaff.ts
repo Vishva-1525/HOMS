@@ -51,6 +51,7 @@ export function useAdminStaff() {
     phone: string
     role: 'warden' | 'security_guard'
     assignment_value: string
+    gender?: 'male' | 'female'
   }) {
     const normalizedInput = {
       ...input,

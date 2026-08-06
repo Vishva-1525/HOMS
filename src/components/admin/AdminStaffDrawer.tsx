@@ -5,17 +5,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 
+export type CreateStaffPayload = {
+  full_name: string
+  email: string
+  phone: string
+  role: 'warden' | 'security_guard'
+  assignment_value: string
+  gender?: 'male' | 'female'
+}
+
 interface AdminStaffDrawerProps {
   open: boolean
   role: 'warden' | 'security_guard'
   onClose: () => void
-  onSubmit: (data: {
-    full_name: string
-    email: string
-    phone: string
-    role: 'warden' | 'security_guard'
-    assignment_value: string
-  }) => Promise<{ email: string; password: string }>
+  onSubmit: (data: CreateStaffPayload) => Promise<{ email: string; password: string }>
 }
 
 export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDrawerProps) {
@@ -23,6 +26,7 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [assignment, setAssignment] = useState('')
+  const [gender, setGender] = useState<'male' | 'female' | ''>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null)
@@ -36,6 +40,13 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    if (role === 'warden' && gender !== 'male' && gender !== 'female') {
+      setError('Select gender for the warden account.')
+      setLoading(false)
+      return
+    }
+
     try {
       const result = await onSubmit({
         full_name: fullName,
@@ -43,6 +54,7 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
         phone,
         role,
         assignment_value: assignment,
+        ...(role === 'warden' ? { gender: gender as 'male' | 'female' } : {}),
       })
       setCredentials(result)
     } catch (err) {
@@ -57,6 +69,7 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
     setEmail('')
     setPhone('')
     setAssignment('')
+    setGender('')
     setCredentials(null)
     setError(null)
     onClose()
@@ -114,6 +127,22 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
               <Label htmlFor="staff-phone">Phone</Label>
               <Input id="staff-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
+            {role === 'warden' && (
+              <div>
+                <Label htmlFor="staff-gender">Gender</Label>
+                <select
+                  id="staff-gender"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as 'male' | 'female' | '')}
+                  required
+                  className="mt-1 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2 text-sm"
+                >
+                  <option value="">Select gender…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+            )}
             <div>
               <Label htmlFor="staff-assignment">{assignmentLabel}</Label>
               <Input id="staff-assignment" value={assignment} onChange={(e) => setAssignment(e.target.value)} />
