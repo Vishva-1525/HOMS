@@ -1,14 +1,10 @@
-import { Download, Monitor, Share, Smartphone } from 'lucide-react'
+import { Download, Share, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
-import { getApkDownloadUrl, isAndroidDevice, isMobileDevice } from '@/lib/app-download'
 import { cn } from '@/lib/utils'
 
 export function AppDownloadCard({ className }: { className?: string }) {
-  const apkUrl = getApkDownloadUrl()
   const { canInstall, isStandalone, isIos, promptInstall } = usePwaInstall()
-  const android = isAndroidDevice()
-  const mobile = isMobileDevice()
 
   return (
     <section
@@ -23,7 +19,7 @@ export function AppDownloadCard({ className }: { className?: string }) {
             <Smartphone className="h-5 w-5 text-[#1A5CA0]" strokeWidth={1.75} />
           </div>
           <div>
-            <h2 className="dashboard-heading text-base font-semibold">Download HOMS app</h2>
+            <h2 className="dashboard-heading text-base font-semibold">Install HOMS app</h2>
           </div>
         </div>
       </div>
@@ -44,50 +40,24 @@ export function AppDownloadCard({ className }: { className?: string }) {
               <strong>Add to Home Screen</strong>.
             </p>
           </div>
-        ) : null}
-
-        <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm text-slate-800">
-          <p className="flex items-center gap-2 font-medium text-[#1A5CA0]">
-            <Monitor className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-            Security gate computer (no internet)
-          </p>
-          <p className="mt-2 text-slate-700">
-            Do <strong>not</strong> save the website as HTML — that only downloads one file and
-            will not work. On a laptop with internet, run{' '}
-            <code className="rounded bg-white px-1 py-0.5 text-xs">npm run package:portable</code>{' '}
-            in the HOMS project, copy <strong>HOMS-Portable.zip</strong> to a pendrive, unzip on the
-            old PC, and double-click <strong>START-HOMS.bat</strong>.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <a
-            href={apkUrl}
-            download="homs.apk"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[#1A5CA0] px-4 text-sm font-medium text-white transition-colors hover:bg-[#154a85]"
+        ) : canInstall ? (
+          <Button
+            type="button"
+            className="w-full gap-2 sm:w-auto"
+            onClick={() => void promptInstall()}
           >
             <Download className="h-4 w-4" strokeWidth={1.75} />
-            Download APK
-          </a>
-
-          {canInstall && !isStandalone && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void promptInstall()}
-            >
-              Install from browser
-            </Button>
-          )}
-        </div>
-
-        <p className="text-xs leading-relaxed text-slate-600">
-          {android
-            ? 'After downloading, open the APK file and allow installation from this source if prompted.'
-            : mobile
-              ? 'Use “Install from browser” on Android Chrome, or download the APK and transfer it to an Android device.'
-              : 'Download the APK and install it on an Android phone or tablet. Desktop browsers can continue using the web app.'}
-        </p>
+            Install app
+          </Button>
+        ) : (
+          <div className="rounded-xl border border-[#BFDBFE] bg-[#EBF3FF]/60 px-4 py-3 text-sm text-slate-800">
+            <p className="font-medium text-[#1A5CA0]">Install from your browser</p>
+            <p className="mt-2 text-slate-700">
+              In Chrome, open the browser menu and choose <strong>Install app</strong> or{' '}
+              <strong>Add to Home screen</strong>.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   )
