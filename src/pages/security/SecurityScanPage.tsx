@@ -1,19 +1,23 @@
 import { useCallback, useRef, useState } from 'react'
-import { LogOut } from 'lucide-react'
+import { Camera, LogOut, ScanBarcode } from 'lucide-react'
+import { HardwareScannerCapture } from '@/components/security/HardwareScannerCapture'
+import { HardwareScannerPanel } from '@/components/security/HardwareScannerPanel'
 import { SecurityCameraPanel } from '@/components/security/SecurityCameraPanel'
 import { SecurityResultScreen } from '@/components/security/SecurityResultScreen'
 import { SvceEmblem } from '@/components/branding/SvceEmblem'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useCameraQrScanner } from '@/hooks/security/useCameraQrScanner'
-import { useHardwareScanner } from '@/hooks/security/useHardwareScanner'
 import { processSecurityScan, type SecurityScanResult } from '@/lib/security-actions'
 import { SVCE_APP_SHORT } from '@/lib/branding'
+import { cn } from '@/lib/utils'
 
 type Phase = 'scanning' | 'validating' | 'result'
+type ScanMode = 'hardware' | 'camera'
 
 export function SecurityScanPage() {
   const { profile, signOut } = useAuth()
   const [phase, setPhase] = useState<Phase>('scanning')
+  const [mode, setMode] = useState<ScanMode>('hardware')
   const [result, setResult] = useState<SecurityScanResult | null>(null)
   const inFlightRef = useRef(false)
 
@@ -41,14 +45,11 @@ export function SecurityScanPage() {
   }, [])
 
   const scanning = phase === 'scanning'
-
-  useHardwareScanner({
-    enabled: scanning,
-    onScan: (raw) => void handleScan(raw),
-  })
+  const hardwareActive = scanning && mode === 'hardware'
+  const cameraActive = scanning && mode === 'camera'
 
   const { videoRef, error: cameraError, starting } = useCameraQrScanner({
-    enabled: scanning,
+    enabled: cameraActive,
     onScan: (raw) => void handleScan(raw),
   })
 
@@ -96,17 +97,57 @@ export function SecurityScanPage() {
           </div>
         ) : (
           <>
-            <SecurityCameraPanel
-              videoRef={videoRef}
-              starting={starting}
-              error={cameraError}
-            />
-            <div className="mt-4 space-y-2 text-center">
-              <p className="text-lg font-bold">Ready to scan</p>
-              <p className="text-sm text-white/70">
-                Use the desktop QR reader or hold the pass in front of the camera.
-              </p>
+            <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
+              <button
+                type="button"
+                onClick={() => setMode('hardware')}
+                className={cn(
+                  'inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition',
+                  mode === 'hardware'
+                    ? 'bg-white text-slate-900 shadow'
+                    : 'text-white/75 hover:bg-white/5',
+                )}
+              >
+                <ScanBarcode className="h-4 w-4" strokeWidth={2} />
+                Desk scanner
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('camera')}
+                className={cn(
+                  'inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition',
+                  mode === 'camera'
+                    ? 'bg-white text-slate-900 shadow'
+                    : 'text-white/75 hover:bg-white/5',
+                )}
+              >
+                <Camera className="h-4 w-4" strokeWidth={2} />
+                Phone camera
+              </button>
             </div>
+
+            {mode === 'hardware' ? (
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
+                <HardwareScannerPanel active={hardwareActive} />
+                <div className="border-t border-white/10 bg-slate-950/80 px-3 py-3">
+                  <HardwareScannerCapture
+                    enabled={hardwareActive}
+                    onScan={(raw) => void handleScan(raw)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <SecurityCameraPanel
+                  videoRef={videoRef}
+                  starting={starting}
+                  error={cameraError}
+                />
+                <p className="mt-3 text-center text-sm text-white/65">
+                  Backup only — for phones/tablets. Desk gates should use the USB 2D scanner.
+                </p>
+              </>
+            )}
           </>
         )}
       </main>

@@ -61,7 +61,7 @@ export function SecurityCameraPanel({
 
       {!starting && !error && (
         <p className="pointer-events-none absolute left-0 right-0 top-4 text-center text-xs font-medium tracking-wide text-white/85">
-          Point camera at QR · or use desktop scanner
+          Hold the pass QR in front of this camera
         </p>
       )}
     </div>
