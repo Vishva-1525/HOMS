@@ -5,8 +5,8 @@ import { scanDebug } from '@/lib/security-scan-debug'
 export type SecurityScanPhase = 'ready' | 'validating' | 'result'
 export type SecurityScanMode = 'desk' | 'camera'
 
-/** How long to show the approve/deny screen before accepting the next scan. */
-const RESULT_DWELL_MS = 1800
+/** Minimum time to show the approve/deny screen before auto-returning to ready. */
+const RESULT_DWELL_MS = 10_000
 
 /**
  * Single security scan state machine.
@@ -55,7 +55,7 @@ export function useSecurityScanController() {
       setResult(next)
       setPhase('result')
       scanDebug('Dashboard Updated')
-      // Production: auto-return to ready so the next desk scan needs no click.
+      // Hold the result for RESULT_DWELL_MS; guard can exit early via goReady.
       dwellTimerRef.current = window.setTimeout(() => {
         dwellTimerRef.current = null
         inFlightRef.current = false
