@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AdminStaffRow } from '@/lib/admin-types'
 import { normalizeBlockValue } from '@/lib/block-display'
+import { formatNetworkError } from '@/lib/network-error'
 import { supabase } from '@/lib/supabase'
 
 export function useAdminStaff() {
@@ -14,30 +15,34 @@ export function useAdminStaff() {
   } | null>(null)
 
   const fetchStaff = useCallback(async () => {
+    setLoading(true)
     setError(null)
-    const [wardenResult, guardResult] = await Promise.all([
-      supabase.rpc('get_admin_staff_list', { p_role: 'warden' }),
-      supabase.rpc('get_admin_staff_list', { p_role: 'security_guard' }),
-    ])
+    try {
+      const [wardenResult, guardResult] = await Promise.all([
+        supabase.rpc('get_admin_staff_list', { p_role: 'warden' }),
+        supabase.rpc('get_admin_staff_list', { p_role: 'security_guard' }),
+      ])
 
-    if (wardenResult.error) {
-      setError(wardenResult.error.message)
-    } else {
-      setWardens((wardenResult.data as AdminStaffRow[]) ?? [])
+      if (wardenResult.error) {
+        setError(wardenResult.error.message)
+      } else {
+        setWardens((wardenResult.data as AdminStaffRow[]) ?? [])
+      }
+
+      if (guardResult.error) {
+        setError(guardResult.error.message)
+      } else {
+        setGuards((guardResult.data as AdminStaffRow[]) ?? [])
+      }
+    } catch (err) {
+      setError(formatNetworkError(err, 'Failed to load staff.'))
+    } finally {
+      setLoading(false)
     }
-
-    if (guardResult.error) {
-      setError(guardResult.error.message)
-    } else {
-      setGuards((guardResult.data as AdminStaffRow[]) ?? [])
-    }
-
-    setLoading(false)
   }, [])
 
   useEffect(() => {
-    setLoading(true)
-    fetchStaff()
+    void fetchStaff()
   }, [fetchStaff])
 
   async function createStaff(input: {

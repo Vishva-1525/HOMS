@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils'
 type StaffTab = 'warden' | 'security_guard'
 
 export function AdminStaffPage() {
-  const { wardens, guards, loading, error, createStaff, updateStaffAssignment } = useAdminStaff()
+  const { wardens, guards, loading, error, createStaff, updateStaffAssignment, refetch } =
+    useAdminStaff()
   const [tab, setTab] = useState<StaffTab>('warden')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editStaff, setEditStaff] = useState<AdminStaffRow | null>(null)
@@ -24,6 +25,30 @@ export function AdminStaffPage() {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading staff…" />
+      </div>
+    )
+  }
+
+  if (error && wardens.length === 0 && guards.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="dashboard-page-header">
+          <h1 className="dashboard-heading text-2xl md:text-3xl">Staff</h1>
+        </div>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p>{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              void refetch()
+            }}
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     )
   }

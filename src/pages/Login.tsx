@@ -14,11 +14,12 @@ import { SVCE_APP_SHORT } from '@/lib/branding'
 import { FORGOT_PASSWORD_PATH } from '@/lib/routes'
 
 export function Login() {
-  const { user, profile, loading, signInWithIdentifier } = useAuth()
+  const { user, profile, loading, signInWithIdentifier, refreshProfile, signOut } = useAuth()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   if (loading) {
     return <AuthLoadingScreen label="Loading..." />
@@ -29,7 +30,19 @@ export function Login() {
   }
 
   if (user && !profile) {
-    return <AuthLoadingScreen label="Loading your profile..." />
+    return (
+      <AuthLoadingScreen
+        errorMessage="Couldn't load your profile. Check your connection and try again."
+        retrying={retrying}
+        onRetry={() => {
+          setRetrying(true)
+          void refreshProfile().finally(() => setRetrying(false))
+        }}
+        onSignOut={() => {
+          void signOut()
+        }}
+      />
+    )
   }
 
   async function handleSubmit(event: FormEvent) {

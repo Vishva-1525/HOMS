@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { SystemSettingsMap } from '@/lib/admin-types'
 import { invalidateQrAvailabilityCache } from '@/hooks/useQrAvailabilityMinutes'
+import { formatNetworkError } from '@/lib/network-error'
 import { supabase } from '@/lib/supabase'
 
 const DEFAULT_KEYS = [
@@ -25,26 +26,31 @@ export function useSystemSettings() {
   const [saved, setSaved] = useState(false)
 
   const fetchSettings = useCallback(async () => {
+    setLoading(true)
     setError(null)
-    const { data, error: fetchError } = await supabase.from('system_settings').select('key, value')
+    try {
+      const { data, error: fetchError } = await supabase.from('system_settings').select('key, value')
 
-    if (fetchError) {
-      setError(fetchError.message)
+      if (fetchError) {
+        setError(fetchError.message)
+        return
+      }
+
+      const map: SystemSettingsMap = {}
+      for (const row of data ?? []) {
+        map[row.key] = row.value
+      }
+      setSettings(map)
+      setDraft(map)
+    } catch (err) {
+      setError(formatNetworkError(err, 'Failed to load settings.'))
+    } finally {
       setLoading(false)
-      return
     }
-
-    const map: SystemSettingsMap = {}
-    for (const row of data ?? []) {
-      map[row.key] = row.value
-    }
-    setSettings(map)
-    setDraft(map)
-    setLoading(false)
   }, [])
 
   useEffect(() => {
-    fetchSettings()
+    void fetchSettings()
   }, [fetchSettings])
 
   function updateDraft(key: string, value: string) {

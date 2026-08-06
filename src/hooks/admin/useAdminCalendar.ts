@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { buildCalendarMap } from '@/lib/academic-calendar'
+import { formatNetworkError } from '@/lib/network-error'
 import type { AcademicCalendarDay, AcademicDayType } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
@@ -13,19 +14,24 @@ export function useAdminCalendar() {
     setLoading(true)
     setError(null)
 
-    const { data, error: fetchError } = await supabase
-      .from('academic_calendar')
-      .select('calendar_date, day_type, label')
-      .order('calendar_date', { ascending: true })
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('academic_calendar')
+        .select('calendar_date, day_type, label')
+        .order('calendar_date', { ascending: true })
 
-    if (fetchError) {
-      setError(fetchError.message)
+      if (fetchError) {
+        setError(fetchError.message)
+        setAllDays([])
+      } else {
+        setAllDays((data ?? []) as AcademicCalendarDay[])
+      }
+    } catch (err) {
+      setError(formatNetworkError(err, 'Failed to load calendar.'))
       setAllDays([])
-    } else {
-      setAllDays((data ?? []) as AcademicCalendarDay[])
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }, [])
 
   useEffect(() => {

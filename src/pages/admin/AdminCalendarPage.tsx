@@ -60,6 +60,7 @@ export function AdminCalendarPage() {
     setTypeFilter,
     upsertDay,
     deleteDay,
+    refetch,
   } = useAdminCalendar()
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState<AcademicCalendarDay>(EMPTY_FORM)
@@ -151,6 +152,30 @@ export function AdminCalendarPage() {
     return (
       <div className="dashboard-loading-panel">
         <Spinner label="Loading calendar…" />
+      </div>
+    )
+  }
+
+  if (error && allDays.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="dashboard-page-header">
+          <h1 className="dashboard-heading text-2xl md:text-3xl">Holiday management</h1>
+        </div>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p>{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              void refetch()
+            }}
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     )
   }

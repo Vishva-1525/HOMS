@@ -107,21 +107,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    const BOOT_TIMEOUT_MS = 12_000
 
     // Immediate session restore - do NOT await profile inside onAuthStateChange
     // (that blocks the Supabase client and freezes "Loading your account...").
-    void supabase.auth.getSession().then(({ data: { session: initial } }) => {
-      if (!mounted) return
-      setSession(initial)
-      setUser(initial?.user ?? null)
+    const boot = Promise.race([
+      supabase.auth.getSession(),
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error('Session restore timed out')), BOOT_TIMEOUT_MS)
+      }),
+    ])
 
-      if (initial?.user) {
-        void applyProfile(initial.user.id, true)
-      } else {
+    void boot
+      .then(({ data: { session: initial } }) => {
+        if (!mounted) return
+        setSession(initial)
+        setUser(initial?.user ?? null)
+
+        if (initial?.user) {
+          void applyProfile(initial.user.id, true)
+        } else {
+          setProfile(null)
+          setLoading(false)
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to restore session:', err)
+        if (!mounted) return
+        setSession(null)
+        setUser(null)
         setProfile(null)
         setLoading(false)
-      }
-    })
+      })
 
     const {
       data: { subscription },

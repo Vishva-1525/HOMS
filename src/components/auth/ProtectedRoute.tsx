@@ -1,4 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { CHANGE_PASSWORD_PATH, getDashboardPath, studentNeedsPasswordChange } from '@/lib/routes'
@@ -9,7 +10,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, profile, role, loading } = useAuth()
+  const { user, profile, role, loading, refreshProfile, signOut } = useAuth()
+  const [retrying, setRetrying] = useState(false)
 
   if (loading) {
     return <AuthLoadingScreen label="Loading your account..." />
@@ -20,7 +22,19 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (!profile || !role) {
-    return <AuthLoadingScreen label="Loading your profile..." />
+    return (
+      <AuthLoadingScreen
+        errorMessage="Couldn't load your profile. Check your connection and try again."
+        retrying={retrying}
+        onRetry={() => {
+          setRetrying(true)
+          void refreshProfile().finally(() => setRetrying(false))
+        }}
+        onSignOut={() => {
+          void signOut()
+        }}
+      />
+    )
   }
 
   if (studentNeedsPasswordChange(profile)) {
