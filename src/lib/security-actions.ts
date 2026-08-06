@@ -1,5 +1,8 @@
 import {
   GATE_CHECKPOINT_LABELS,
+  GATE_CHECKPOINT_SHORT_LABELS,
+  GATE_CHECKPOINTS,
+  checkpointIndex,
   getNextCheckpoint,
   type GateCheckpoint,
 } from '@/lib/gate-checkpoints'
@@ -16,6 +19,13 @@ import type { GateLog, OutpassWithStudent } from '@/lib/types'
 
 export type SecurityScanOutcome = 'approved' | 'denied'
 
+export interface SecurityGateProgressItem {
+  checkpoint: GateCheckpoint
+  label: string
+  done: boolean
+  justRecorded: boolean
+}
+
 export interface SecurityScanResult {
   outcome: SecurityScanOutcome
   title: string
@@ -26,6 +36,12 @@ export interface SecurityScanResult {
   photoUrl: string | null
   checkpointLabel?: string
   checkpoint?: GateCheckpoint
+  /** 1–4 after a successful gate scan */
+  step?: number
+  totalSteps?: number
+  cycleComplete?: boolean
+  nextGateLabel?: string
+  progress?: SecurityGateProgressItem[]
 }
 
 async function fetchPassBundle(outpassId: string): Promise<{
@@ -188,12 +204,26 @@ export async function processSecurityScan(raw: string): Promise<SecurityScanResu
     return denied('Could not record', msg, identity)
   }
 
+  const step = checkpointIndex(nextCheckpoint) + 1
+  const cycleComplete = nextCheckpoint === 'hostel_entry'
+  const following = GATE_CHECKPOINTS[step] ?? null
+
   return {
     outcome: 'approved',
-    title: 'Approved',
-    detail: `${GATE_CHECKPOINT_LABELS[nextCheckpoint]} recorded`,
+    title: cycleComplete ? 'Trip complete' : 'Approved',
+    detail: `${GATE_CHECKPOINT_LABELS[nextCheckpoint]} · scan ${step} of 4`,
     ...identity,
     checkpoint: nextCheckpoint,
     checkpointLabel: GATE_CHECKPOINT_LABELS[nextCheckpoint],
+    step,
+    totalSteps: 4,
+    cycleComplete,
+    nextGateLabel: following ? GATE_CHECKPOINT_LABELS[following] : undefined,
+    progress: GATE_CHECKPOINTS.map((cp, index) => ({
+      checkpoint: cp,
+      label: GATE_CHECKPOINT_SHORT_LABELS[cp],
+      done: index < step,
+      justRecorded: index === step - 1,
+    })),
   }
 }

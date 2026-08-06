@@ -1,4 +1,5 @@
 import { ScanBarcode, ShieldCheck, Usb } from 'lucide-react'
+import { GATE_CHECKPOINT_SHORT_LABELS, GATE_CHECKPOINTS } from '@/lib/gate-checkpoints'
 import { cn } from '@/lib/utils'
 
 interface HardwareScannerPanelProps {
@@ -7,7 +8,7 @@ interface HardwareScannerPanelProps {
 }
 
 /**
- * Ready state for Brontix X3 / desk 2D USB scanners (keyboard wedge).
+ * Ready state for desk 2D USB scanners (keyboard wedge).
  * These devices do not stream live video to the browser.
  */
 export function HardwareScannerPanel({ active, className }: HardwareScannerPanelProps) {
@@ -41,10 +42,26 @@ export function HardwareScannerPanel({ active, className }: HardwareScannerPanel
           </p>
           <p className="mt-2 text-sm leading-relaxed text-white/85">
             {active
-              ? 'Aim the desk 2D QR reader at the student pass. Keep this window focused — results open automatically.'
+              ? 'Aim the desk 2D QR reader at the student pass. Same QR is used for all four gates in order.'
               : 'Return to this screen to scan the next pass.'}
           </p>
         </div>
+
+        {active && (
+          <ol className="w-full space-y-1.5 rounded-2xl border border-white/20 bg-black/20 px-3 py-3 text-left">
+            {GATE_CHECKPOINTS.map((cp, index) => (
+              <li
+                key={cp}
+                className="flex items-center gap-2 text-sm font-medium text-white/90"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-bold">
+                  {index + 1}
+                </span>
+                {GATE_CHECKPOINT_SHORT_LABELS[cp]}
+              </li>
+            ))}
+          </ol>
+        )}
 
         {active && (
           <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
@@ -53,12 +70,8 @@ export function HardwareScannerPanel({ active, className }: HardwareScannerPanel
               USB 2D reader
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
-              No webcam
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
               <ShieldCheck className="h-3 w-3" strokeWidth={2} aria-hidden />
-              Approved passes only
+              4 scans per trip
             </span>
           </div>
         )}

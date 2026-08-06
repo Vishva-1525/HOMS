@@ -17,6 +17,8 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
   }, [result.photoUrl])
 
   const showPhoto = Boolean(result.photoUrl) && !imgFailed
+  const showProgress = approved && result.progress && result.progress.length === 4
+  const cycleComplete = Boolean(result.cycleComplete)
 
   return (
     <div
@@ -27,7 +29,7 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
           : 'bg-gradient-to-b from-red-500 via-red-600 to-red-900',
       )}
     >
-      <div className="w-full max-w-lg flex-1 flex flex-col items-center justify-center gap-5 text-center">
+      <div className="w-full max-w-lg flex-1 flex flex-col items-center justify-center gap-4 text-center">
         <div
           className={cn(
             'flex h-20 w-20 items-center justify-center rounded-full bg-white/20 ring-4 ring-white/40',
@@ -48,7 +50,51 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
           )}
         </div>
 
-        <div className="w-full max-w-[220px] overflow-hidden rounded-3xl border-4 border-white/50 bg-white/10 shadow-2xl">
+        {showProgress && (
+          <div className="w-full rounded-2xl border border-white/25 bg-black/15 px-3 py-3 text-left">
+            <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-wider text-white/80">
+              Gate protocol · {result.step ?? 0}/4
+            </p>
+            <ol className="space-y-1.5">
+              {result.progress!.map((item, index) => (
+                <li
+                  key={item.checkpoint}
+                  className={cn(
+                    'flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm',
+                    item.justRecorded && 'bg-white/25 font-bold ring-1 ring-white/40',
+                    item.done && !item.justRecorded && 'bg-white/10 text-white/90',
+                    !item.done && 'text-white/55',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                      item.done ? 'bg-white text-emerald-700' : 'bg-white/15 text-white/70',
+                    )}
+                  >
+                    {item.done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">{item.label}</span>
+                  {item.justRecorded && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Done</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+            {!cycleComplete && result.nextGateLabel && (
+              <p className="mt-2 rounded-xl bg-white/20 px-3 py-2 text-center text-sm font-semibold">
+                Next required: {result.nextGateLabel}
+              </p>
+            )}
+            {cycleComplete && (
+              <p className="mt-2 rounded-xl bg-white/20 px-3 py-2 text-center text-sm font-semibold">
+                All four gate scans complete for this trip
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="w-full max-w-[200px] overflow-hidden rounded-3xl border-4 border-white/50 bg-white/10 shadow-2xl">
           {showPhoto && result.photoUrl ? (
             <img
               src={result.photoUrl}
@@ -80,7 +126,9 @@ export function SecurityResultScreen({ result, onScanNext }: SecurityResultScree
         onClick={onScanNext}
         className="mt-6 h-14 w-full max-w-lg rounded-2xl bg-white text-base font-bold text-slate-900 shadow-lg active:scale-[0.98] sm:h-16 sm:text-lg"
       >
-        Scan next student
+        {approved && !cycleComplete
+          ? 'Ready for next gate scan'
+          : 'Scan next student'}
       </button>
     </div>
   )
