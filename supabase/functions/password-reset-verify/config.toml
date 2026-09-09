@@ -1,0 +1,2 @@
+# Public password-reset flow — callers are not signed in.
+verify_jwt = false
