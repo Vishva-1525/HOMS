@@ -42,39 +42,57 @@ export async function signInWithIdentifier(identifier: string, password: string)
   return data
 }
 
-export async function requestPasswordReset(email: string) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/login`,
-  })
-  if (error) throw error
+function edgeFunctionErrorMessage(data: unknown, fallback: string): string {
+  if (data && typeof data === 'object' && 'error' in data) {
+    const message = (data as { error?: unknown }).error
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
 }
 
-export async function requestStudentPasswordReset(regNumber: string): Promise<string> {
-  const { data, error } = await supabase.functions.invoke('student-forgot-password', {
-    body: { reg_number: regNumber.trim() },
+/** Send a 6-digit verification code to the account email. */
+export async function requestPasswordResetOtp(email: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('password-reset-request', {
+    body: { email: email.trim().toLowerCase() },
   })
 
   if (error) throw error
-  if (data?.error) throw new Error(data.error)
+  if (data?.error) throw new Error(String(data.error))
 
-  return data.message as string
+  return (data?.message as string) ?? 'If an account exists for that email, a verification code has been sent.'
 }
 
-export async function resetStudentPasswordWithOtp(
-  regNumber: string,
+/** Confirm the verification code before allowing a new password. */
+export async function verifyPasswordResetOtp(email: string, otp: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('password-reset-verify', {
+    body: {
+      email: email.trim().toLowerCase(),
+      otp: otp.trim(),
+    },
+  })
+
+  if (error) throw new Error(edgeFunctionErrorMessage(data, error.message || 'Verification failed.'))
+  if (data?.error) throw new Error(String(data.error))
+}
+
+/** Set a new password after OTP verification and send a confirmation email. */
+export async function confirmPasswordResetWithOtp(
+  email: string,
   otp: string,
   newPassword: string,
-) {
-  const { data, error } = await supabase.functions.invoke('student-reset-password', {
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('password-reset-confirm', {
     body: {
-      reg_number: regNumber.trim(),
+      email: email.trim().toLowerCase(),
       otp: otp.trim(),
       new_password: newPassword,
     },
   })
 
-  if (error) throw error
-  if (data?.error) throw new Error(data.error)
+  if (error) throw new Error(edgeFunctionErrorMessage(data, error.message || 'Failed to reset password.'))
+  if (data?.error) throw new Error(String(data.error))
+
+  return (data?.message as string) ?? 'Your password has been updated.'
 }
 
 export async function updatePassword(newPassword: string) {

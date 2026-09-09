@@ -1,56 +1,80 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { isEmailIdentifier, requestPasswordReset, requestStudentPasswordReset, resetStudentPasswordWithOtp } from '@/lib/auth'
+import {
+  confirmPasswordResetWithOtp,
+  requestPasswordResetOtp,
+  verifyPasswordResetOtp,
+} from '@/lib/auth'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { PasswordInput } from '@/components/auth/PasswordInput'
+import { PasswordStrengthBar } from '@/components/auth/PasswordStrengthBar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getPasswordStrength } from '@/lib/password-strength'
 import { LOGIN_PATH } from '@/lib/routes'
 
-type Step = 'request' | 'student-otp' | 'done'
+type Step = 'email' | 'verify' | 'password' | 'done'
 
 export function ForgotPasswordPage() {
-  const [identifier, setIdentifier] = useState('')
+  const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [step, setStep] = useState<Step>('request')
+  const [step, setStep] = useState<Step>('email')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const isStudentFlow = !isEmailIdentifier(identifier)
+  function resetToEmailStep() {
+    setStep('email')
+    setOtp('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setError(null)
+    setMessage(null)
+  }
 
-  async function handleRequest(event: FormEvent) {
+  async function handleRequestCode(event: FormEvent) {
     event.preventDefault()
     setError(null)
     setMessage(null)
     setSubmitting(true)
 
     try {
-      if (isEmailIdentifier(identifier)) {
-        await requestPasswordReset(identifier.trim().toLowerCase())
-        setStep('done')
-        setMessage('Check your email for a password reset link.')
-      } else {
-        const resultMessage = await requestStudentPasswordReset(identifier)
-        setStep('student-otp')
-        setMessage(resultMessage)
-      }
+      const resultMessage = await requestPasswordResetOtp(email)
+      setMessage(resultMessage)
+      setStep('verify')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset instructions.')
+      setError(err instanceof Error ? err.message : 'Failed to send verification code.')
     } finally {
       setSubmitting(false)
     }
   }
 
-  async function handleStudentReset(event: FormEvent) {
+  async function handleVerifyCode(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    setSubmitting(true)
+
+    try {
+      await verifyPasswordResetOtp(email, otp)
+      setMessage('Code verified. Create your new password.')
+      setStep('password')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid verification code.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleSetPassword(event: FormEvent) {
     event.preventDefault()
     setError(null)
 
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters.')
+    const strength = getPasswordStrength(newPassword)
+    if (strength.level === 'weak') {
+      setError('Choose a stronger password — at least 8 characters with mixed case and numbers.')
       return
     }
 
@@ -62,43 +86,44 @@ export function ForgotPasswordPage() {
     setSubmitting(true)
 
     try {
-      await resetStudentPasswordWithOtp(identifier, otp, newPassword)
+      const resultMessage = await confirmPasswordResetWithOtp(email, otp, newPassword)
+      setMessage(resultMessage)
       setStep('done')
-      setMessage('Your password has been reset. You can now sign in.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset password.')
+      setError(err instanceof Error ? err.message : 'Failed to update password.')
     } finally {
       setSubmitting(false)
     }
   }
 
+  const description =
+    step === 'verify'
+      ? 'Enter the verification code sent to your email'
+      : step === 'password'
+        ? 'Choose a new password for your account'
+        : step === 'done'
+          ? 'Your password has been updated'
+          : 'Enter your email to receive a verification code'
+
   return (
-    <AuthLayout
-      title="Forgot Password"
-      description={
-        step === 'student-otp'
-          ? 'Enter the OTP sent to your parent\'s registered email'
-          : 'Reset your account password'
-      }
-    >
-      {step === 'request' && (
-        <form onSubmit={handleRequest} className="space-y-4">
+    <AuthLayout title="Forgot Password" description={description}>
+      {step === 'email' && (
+        <form onSubmit={handleRequestCode} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="identifier">Email or Register Number</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="identifier"
-              type="text"
-              placeholder="email@svce.ac.in or 21CS001"
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="email@svce.ac.in"
               required
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
             />
-            {isStudentFlow && identifier.trim() && (
-              <p className="text-xs text-muted-foreground">
-                Students: OTP will be sent to your parent&apos;s registered email.
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              We&apos;ll send a 6-digit verification code to this email address.
+            </p>
           </div>
 
           {error && (
@@ -108,35 +133,64 @@ export function ForgotPasswordPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? 'Sending...' : 'Send reset instructions'}
+            {submitting ? 'Sending...' : 'Send verification code'}
           </Button>
         </form>
       )}
 
-      {step === 'student-otp' && (
-        <form onSubmit={handleStudentReset} className="space-y-4">
+      {step === 'verify' && (
+        <form onSubmit={handleVerifyCode} className="space-y-4">
           {message && (
             <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-foreground">{message}</p>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="otp">OTP</Label>
+            <Label htmlFor="otp">Verification code</Label>
             <Input
               id="otp"
               type="text"
               inputMode="numeric"
+              autoComplete="one-time-code"
               pattern="[0-9]{6}"
               maxLength={6}
               placeholder="6-digit code"
               required
               value={otp}
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               disabled={submitting}
             />
           </div>
 
+          {error && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
+
+          <Button type="submit" className="w-full" disabled={submitting || otp.length !== 6}>
+            {submitting ? 'Verifying...' : 'Verify code'}
+          </Button>
+
+          <p className="text-center text-sm">
+            <button
+              type="button"
+              className="text-primary underline-offset-4 hover:underline"
+              onClick={resetToEmailStep}
+            >
+              Use a different email
+            </button>
+          </p>
+        </form>
+      )}
+
+      {step === 'password' && (
+        <form onSubmit={handleSetPassword} className="space-y-4">
+          {message && (
+            <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-foreground">{message}</p>
+          )}
+
           <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
+            <Label htmlFor="new-password">New password</Label>
             <PasswordInput
               id="new-password"
               autoComplete="new-password"
@@ -146,10 +200,11 @@ export function ForgotPasswordPage() {
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={submitting}
             />
+            <PasswordStrengthBar password={newPassword} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Label htmlFor="confirm-password">Confirm password</Label>
             <PasswordInput
               id="confirm-password"
               autoComplete="new-password"
@@ -168,25 +223,8 @@ export function ForgotPasswordPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? 'Resetting...' : 'Reset password'}
+            {submitting ? 'Updating...' : 'Update password'}
           </Button>
-
-          <p className="text-center text-sm">
-            <button
-              type="button"
-              className="text-primary underline-offset-4 hover:underline"
-              onClick={() => {
-                setStep('request')
-                setOtp('')
-                setNewPassword('')
-                setConfirmPassword('')
-                setError(null)
-                setMessage(null)
-              }}
-            >
-              Request a new OTP
-            </button>
-          </p>
         </form>
       )}
 
@@ -195,6 +233,9 @@ export function ForgotPasswordPage() {
           {message && (
             <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-foreground">{message}</p>
           )}
+          <p className="text-sm text-muted-foreground">
+            A confirmation email has been sent to your inbox.
+          </p>
           <Link to={LOGIN_PATH} className="block">
             <Button className="w-full">Back to sign in</Button>
           </Link>

@@ -40,11 +40,12 @@ npm install
    ```bash
    npx supabase link --project-ref <your-project-ref>
    npx supabase db push
-   npx supabase functions deploy student-forgot-password
-   npx supabase functions deploy student-reset-password
+   npx supabase functions deploy password-reset-request
+   npx supabase functions deploy password-reset-verify
+   npx supabase functions deploy password-reset-confirm
    ```
 
-4. Configure edge function secrets (for student OTP reset emails):
+4. Configure edge function secrets (for password-reset verification emails):
 
    ```bash
    npx supabase secrets set RESEND_API_KEY=re_xxx FROM_EMAIL="HOMS <noreply@yourdomain.com>"
