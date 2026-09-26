@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthProvider'
 import { AuthBackground } from '@/components/auth/AuthBackground'
@@ -13,55 +13,21 @@ import { Label } from '@/components/ui/label'
 import { SVCE_APP_SHORT } from '@/lib/branding'
 import { FORGOT_PASSWORD_PATH } from '@/lib/routes'
 
-/** Only show Retry/Sign out after profile has failed to load for this long. */
-const PROFILE_WAIT_MS = 8_000
-
 export function Login() {
-  const { user, profile, loading, signInWithIdentifier, refreshProfile, signOut } = useAuth()
+  const { user, profile, loading, signInWithIdentifier } = useAuth()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [retrying, setRetrying] = useState(false)
-  const [profileTimedOut, setProfileTimedOut] = useState(false)
 
-  useEffect(() => {
-    if (!user || profile) {
-      setProfileTimedOut(false)
-      return
-    }
-    const timer = window.setTimeout(() => setProfileTimedOut(true), PROFILE_WAIT_MS)
-    return () => window.clearTimeout(timer)
-  }, [user, profile])
-
-  if (loading || submitting) {
-    return <AuthLoadingScreen label="Signing you in..." />
-  }
-
+  // Signed-in with profile → go to dashboard (never show Retry/Sign out here).
   if (user && profile) {
     return <PostLoginRedirect />
   }
 
-  // Profile still loading after auth — never flash Retry/Sign out during the normal wait.
-  if (user && !profile && !profileTimedOut) {
-    return <AuthLoadingScreen label="Loading your profile..." />
-  }
-
-  if (user && !profile && profileTimedOut) {
-    return (
-      <AuthLoadingScreen
-        errorMessage="Couldn't load your profile. Check your connection and try again."
-        retrying={retrying}
-        onRetry={() => {
-          setRetrying(true)
-          setProfileTimedOut(false)
-          void refreshProfile().finally(() => setRetrying(false))
-        }}
-        onSignOut={() => {
-          void signOut()
-        }}
-      />
-    )
+  // Auth boot / sign-in / profile resolve — spinner only.
+  if (loading || submitting || (user && !profile)) {
+    return <AuthLoadingScreen label={submitting || loading ? 'Signing you in...' : 'Loading your profile...'} />
   }
 
   async function handleSubmit(event: FormEvent) {

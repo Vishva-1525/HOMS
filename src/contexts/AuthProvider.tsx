@@ -43,7 +43,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 const PROFILE_SELECT =
   'id, role, full_name, phone, password_changed, created_at, gender, warden_tier, is_available, unavailable_reason, avatar_url'
 
-async function fetchProfile(userId: string): Promise<Profile | null> {
+async function fetchProfileOnce(userId: string): Promise<Profile | null> {
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -65,12 +65,26 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
   }
 }
 
+/** Retry a couple of times — weak campus Wi‑Fi often fails the first profile read. */
+async function fetchProfile(userId: string): Promise<Profile | null> {
+  const cached = getCachedProfile(userId)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const profile = await fetchProfileOnce(userId)
+    if (profile) return profile
+    if (attempt < 2) {
+      await new Promise((r) => window.setTimeout(r, 400 * (attempt + 1)))
+    }
+  }
+  return cached
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const profileRequestId = useRef(0)
+  const signingInRef = useRef(false)
 
   const applyProfile = useCallback(async (userId: string, preferCache: boolean) => {
     const requestId = ++profileRequestId.current
@@ -79,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const cached = getCachedProfile(userId)
       if (cached) {
         setProfile(cached)
-        setLoading(false)
+        if (!signingInRef.current) setLoading(false)
       }
     }
 
@@ -88,13 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (nextProfile) {
       setProfile(nextProfile)
-      setLoading(false)
+      if (!signingInRef.current) setLoading(false)
       return
     }
 
-    // Keep cached profile if network fails; otherwise stop boot spinner.
     setProfile((prev) => prev ?? getCachedProfile(userId))
-    setLoading(false)
+    if (!signingInRef.current) setLoading(false)
   }, [])
 
   const refreshProfile = useCallback(async () => {
@@ -102,15 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null)
       return
     }
+    setLoading(true)
     await applyProfile(user.id, false)
+    setLoading(false)
   }, [user, applyProfile])
 
   useEffect(() => {
     let mounted = true
     const BOOT_TIMEOUT_MS = 12_000
 
-    // Immediate session restore - do NOT await profile inside onAuthStateChange
-    // (that blocks the Supabase client and freezes "Loading your account...").
     const boot = Promise.race([
       supabase.auth.getSession(),
       new Promise<never>((_, reject) => {
@@ -145,11 +158,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return
 
+      // While Login is driving sign-in, ignore auth-listener profile races.
+      if (signingInRef.current) {
+        setSession(nextSession)
+        setUser(nextSession?.user ?? null)
+        return
+      }
+
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
 
       if (nextSession?.user) {
-        // Keep boot/sign-in chrome until profile resolves — avoids Retry/Sign-out flash.
         const userId = nextSession.user.id
         const cached = getCachedProfile(userId)
         if (cached) {
@@ -159,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(true)
         }
         queueMicrotask(() => {
-          if (!mounted) return
+          if (!mounted || signingInRef.current) return
           void applyProfile(userId, true)
         })
       } else {
@@ -177,24 +196,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyProfile])
 
   const signInWithIdentifier = useCallback(async (identifier: string, password: string) => {
+    signingInRef.current = true
     setLoading(true)
     try {
       const data = await authSignIn(identifier, password)
 
-      if (data.user) {
-        setUser(data.user)
-        setSession(data.session)
-        const cached = getCachedProfile(data.user.id)
-        if (cached) setProfile(cached)
-        const userProfile = await fetchProfile(data.user.id)
-        setProfile(userProfile ?? cached ?? null)
+      if (!data.user) {
+        throw new Error('Sign in failed. Please check your credentials.')
       }
+
+      setUser(data.user)
+      setSession(data.session)
+
+      const cached = getCachedProfile(data.user.id)
+      if (cached) setProfile(cached)
+
+      const userProfile = await fetchProfile(data.user.id)
+      if (!userProfile && !cached) {
+        // Roll back to a clean login form — never park on Retry/Sign out.
+        setUser(null)
+        setSession(null)
+        setProfile(null)
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined)
+        throw new Error("Couldn't load your profile. Check your connection and try again.")
+      }
+
+      setProfile(userProfile ?? cached)
     } finally {
+      signingInRef.current = false
       setLoading(false)
     }
   }, [])
 
   const signOut = useCallback(async () => {
+    signingInRef.current = false
     profileRequestId.current += 1
     setSession(null)
     setUser(null)

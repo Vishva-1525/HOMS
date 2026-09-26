@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
   allowedRoles: UserRole[]
 }
 
-const PROFILE_WAIT_MS = 8_000
+const PROFILE_WAIT_MS = 12_000
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { user, profile, role, loading, refreshProfile, signOut } = useAuth()
@@ -34,6 +34,7 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (!profile || !role) {
+    // Stay on spinner while profile loads; recovery UI only after a real wait.
     if (!profileTimedOut) {
       return <AuthLoadingScreen label="Loading your profile..." />
     }
