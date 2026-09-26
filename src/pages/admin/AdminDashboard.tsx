@@ -6,9 +6,9 @@ import {
   LogOut,
 } from 'lucide-react'
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed'
+import { DashboardHomeSkeleton } from '@/components/auth/DashboardHomeSkeleton'
 import { PassPeriodStatsPanel } from '@/components/shared/PassPeriodStatsPanel'
 import { StatCard } from '@/components/ui/StatCard'
-import { Spinner } from '@/components/ui/spinner'
 import { useAdminStats } from '@/hooks/admin/useAdminStats'
 
 export function AdminDashboard() {
@@ -16,11 +16,7 @@ export function AdminDashboard() {
   const navigate = useNavigate()
 
   if (loading) {
-    return (
-      <div className="dashboard-loading-panel">
-        <Spinner label="Loading admin dashboard…" />
-      </div>
-    )
+    return <DashboardHomeSkeleton />
   }
 
   return (

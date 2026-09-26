@@ -72,12 +72,6 @@ export function useAdminStats() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'outpass_requests' }, () =>
           void fetchStats(true),
         )
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, () =>
-          void fetchStats(true),
-        )
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () =>
-          void fetchStats(true),
-        )
         .subscribe()
     }, 2000)
 

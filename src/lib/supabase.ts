@@ -10,8 +10,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-/** 2 retries, short backoff - resilient without making normal loads feel slow. */
-const resilientFetch = createResilientFetch(2, 250)
+/** 1 retry, 8s timeout — fail soft on weak campus Wi‑Fi instead of hanging ~45s. */
+const resilientFetch = createResilientFetch(1, 300, 8_000)
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

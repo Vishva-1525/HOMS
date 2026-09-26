@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { DashboardHomeSkeleton } from '@/components/auth/DashboardHomeSkeleton'
 import { ActivePassBanner } from '@/components/student/ActivePassBanner'
 import { ExtensionRequestBanner } from '@/components/student/ExtensionRequestBanner'
 import { PassDetailSheet } from '@/components/student/PassDetailSheet'
@@ -7,7 +8,6 @@ import { StudentDashboardStats } from '@/components/student/StudentDashboardStat
 import { StudentRecentRequestsTable } from '@/components/student/StudentRecentRequestsTable'
 import { PushPermissionBanner } from '@/components/pwa/PushPermissionBanner'
 import { DashboardErrorPanel } from '@/components/ui/DashboardErrorPanel'
-import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useStudentDataContext } from '@/contexts/StudentDataContext'
 import {
@@ -82,11 +82,7 @@ export function StudentHomePage() {
   }
 
   if (loading) {
-    return (
-      <div className="dashboard-loading-panel">
-        <Spinner label="Loading dashboard…" />
-      </div>
-    )
+    return <DashboardHomeSkeleton />
   }
 
   if (error && passes.length === 0) {

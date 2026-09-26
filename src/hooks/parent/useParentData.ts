@@ -169,24 +169,15 @@ export function useParentData() {
         },
         () => scheduleRefresh(),
       )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, (payload) => {
-        const row = (payload.new ?? payload.old) as { outpass_id?: string } | null
-        if (row?.outpass_id && !passIdsRef.current.has(row.outpass_id)) return
-        scheduleRefresh()
-      })
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'extension_requests' },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as { outpass_id?: string } | null
-          if (row?.outpass_id && !passIdsRef.current.has(row.outpass_id)) return
-          scheduleRefresh()
-        },
-      )
       .subscribe()
+
+    const softPoll = window.setInterval(() => {
+      void fetchWardData(selectedWardId)
+    }, 45_000)
 
     return () => {
       scheduleRefresh.cancel()
+      window.clearInterval(softPoll)
       void supabase.removeChannel(channel)
     }
   }, [selectedWardId, fetchWardData])

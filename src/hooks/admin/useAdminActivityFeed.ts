@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AdminActivityEventType, AdminActivityRow } from '@/lib/admin-types'
+import { debounce } from '@/lib/debounce'
 import { PASS_TYPE_LABELS } from '@/lib/outpass'
 import { formatRelativeTime } from '@/lib/relative-time'
 import { supabase } from '@/lib/supabase'
@@ -12,6 +13,8 @@ const DOT_COLORS: Record<AdminActivityEventType, string> = {
   gate_entry: '#2E8B44',
   overdue_alert: '#DC2626',
 }
+
+const REALTIME_DEBOUNCE_MS = 800
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-IN', {
@@ -98,18 +101,25 @@ export function useAdminActivityFeed() {
     setLoading(true)
     fetchFeed().finally(() => setLoading(false))
 
+    const scheduleRefresh = debounce(() => {
+      void fetchFeed()
+    }, REALTIME_DEBOUNCE_MS)
+
     const channel = supabase
       .channel('admin-activity')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'outpass_requests' }, () =>
-        fetchFeed(),
-      )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'gate_logs' }, () =>
-        fetchFeed(),
+        scheduleRefresh(),
       )
       .subscribe()
 
+    const softPoll = window.setInterval(() => {
+      void fetchFeed()
+    }, 45_000)
+
     return () => {
-      supabase.removeChannel(channel)
+      scheduleRefresh.cancel()
+      window.clearInterval(softPoll)
+      void supabase.removeChannel(channel)
     }
   }, [fetchFeed])
 

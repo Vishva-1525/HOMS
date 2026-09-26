@@ -19,7 +19,7 @@ export function useNotifications() {
 
     const { data, error } = await supabase
       .from('notifications_log')
-      .select('*')
+      .select('id, user_id, type, message, read_at, created_at, outpass_id, extension_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30)
@@ -62,10 +62,20 @@ export function useNotifications() {
     fetchNotifications()
   }, [fetchNotifications])
 
-  // Recover stuck outbox rows when the app opens.
+  // Recover stuck outbox rows once per browser session (avoid mount stampede).
   useEffect(() => {
     if (!user) return
-    void flushNotificationOutbox()
+    const key = 'homs-outbox-flushed'
+    try {
+      if (sessionStorage.getItem(key) === '1') return
+      sessionStorage.setItem(key, '1')
+    } catch {
+      // ignore
+    }
+    const timer = window.setTimeout(() => {
+      void flushNotificationOutbox()
+    }, 2500)
+    return () => window.clearTimeout(timer)
   }, [user])
 
   useEffect(() => {

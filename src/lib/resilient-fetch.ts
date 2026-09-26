@@ -1,9 +1,9 @@
 import { isTransientNetworkError } from '@/lib/network-error'
 
-const DEFAULT_RETRIES = 3
+const DEFAULT_RETRIES = 1
 const DEFAULT_BASE_DELAY_MS = 400
 /** Per-attempt cap so hung TCP / auth locks cannot freeze dashboards forever. */
-const DEFAULT_TIMEOUT_MS = 15_000
+const DEFAULT_TIMEOUT_MS = 8_000
 
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms))

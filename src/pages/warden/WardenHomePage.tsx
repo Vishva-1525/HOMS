@@ -13,7 +13,7 @@ import { PassTypeBadge } from '@/components/ui/PassTypeBadge'
 import { DataTable } from '@/components/ui/DataTable'
 import { StatCard } from '@/components/ui/StatCard'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
+import { DashboardHomeSkeleton } from '@/components/auth/DashboardHomeSkeleton'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useWardenDataContext } from '@/contexts/WardenDataContext'
 import { getGreeting } from '@/lib/outpass'
@@ -102,11 +102,7 @@ export function WardenHomePage() {
   }
 
   if (loading) {
-    return (
-      <div className="dashboard-loading-panel">
-        <Spinner label="Loading dashboard…" />
-      </div>
-    )
+    return <DashboardHomeSkeleton />
   }
 
   return (
