@@ -35,19 +35,24 @@ export function RoutePrefetch() {
     }
 
     let idleId: number | undefined
-    let timeoutId: number | undefined
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(run, { timeout: 3000 })
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+
+    if (typeof w.requestIdleCallback === 'function') {
+      idleId = w.requestIdleCallback(run, { timeout: 3000 })
     } else {
-      timeoutId = window.setTimeout(run, 2500)
+      timeoutId = setTimeout(run, 2500)
     }
 
     return () => {
-      if (idleId !== undefined && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId)
+      if (idleId !== undefined && typeof w.cancelIdleCallback === 'function') {
+        w.cancelIdleCallback(idleId)
       }
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId)
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
     }
   }, [role, loading])
 
