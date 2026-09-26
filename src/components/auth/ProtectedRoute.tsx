@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { CHANGE_PASSWORD_PATH, getDashboardPath, studentNeedsPasswordChange } from '@/lib/routes'
@@ -9,9 +9,21 @@ interface ProtectedRouteProps {
   allowedRoles: UserRole[]
 }
 
+const PROFILE_WAIT_MS = 8_000
+
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { user, profile, role, loading, refreshProfile, signOut } = useAuth()
   const [retrying, setRetrying] = useState(false)
+  const [profileTimedOut, setProfileTimedOut] = useState(false)
+
+  useEffect(() => {
+    if (!user || profile) {
+      setProfileTimedOut(false)
+      return
+    }
+    const timer = window.setTimeout(() => setProfileTimedOut(true), PROFILE_WAIT_MS)
+    return () => window.clearTimeout(timer)
+  }, [user, profile])
 
   if (loading) {
     return <AuthLoadingScreen label="Loading your account..." />
@@ -22,12 +34,17 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (!profile || !role) {
+    if (!profileTimedOut) {
+      return <AuthLoadingScreen label="Loading your profile..." />
+    }
+
     return (
       <AuthLoadingScreen
         errorMessage="Couldn't load your profile. Check your connection and try again."
         retrying={retrying}
         onRetry={() => {
           setRetrying(true)
+          setProfileTimedOut(false)
           void refreshProfile().finally(() => setRetrying(false))
         }}
         onSignOut={() => {

@@ -149,8 +149,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextSession?.user ?? null)
 
       if (nextSession?.user) {
-        // Defer profile I/O outside the auth callback lock.
+        // Keep boot/sign-in chrome until profile resolves — avoids Retry/Sign-out flash.
         const userId = nextSession.user.id
+        const cached = getCachedProfile(userId)
+        if (cached) {
+          setProfile(cached)
+          setLoading(false)
+        } else {
+          setLoading(true)
+        }
         queueMicrotask(() => {
           if (!mounted) return
           void applyProfile(userId, true)
@@ -170,15 +177,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyProfile])
 
   const signInWithIdentifier = useCallback(async (identifier: string, password: string) => {
-    const data = await authSignIn(identifier, password)
+    setLoading(true)
+    try {
+      const data = await authSignIn(identifier, password)
 
-    if (data.user) {
-      setUser(data.user)
-      setSession(data.session)
-      const cached = getCachedProfile(data.user.id)
-      if (cached) setProfile(cached)
-      const userProfile = await fetchProfile(data.user.id)
-      setProfile(userProfile ?? cached)
+      if (data.user) {
+        setUser(data.user)
+        setSession(data.session)
+        const cached = getCachedProfile(data.user.id)
+        if (cached) setProfile(cached)
+        const userProfile = await fetchProfile(data.user.id)
+        setProfile(userProfile ?? cached ?? null)
+      }
+    } finally {
       setLoading(false)
     }
   }, [])
