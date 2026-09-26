@@ -29,3 +29,5 @@ students.csv
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
