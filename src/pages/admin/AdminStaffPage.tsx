@@ -5,21 +5,37 @@ import { AdminStaffEditDrawer } from '@/components/admin/AdminStaffEditDrawer'
 import { DataTable } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { useAdminStaff } from '@/hooks/admin/useAdminStaff'
+import { useAuth } from '@/contexts/AuthProvider'
+import { useAdminStaff, type StaffRole } from '@/hooks/admin/useAdminStaff'
 import type { AdminStaffRow } from '@/lib/admin-types'
 import { formatBlockLabel } from '@/lib/block-display'
 import { cn } from '@/lib/utils'
 
-type StaffTab = 'warden' | 'security_guard'
+type StaffTab = StaffRole
+
+const ADD_LABEL: Record<StaffTab, string> = {
+  warden: 'Add warden',
+  security_guard: 'Add security guard',
+  admin: 'Add admin',
+}
+
+const EMPTY_LABEL: Record<StaffTab, string> = {
+  warden: 'wardens',
+  security_guard: 'security guards',
+  admin: 'admins',
+}
 
 export function AdminStaffPage() {
-  const { wardens, guards, loading, error, createStaff, updateStaffAssignment, refetch } =
-    useAdminStaff()
+  const { role: viewerRole } = useAuth()
+  const isAdminViewer = viewerRole === 'admin'
+  const { wardens, guards, admins, loading, error, createStaff, updateStaffAssignment, refetch } =
+    useAdminStaff(isAdminViewer)
   const [tab, setTab] = useState<StaffTab>('warden')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editStaff, setEditStaff] = useState<AdminStaffRow | null>(null)
 
-  const rows = tab === 'warden' ? wardens : guards
+  const activeTab: StaffTab = tab === 'admin' && !isAdminViewer ? 'warden' : tab
+  const rows = activeTab === 'warden' ? wardens : activeTab === 'security_guard' ? guards : admins
 
   if (loading) {
     return (
@@ -60,7 +76,7 @@ export function AdminStaffPage() {
           <h1 className="dashboard-heading text-2xl md:text-3xl">Staff</h1>
         </div>
         <Button type="button" onClick={() => setDrawerOpen(true)}>
-          {tab === 'warden' ? 'Add warden' : 'Add security guard'}
+          {ADD_LABEL[activeTab]}
         </Button>
       </div>
 
@@ -71,43 +87,52 @@ export function AdminStaffPage() {
       )}
 
       <div className="flex gap-2">
-        <TabButton active={tab === 'warden'} onClick={() => setTab('warden')}>
+        <TabButton active={activeTab === 'warden'} onClick={() => setTab('warden')}>
           Wardens ({wardens.length})
         </TabButton>
-        <TabButton active={tab === 'security_guard'} onClick={() => setTab('security_guard')}>
+        <TabButton active={activeTab === 'security_guard'} onClick={() => setTab('security_guard')}>
           Security Guards ({guards.length})
         </TabButton>
+        {isAdminViewer && (
+          <TabButton active={activeTab === 'admin'} onClick={() => setTab('admin')}>
+            Admins ({admins.length})
+          </TabButton>
+        )}
       </div>
 
       <div className="dashboard-surface overflow-hidden">
         <DataTable
           data={rows}
           getRowKey={(row) => row.id}
-          emptyMessage={`No ${tab === 'warden' ? 'wardens' : 'security guards'} found.`}
+          emptyMessage={`No ${EMPTY_LABEL[activeTab]} found.`}
           columns={
-            tab === 'warden'
+            activeTab === 'warden'
               ? wardenColumns((row) => setEditStaff(row))
-              : guardColumns((row) => setEditStaff(row))
+              : activeTab === 'security_guard'
+                ? guardColumns((row) => setEditStaff(row))
+                : adminColumns()
           }
         />
       </div>
 
       <AdminStaffDrawer
         open={drawerOpen}
-        role={tab}
+        role={activeTab}
         onClose={() => setDrawerOpen(false)}
         onSubmit={createStaff}
       />
 
-      <AdminStaffEditDrawer
-        open={editStaff !== null}
-        staff={editStaff}
-        role={tab}
-        onClose={() => setEditStaff(null)}
-        onSave={(profileId, assignmentValue) =>
-          updateStaffAssignment(profileId, tab, assignmentValue)
-        }
-      />
+      {activeTab !== 'admin' && (
+        <AdminStaffEditDrawer
+          open={editStaff !== null}
+          staff={editStaff}
+          role={activeTab}
+          onClose={() => setEditStaff(null)}
+          onSave={(profileId, assignmentValue) =>
+            updateStaffAssignment(profileId, activeTab, assignmentValue)
+          }
+        />
+      )}
     </div>
   )
 }
@@ -190,6 +215,19 @@ function wardenColumns(onEdit: (row: AdminStaffRow) => void) {
       accessor: 'actions' as const,
       width: '48px',
       render: (row: AdminStaffRow) => <EditAssignmentButton onClick={() => onEdit(row)} />,
+    },
+  ]
+}
+
+function adminColumns() {
+  return [
+    { header: 'Name', accessor: 'full_name' as const },
+    { header: 'Email', accessor: 'email' as const },
+    { header: 'Phone', accessor: 'phone' as const },
+    {
+      header: 'Last login',
+      accessor: 'last_sign_in_at' as const,
+      render: (row: AdminStaffRow) => formatLastLogin(row.last_sign_in_at),
     },
   ]
 }

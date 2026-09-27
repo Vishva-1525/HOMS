@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AdminStaffRow } from '@/lib/admin-types'
 import { normalizeBlockValue } from '@/lib/block-display'
+import { edgeFunctionErrorMessage } from '@/lib/edge-function-error'
 import { formatNetworkError } from '@/lib/network-error'
 import { supabase } from '@/lib/supabase'
 
-export function useAdminStaff() {
+export type StaffRole = 'warden' | 'security_guard' | 'admin'
+
+export function useAdminStaff(includeAdmins = false) {
   const [wardens, setWardens] = useState<AdminStaffRow[]>([])
   const [guards, setGuards] = useState<AdminStaffRow[]>([])
+  const [admins, setAdmins] = useState<AdminStaffRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createdCredentials, setCreatedCredentials] = useState<{
@@ -18,10 +22,17 @@ export function useAdminStaff() {
     setLoading(true)
     setError(null)
     try {
-      const [wardenResult, guardResult] = await Promise.all([
+      const [wardenResult, guardResult, adminResult] = await Promise.all([
         supabase.rpc('get_admin_staff_list', { p_role: 'warden' }),
         supabase.rpc('get_admin_staff_list', { p_role: 'security_guard' }),
+        includeAdmins
+          ? supabase.rpc('get_admin_staff_list', { p_role: 'admin' })
+          : Promise.resolve(null),
       ])
+
+      if (adminResult && !adminResult.error) {
+        setAdmins((adminResult.data as AdminStaffRow[]) ?? [])
+      }
 
       if (wardenResult.error) {
         setError(wardenResult.error.message)
@@ -39,7 +50,7 @@ export function useAdminStaff() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [includeAdmins])
 
   useEffect(() => {
     void fetchStaff()
@@ -49,7 +60,7 @@ export function useAdminStaff() {
     full_name: string
     email: string
     phone: string
-    role: 'warden' | 'security_guard'
+    role: StaffRole
     assignment_value: string
     gender?: 'male' | 'female'
   }) {
@@ -65,7 +76,7 @@ export function useAdminStaff() {
       body: normalizedInput,
     })
 
-    if (fnError) throw new Error(fnError.message)
+    if (fnError) throw new Error(await edgeFunctionErrorMessage(fnError, 'Failed to create staff'))
     if (data?.error) throw new Error(data.error as string)
 
     setCreatedCredentials({ email: data.email, password: data.password })
@@ -102,6 +113,7 @@ export function useAdminStaff() {
   return {
     wardens,
     guards,
+    admins,
     loading,
     error,
     createStaff,

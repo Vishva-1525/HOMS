@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   confirmPasswordResetWithOtp,
@@ -16,6 +16,8 @@ import { LOGIN_PATH } from '@/lib/routes'
 
 type Step = 'email' | 'verify' | 'password' | 'done'
 
+const RESEND_COOLDOWN_SECONDS = 60
+
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
@@ -25,6 +27,7 @@ export function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [resendIn, setResendIn] = useState(0)
 
   function resetToEmailStep() {
     setStep('email')
@@ -35,21 +38,33 @@ export function ForgotPasswordPage() {
     setMessage(null)
   }
 
-  async function handleRequestCode(event: FormEvent) {
-    event.preventDefault()
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const timer = window.setTimeout(() => setResendIn((s) => s - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resendIn])
+
+  async function sendCode() {
     setError(null)
-    setMessage(null)
     setSubmitting(true)
 
     try {
       const resultMessage = await requestPasswordResetOtp(email)
       setMessage(resultMessage)
+      setOtp('')
       setStep('verify')
+      setResendIn(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send verification code.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleRequestCode(event: FormEvent) {
+    event.preventDefault()
+    setMessage(null)
+    await sendCode()
   }
 
   async function handleVerifyCode(event: FormEvent) {
@@ -103,26 +118,26 @@ export function ForgotPasswordPage() {
         ? 'Choose a new password for your account'
         : step === 'done'
           ? 'Your password has been updated'
-          : 'Enter your email to receive a verification code'
+          : 'Enter your email or register number to receive a verification code'
 
   return (
     <AuthLayout title="Forgot Password" description={description}>
       {step === 'email' && (
         <form onSubmit={handleRequestCode} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email or register number</Label>
             <Input
               id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="email@svce.ac.in"
+              type="text"
+              autoComplete="username"
+              placeholder="email@svce.ac.in or register number"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
             />
             <p className="text-xs text-muted-foreground">
-              We&apos;ll send a 6-digit verification code to this email address.
+              We&apos;ll send a 6-digit verification code to the email on your account.
             </p>
           </div>
 
@@ -171,15 +186,24 @@ export function ForgotPasswordPage() {
             {submitting ? 'Verifying...' : 'Verify code'}
           </Button>
 
-          <p className="text-center text-sm">
+          <div className="flex items-center justify-between text-sm">
             <button
               type="button"
               className="text-primary underline-offset-4 hover:underline"
               onClick={resetToEmailStep}
+              disabled={submitting}
             >
-              Use a different email
+              Use a different account
             </button>
-          </p>
+            <button
+              type="button"
+              className="text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+              onClick={() => void sendCode()}
+              disabled={submitting || resendIn > 0}
+            >
+              {resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code'}
+            </button>
+          </div>
         </form>
       )}
 
@@ -233,9 +257,6 @@ export function ForgotPasswordPage() {
           {message && (
             <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-foreground">{message}</p>
           )}
-          <p className="text-sm text-muted-foreground">
-            A confirmation email has been sent to your inbox.
-          </p>
           <Link to={LOGIN_PATH} className="block">
             <Button className="w-full">Back to sign in</Button>
           </Link>

@@ -1,3 +1,4 @@
+import { edgeFunctionErrorMessage } from '@/lib/edge-function-error'
 import { supabase } from '@/lib/supabase'
 
 export function isEmailIdentifier(identifier: string): boolean {
@@ -42,57 +43,58 @@ export async function signInWithIdentifier(identifier: string, password: string)
   return data
 }
 
-function edgeFunctionErrorMessage(data: unknown, fallback: string): string {
-  if (data && typeof data === 'object' && 'error' in data) {
-    const message = (data as { error?: unknown }).error
-    if (typeof message === 'string' && message.trim()) return message
-  }
-  return fallback
+async function invokePasswordReset(
+  name: 'password-reset-request' | 'password-reset-verify' | 'password-reset-confirm',
+  body: Record<string, string>,
+  fallback: string,
+): Promise<{ message?: string }> {
+  const { data, error } = await supabase.functions.invoke(name, { body })
+
+  if (error) throw new Error(await edgeFunctionErrorMessage(error, fallback))
+  if (data?.error) throw new Error(String(data.error))
+  return (data ?? {}) as { message?: string }
 }
 
-/** Send a 6-digit verification code to the account email. */
-export async function requestPasswordResetOtp(email: string): Promise<string> {
-  const { data, error } = await supabase.functions.invoke('password-reset-request', {
-    body: { email: email.trim().toLowerCase() },
-  })
+function normalizeResetIdentifier(identifier: string): string {
+  const trimmed = identifier.trim()
+  return isEmailIdentifier(trimmed) ? trimmed.toLowerCase() : trimmed.toUpperCase()
+}
 
-  if (error) throw error
-  if (data?.error) throw new Error(String(data.error))
-
-  return (data?.message as string) ?? 'If an account exists for that email, a verification code has been sent.'
+/** Send a 6-digit verification code to the account email (email or register number). */
+export async function requestPasswordResetOtp(identifier: string): Promise<string> {
+  const data = await invokePasswordReset(
+    'password-reset-request',
+    { identifier: normalizeResetIdentifier(identifier) },
+    'Could not send the verification code. Please try again.',
+  )
+  return data.message ?? 'Verification code sent. Check your inbox.'
 }
 
 /** Confirm the verification code before allowing a new password. */
-export async function verifyPasswordResetOtp(email: string, otp: string): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('password-reset-verify', {
-    body: {
-      email: email.trim().toLowerCase(),
-      otp: otp.trim(),
-    },
-  })
-
-  if (error) throw new Error(edgeFunctionErrorMessage(data, error.message || 'Verification failed.'))
-  if (data?.error) throw new Error(String(data.error))
+export async function verifyPasswordResetOtp(identifier: string, otp: string): Promise<void> {
+  await invokePasswordReset(
+    'password-reset-verify',
+    { identifier: normalizeResetIdentifier(identifier), otp: otp.trim() },
+    'Verification failed. Please try again.',
+  )
 }
 
 /** Set a new password after OTP verification and send a confirmation email. */
 export async function confirmPasswordResetWithOtp(
-  email: string,
+  identifier: string,
   otp: string,
   newPassword: string,
 ): Promise<string> {
-  const { data, error } = await supabase.functions.invoke('password-reset-confirm', {
-    body: {
-      email: email.trim().toLowerCase(),
+  const data = await invokePasswordReset(
+    'password-reset-confirm',
+    {
+      identifier: normalizeResetIdentifier(identifier),
       otp: otp.trim(),
       new_password: newPassword,
     },
-  })
-
-  if (error) throw new Error(edgeFunctionErrorMessage(data, error.message || 'Failed to reset password.'))
-  if (data?.error) throw new Error(String(data.error))
-
-  return (data?.message as string) ?? 'Your password has been updated.'
+    'Failed to reset password. Please try again.',
+  )
+  return data.message ?? 'Your password has been updated.'
 }
 
 export async function updatePassword(newPassword: string) {

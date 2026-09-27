@@ -1,110 +1,17 @@
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders, json } from '../_shared/http.ts'
+import { MailNotConfiguredError, sendMail } from '../_shared/mailer.ts'
+import {
+  escapeHtml,
+  generateOtp,
+  hashOtp,
+  maskEmail,
+  OTP_TTL_MINUTES,
+  resolveResetAccount,
+  serviceClient,
+} from '../_shared/password-reset.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-async function hashOtp(otp: string): Promise<string> {
-  const data = new TextEncoder().encode(otp)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
-}
-
-function maskEmail(email: string): string {
-  return email.replace(
-    /^(.{2})(.*)(@.*)$/,
-    (_: string, a: string, b: string, c: string) => `${a}${'*'.repeat(Math.min(b.length, 6))}${c}`,
-  )
-}
-
-async function findAuthUserByEmail(
-  admin: SupabaseClient,
-  email: string,
-): Promise<{ id: string; email: string } | null> {
-  const normalized = email.trim().toLowerCase()
-
-  try {
-    const url = Deno.env.get('SUPABASE_URL')!
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const res = await fetch(
-      `${url}/auth/v1/admin/users?email=${encodeURIComponent(normalized)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${serviceKey}`,
-          apikey: serviceKey,
-        },
-      },
-    )
-    if (res.ok) {
-      const payload = await res.json() as { users?: Array<{ id: string; email?: string }> } | { id?: string; email?: string }
-      if (Array.isArray((payload as { users?: unknown[] }).users)) {
-        const users = (payload as { users: Array<{ id: string; email?: string }> }).users
-        const match = users.find((u) => u.email?.toLowerCase() === normalized)
-        if (match?.id && match.email) return { id: match.id, email: match.email }
-      } else if ((payload as { id?: string }).id) {
-        const single = payload as { id: string; email?: string }
-        return { id: single.id, email: single.email ?? normalized }
-      }
-    }
-  } catch {
-    // fall through to pagination
-  }
-
-  let page = 1
-  while (page <= 10) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
-    if (error || !data?.users?.length) break
-    const match = data.users.find((u) => u.email?.toLowerCase() === normalized)
-    if (match?.id && match.email) return { id: match.id, email: match.email }
-    if (data.users.length < 200) break
-    page += 1
-  }
-
-  return null
-}
-
-async function sendOtpEmail(to: string, otp: string, fullName: string): Promise<void> {
-  const resendKey = Deno.env.get('RESEND_API_KEY')
-  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'HOMS <onboarding@resend.dev>'
-
-  if (!resendKey) {
-    console.warn(`[DEV] Password reset OTP for ${to}: ${otp}`)
-    return
-  }
-
-  const greeting = fullName ? `Dear ${fullName},` : 'Hello,'
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [to],
-      subject: 'SVCE HOMS — Password Reset Verification Code',
-      html: `
-        <p>${greeting}</p>
-        <p>A password reset was requested for your SVCE Hostel Outpass System account.</p>
-        <p>Your verification code is:</p>
-        <p style="font-size:28px;letter-spacing:6px;font-weight:700;margin:16px 0">${otp}</p>
-        <p>This code expires in 10 minutes. If you did not request this, please ignore this email.</p>
-      `,
-    }),
-  })
-
-  if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`Failed to send email: ${body}`)
-  }
-}
+const RESEND_COOLDOWN_SECONDS = 60
+const MAX_REQUESTS_PER_HOUR = 5
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -112,73 +19,125 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json()
+    const body = (await req.json()) as { email?: unknown; identifier?: unknown }
+    const identifier = String(body.identifier ?? body.email ?? '').trim()
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return new Response(JSON.stringify({ error: 'A valid email address is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (!identifier) {
+      return json({ error: 'Enter your email address or register number.' }, 400)
     }
 
-    const normalizedEmail = email.trim().toLowerCase()
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+    const admin = serviceClient()
+    const account = await resolveResetAccount(admin, identifier)
 
-    const user = await findAuthUserByEmail(supabase, normalizedEmail)
-
-    // Always return a success-shaped response to avoid email enumeration.
-    const genericMessage =
-      'If an account exists for that email, a verification code has been sent.'
-
-    if (!user) {
-      return new Response(
-        JSON.stringify({ success: true, message: genericMessage }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    if (!account) {
+      return json(
+        {
+          error: identifier.includes('@')
+            ? 'No account found for that email. Check the spelling or use your register number.'
+            : 'No account found for that register number. Check it or use your email address.',
+        },
+        404,
       )
     }
 
-    const { data: profile } = await supabase
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { data: recent } = await admin
+      .from('email_password_reset_otps')
+      .select('created_at')
+      .eq('user_id', account.id)
+      .gte('created_at', hourAgo)
+      .order('created_at', { ascending: false })
+
+    const recentRows = recent ?? []
+    if (recentRows.length > 0) {
+      const secondsSince = (Date.now() - new Date(recentRows[0].created_at).getTime()) / 1000
+      if (secondsSince < RESEND_COOLDOWN_SECONDS) {
+        const wait = Math.ceil(RESEND_COOLDOWN_SECONDS - secondsSince)
+        return json({ error: `Please wait ${wait} seconds before requesting another code.` }, 429)
+      }
+    }
+    if (recentRows.length >= MAX_REQUESTS_PER_HOUR) {
+      return json({ error: 'Too many code requests. Please try again in an hour.' }, 429)
+    }
+
+    const { data: profile } = await admin
       .from('profiles')
       .select('full_name')
-      .eq('id', user.id)
+      .eq('id', account.id)
       .maybeSingle()
 
     const otp = generateOtp()
-    const otpHash = await hashOtp(otp)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    const now = new Date()
 
-    await supabase
+    await admin
       .from('email_password_reset_otps')
-      .update({ used_at: new Date().toISOString() })
-      .eq('user_id', user.id)
+      .update({ used_at: now.toISOString() })
+      .eq('user_id', account.id)
       .is('used_at', null)
 
-    const { error: insertError } = await supabase.from('email_password_reset_otps').insert({
-      user_id: user.id,
-      email: normalizedEmail,
-      otp_hash: otpHash,
-      expires_at: expiresAt,
-    })
+    const { data: inserted, error: insertError } = await admin
+      .from('email_password_reset_otps')
+      .insert({
+        user_id: account.id,
+        email: account.email,
+        otp_hash: await hashOtp(otp),
+        expires_at: new Date(now.getTime() + OTP_TTL_MINUTES * 60 * 1000).toISOString(),
+      })
+      .select('id')
+      .single()
 
     if (insertError) throw insertError
 
-    await sendOtpEmail(normalizedEmail, otp, profile?.full_name ?? '')
+    const name = profile?.full_name?.trim() ?? ''
+    const greeting = name ? `Dear ${escapeHtml(name)},` : 'Hello,'
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Verification code sent to ${maskEmail(normalizedEmail)}`,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    try {
+      await sendMail({
+        to: account.email,
+        subject: 'SVCE HOMS — Password reset code',
+        text: [
+          name ? `Dear ${name},` : 'Hello,',
+          '',
+          'A password reset was requested for your SVCE Hostel Outpass System account.',
+          `Your verification code is: ${otp}`,
+          '',
+          `This code expires in ${OTP_TTL_MINUTES} minutes. If you did not request this, ignore this email.`,
+        ].join('\n'),
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#0f172a;line-height:1.5">
+            <p>${greeting}</p>
+            <p>A password reset was requested for your SVCE Hostel Outpass System account.</p>
+            <p>Your verification code is:</p>
+            <p style="font-size:30px;letter-spacing:8px;font-weight:700;margin:16px 0;color:#1A5CA0">${otp}</p>
+            <p>This code expires in ${OTP_TTL_MINUTES} minutes. If you did not request this, ignore this email.</p>
+          </div>
+        `,
+      })
+    } catch (err) {
+      await admin
+        .from('email_password_reset_otps')
+        .update({ used_at: new Date().toISOString() })
+        .eq('id', inserted.id)
+
+      console.error('password-reset-request mail failure:', err)
+      return json(
+        {
+          error:
+            err instanceof MailNotConfiguredError
+              ? 'Password reset emails are temporarily unavailable. Please contact the hostel office.'
+              : 'We could not send the email right now. Please try again in a few minutes.',
+        },
+        503,
+      )
+    }
+
+    return json({
+      success: true,
+      email: maskEmail(account.email),
+      message: `We sent a 6-digit code to ${maskEmail(account.email)}. Check your inbox (and spam folder).`,
     })
+  } catch (err) {
+    console.error('password-reset-request error:', err)
+    return json({ error: 'Something went wrong. Please try again.' }, 500)
   }
 })

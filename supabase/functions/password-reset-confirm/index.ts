@@ -1,96 +1,6 @@
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-async function hashOtp(otp: string): Promise<string> {
-  const data = new TextEncoder().encode(otp)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-async function findAuthUserIdByEmail(
-  admin: SupabaseClient,
-  email: string,
-): Promise<string | null> {
-  const normalized = email.trim().toLowerCase()
-
-  try {
-    const url = Deno.env.get('SUPABASE_URL')!
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const res = await fetch(
-      `${url}/auth/v1/admin/users?email=${encodeURIComponent(normalized)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${serviceKey}`,
-          apikey: serviceKey,
-        },
-      },
-    )
-    if (res.ok) {
-      const payload = await res.json() as { users?: Array<{ id: string; email?: string }> } | { id?: string }
-      if (Array.isArray((payload as { users?: unknown[] }).users)) {
-        const users = (payload as { users: Array<{ id: string; email?: string }> }).users
-        const match = users.find((u) => u.email?.toLowerCase() === normalized)
-        if (match) return match.id
-      } else if ((payload as { id?: string }).id) {
-        return (payload as { id: string }).id
-      }
-    }
-  } catch {
-    // fall through
-  }
-
-  let page = 1
-  while (page <= 10) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
-    if (error || !data?.users?.length) break
-    const match = data.users.find((u) => u.email?.toLowerCase() === normalized)
-    if (match) return match.id
-    if (data.users.length < 200) break
-    page += 1
-  }
-
-  return null
-}
-
-async function sendPasswordUpdatedEmail(to: string, fullName: string): Promise<void> {
-  const resendKey = Deno.env.get('RESEND_API_KEY')
-  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'HOMS <onboarding@resend.dev>'
-
-  if (!resendKey) {
-    console.warn(`[DEV] Password updated notification for ${to}`)
-    return
-  }
-
-  const greeting = fullName ? `Dear ${fullName},` : 'Hello,'
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [to],
-      subject: 'SVCE HOMS — Password Updated',
-      html: `
-        <p>${greeting}</p>
-        <p>Your password for the SVCE Hostel Outpass System has been updated successfully.</p>
-        <p>If you did not make this change, contact your hostel warden office immediately.</p>
-      `,
-    }),
-  })
-
-  if (!response.ok) {
-    const body = await response.text()
-    console.error(`Failed to send password-updated email: ${body}`)
-  }
-}
+import { corsHeaders, json } from '../_shared/http.ts'
+import { sendMail } from '../_shared/mailer.ts'
+import { checkOtp, escapeHtml, resolveResetAccount, serviceClient } from '../_shared/password-reset.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -98,108 +8,89 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, otp, new_password } = await req.json()
+    const body = (await req.json()) as {
+      email?: unknown
+      identifier?: unknown
+      otp?: unknown
+      new_password?: unknown
+    }
+    const identifier = String(body.identifier ?? body.email ?? '').trim()
+    const otp = String(body.otp ?? '').trim()
+    const newPassword = typeof body.new_password === 'string' ? body.new_password : ''
 
-    if (!email || !otp || !new_password) {
-      return new Response(
-        JSON.stringify({ error: 'Email, verification code, and new password are required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+    if (!identifier || !otp || !newPassword) {
+      return json({ error: 'Verification code and new password are required.' }, 400)
     }
 
-    if (typeof new_password !== 'string' || new_password.length < 8) {
-      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (newPassword.length < 8) {
+      return json({ error: 'Password must be at least 8 characters.' }, 400)
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase()
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
-
-    const userId = await findAuthUserIdByEmail(supabase, normalizedEmail)
-    if (!userId) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired verification code' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    const admin = serviceClient()
+    const account = await resolveResetAccount(admin, identifier)
+    if (!account) {
+      return json({ error: 'Invalid or expired verification code. Please request a new one.' }, 400)
     }
 
-    const otpHash = await hashOtp(String(otp).trim())
+    const check = await checkOtp(admin, account.id, otp)
+    if (!check.ok) return json({ error: check.error }, 400)
 
-    const { data: otpRow, error: otpError } = await supabase
-      .from('email_password_reset_otps')
-      .select('id, expires_at, used_at, verified_at')
-      .eq('user_id', userId)
-      .eq('otp_hash', otpHash)
-      .is('used_at', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (otpError || !otpRow) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired verification code' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (!check.row.verified_at) {
+      return json({ error: 'Please verify your code before setting a new password.' }, 400)
     }
 
-    if (new Date(otpRow.expires_at) < new Date()) {
-      return new Response(JSON.stringify({ error: 'Verification code has expired. Please request a new one.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    if (!otpRow.verified_at) {
-      return new Response(JSON.stringify({ error: 'Please verify your code before setting a new password.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-      password: new_password,
+    const { error: authError } = await admin.auth.admin.updateUserById(account.id, {
+      password: newPassword,
     })
+    if (authError) {
+      return json({ error: authError.message || 'Could not update password.' }, 400)
+    }
 
-    if (authError) throw authError
-
-    await supabase
+    await admin
       .from('email_password_reset_otps')
       .update({ used_at: new Date().toISOString() })
-      .eq('id', otpRow.id)
+      .eq('id', check.row.id)
 
-    await supabase
+    const { data: profile } = await admin
       .from('profiles')
       .update({ password_changed: true })
-      .eq('id', userId)
-
-    const { data: profile } = await supabase
-      .from('profiles')
+      .eq('id', account.id)
       .select('full_name')
-      .eq('id', userId)
       .maybeSingle()
 
-    await sendPasswordUpdatedEmail(normalizedEmail, profile?.full_name ?? '')
+    const name = profile?.full_name?.trim() ?? ''
+    let confirmationSent = true
+    try {
+      await sendMail({
+        to: account.email,
+        subject: 'SVCE HOMS — Your password was changed',
+        text: [
+          name ? `Dear ${name},` : 'Hello,',
+          '',
+          'Your password for the SVCE Hostel Outpass System was changed successfully.',
+          'If you did not make this change, contact the hostel warden office immediately.',
+        ].join('\n'),
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#0f172a;line-height:1.5">
+            <p>${name ? `Dear ${escapeHtml(name)},` : 'Hello,'}</p>
+            <p>Your password for the SVCE Hostel Outpass System was changed successfully.</p>
+            <p>If you did not make this change, contact the hostel warden office immediately.</p>
+          </div>
+        `,
+      })
+    } catch (err) {
+      confirmationSent = false
+      console.error('password-reset-confirm mail failure:', err)
+    }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Your password has been updated. A confirmation email has been sent.',
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return json({
+      success: true,
+      message: confirmationSent
+        ? 'Your password has been updated. A confirmation email has been sent.'
+        : 'Your password has been updated. You can sign in now.',
     })
+  } catch (err) {
+    console.error('password-reset-confirm error:', err)
+    return json({ error: 'Something went wrong. Please try again.' }, 500)
   }
 })

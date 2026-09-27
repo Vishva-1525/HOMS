@@ -149,6 +149,7 @@ async function main() {
       password,
       email_confirm: true,
       ...(user_metadata ? { user_metadata } : {}),
+      ...(user_metadata?.role ? { app_metadata: { role: user_metadata.role } } : {}),
     }
 
     const { data, error } = await admin.auth.admin.createUser(payload)

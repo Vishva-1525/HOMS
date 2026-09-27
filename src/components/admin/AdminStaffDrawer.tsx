@@ -4,19 +4,26 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
+import type { StaffRole } from '@/hooks/admin/useAdminStaff'
 
 export type CreateStaffPayload = {
   full_name: string
   email: string
   phone: string
-  role: 'warden' | 'security_guard'
+  role: StaffRole
   assignment_value: string
   gender?: 'male' | 'female'
 }
 
+const DRAWER_TITLE: Record<StaffRole, string> = {
+  warden: 'Add warden',
+  security_guard: 'Add security guard',
+  admin: 'Add admin',
+}
+
 interface AdminStaffDrawerProps {
   open: boolean
-  role: 'warden' | 'security_guard'
+  role: StaffRole
   onClose: () => void
   onSubmit: (data: CreateStaffPayload) => Promise<{ email: string; password: string }>
 }
@@ -33,7 +40,7 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
 
   if (!open) return null
 
-  const title = role === 'warden' ? 'Add warden' : 'Add security guard'
+  const title = DRAWER_TITLE[role]
   const assignmentLabel = role === 'warden' ? 'Block assigned' : 'Gate assigned'
 
   async function handleSubmit(e: React.FormEvent) {
@@ -143,10 +150,17 @@ export function AdminStaffDrawer({ open, role, onClose, onSubmit }: AdminStaffDr
                 </select>
               </div>
             )}
-            <div>
-              <Label htmlFor="staff-assignment">{assignmentLabel}</Label>
-              <Input id="staff-assignment" value={assignment} onChange={(e) => setAssignment(e.target.value)} />
-            </div>
+            {role === 'admin' ? (
+              <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                Admins get full access, including system settings and creating other admins.
+                A strong random password is generated.
+              </p>
+            ) : (
+              <div>
+                <Label htmlFor="staff-assignment">{assignmentLabel}</Label>
+                <Input id="staff-assignment" value={assignment} onChange={(e) => setAssignment(e.target.value)} />
+              </div>
+            )}
             {error && <p className="text-sm text-red-700">{error}</p>}
           </div>
           <div className="border-t p-4">
