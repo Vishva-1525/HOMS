@@ -3,35 +3,49 @@ import { QRCodeCanvas } from 'qrcode.react'
 import { Share2 } from 'lucide-react'
 import { PassQrPlaceholder } from '@/components/student/PassQrPlaceholder'
 import { Button } from '@/components/ui/button'
-import { useQrUnlockCountdown } from '@/hooks/useQrUnlockCountdown'
+import { usePassQrAccess } from '@/hooks/usePassQrAccess'
 import { isQrEligibleStatus } from '@/lib/pass-filters'
 import { buildPassQrValue } from '@/lib/pass-qr'
+import { formatCountdownDuration } from '@/lib/qr-availability'
 import type { OutpassRequest } from '@/lib/types'
 
 interface PassQrCodeProps {
   pass: OutpassRequest
 }
 
+function formatOpensAt(date: Date): string {
+  return date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function PassQrCode({ pass }: PassQrCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const unlock = useQrUnlockCountdown(pass)
+  const access = usePassQrAccess(pass)
 
   if (!isQrEligibleStatus(pass.status)) {
     return <PassQrPlaceholder status={pass.status} />
   }
 
-  if (Date.now() > new Date(pass.return_by).getTime()) {
+  if (access.state === 'checking') {
+    return <PassQrPlaceholder status={pass.status} variant="checking" />
+  }
+
+  if (access.state === 'closed') {
     return <PassQrPlaceholder status={pass.status} variant="expired" />
   }
 
-  if (!unlock.ready) {
+  if (access.state === 'waiting') {
     return (
       <PassQrPlaceholder
         status={pass.status}
         variant="before-departure"
-        opensAt={unlock.opensAtLabel}
-        countdownLabel={unlock.remainingLabel}
-        windowMinutes={unlock.windowMinutes}
+        opensAt={access.opensAt ? formatOpensAt(access.opensAt) : undefined}
+        countdownLabel={formatCountdownDuration(access.msRemaining)}
+        windowMinutes={access.windowMinutes}
       />
     )
   }

@@ -1,3 +1,4 @@
+import { serverNow } from '@/lib/server-clock'
 import type { OutpassStatus, PassType } from '@/lib/types'
 
 export const PASS_TYPE_LABELS: Record<PassType, string> = {
@@ -71,6 +72,6 @@ export function formatTableDateTime(dateIso: string): string {
 
 export function isPassActive(pass: { status: OutpassStatus; departure_at: string; return_by: string }): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
-  const now = Date.now()
+  const now = serverNow()
   return now >= new Date(pass.departure_at).getTime() && now <= new Date(pass.return_by).getTime()
 }

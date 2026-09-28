@@ -1,5 +1,6 @@
 import type { OutpassRequest } from '@/lib/types'
 import { isMultiDailyScanPass, isPassWithinValidityWindow } from '@/lib/pass-multi-scan'
+import { serverNow } from '@/lib/server-clock'
 
 /** Default: QR unlocks this many minutes before departure (also in system_settings). */
 export const DEFAULT_QR_AVAILABILITY_MINUTES = 30
@@ -15,7 +16,7 @@ export function getQrAvailabilityOpensAt(pass: OutpassRequest, windowMinutes: nu
   return new Date(departure - windowMinutes * 60_000)
 }
 
-export function isQrAvailable(pass: OutpassRequest, windowMinutes: number, now = Date.now()): boolean {
+export function isQrAvailable(pass: OutpassRequest, windowMinutes: number, now = serverNow()): boolean {
   if (pass.status !== 'approved' && pass.status !== 'extended') return false
   if (now > new Date(pass.return_by).getTime()) return false
 
@@ -31,7 +32,7 @@ export function isQrAvailable(pass: OutpassRequest, windowMinutes: number, now =
 export function getMsUntilQrUnlock(
   pass: OutpassRequest,
   windowMinutes: number,
-  now = Date.now(),
+  now = serverNow(),
 ): number {
   if (isMultiDailyScanPass(pass)) return 0
   if (pass.status !== 'approved' && pass.status !== 'extended') return 0
@@ -63,7 +64,7 @@ export function formatQrOpensAt(pass: OutpassRequest, windowMinutes: number): st
   })
 }
 
-export function isWithinDepartureWindow(pass: OutpassRequest, now = Date.now()): boolean {
+export function isWithinDepartureWindow(pass: OutpassRequest, now = serverNow()): boolean {
   if (isMultiDailyScanPass(pass)) {
     return isPassWithinValidityWindow(pass, now)
   }

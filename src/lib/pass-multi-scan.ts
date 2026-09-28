@@ -8,6 +8,7 @@ import {
   isTripInProgress,
 } from '@/lib/gate-checkpoints'
 import { isPassActive } from '@/lib/outpass'
+import { serverNow } from '@/lib/server-clock'
 
 /** Internship (and any pass flagged in DB) allows repeated daily 4-scan cycles until return_by. */
 export function isMultiDailyScanPass(
@@ -31,7 +32,7 @@ export function getLatestGateEvent(gateLogs: GateLog[]): GateLog | null {
 /** True when the QR is within its backend validity window. */
 export function isPassWithinValidityWindow(
   pass: Pick<OutpassRequest, 'departure_at' | 'return_by'>,
-  now = Date.now(),
+  now = serverNow(),
 ): boolean {
   return (
     now >= new Date(pass.departure_at).getTime()
@@ -41,7 +42,7 @@ export function isPassWithinValidityWindow(
 
 export function isInternshipQrExpired(
   pass: Pick<OutpassRequest, 'allows_multi_daily_scan' | 'special_purpose' | 'return_by'>,
-  now = Date.now(),
+  now = serverNow(),
 ): boolean {
   if (!isMultiDailyScanPass(pass)) return false
   return now > new Date(pass.return_by).getTime()
@@ -50,7 +51,7 @@ export function isInternshipQrExpired(
 /** Single-use: completed after hostel entry. Internship: completed after return_by. */
 export function isPassTripComplete(pass: OutpassRequest, gateLogs: GateLog[]): boolean {
   if (isMultiDailyScanPass(pass)) {
-    return Date.now() > new Date(pass.return_by).getTime()
+    return serverNow() > new Date(pass.return_by).getTime()
   }
   return isCheckpointCycleComplete(pass.id, gateLogs)
 }

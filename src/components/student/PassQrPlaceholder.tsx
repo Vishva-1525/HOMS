@@ -17,7 +17,7 @@ function getPlaceholderMessage(status: OutpassStatus): string {
 
 interface PassQrPlaceholderProps {
   status: OutpassStatus
-  variant?: 'approval' | 'before-departure' | 'expired'
+  variant?: 'approval' | 'before-departure' | 'expired' | 'checking'
   opensAt?: string
   /** Live countdown until unlock, e.g. "29:58" */
   countdownLabel?: string
@@ -33,6 +33,17 @@ export function PassQrPlaceholder({
 }: PassQrPlaceholderProps) {
   const isBeforeDeparture = variant === 'before-departure'
   const isExpired = variant === 'expired'
+
+  if (variant === 'checking') {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300/80 bg-[var(--glass-bg)] p-8 text-center">
+        <div className="flex h-[200px] w-[200px] items-center justify-center rounded-xl bg-slate-100/90">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-[#1A5CA0]" />
+        </div>
+        <p className="text-sm font-medium text-slate-800">Loading your pass…</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300/80 bg-[var(--glass-bg)] p-8 text-center">
@@ -53,7 +64,7 @@ export function PassQrPlaceholder({
       </p>
       <p className="max-w-[260px] text-xs leading-relaxed text-slate-600">
         {isExpired
-          ? 'This pass QR has expired. Submit a new request to renew access.'
+          ? 'This pass QR can no longer be used. Submit a new request if you need to go out again.'
           : isBeforeDeparture
             ? formatQrAvailabilityMessage(windowMinutes)
             : getPlaceholderMessage(status)}

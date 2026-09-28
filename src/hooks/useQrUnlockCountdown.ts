@@ -9,6 +9,7 @@ import {
   isQrAvailable,
 } from '@/lib/qr-availability'
 import { isMultiDailyScanPass } from '@/lib/pass-multi-scan'
+import { serverNow, syncServerClock } from '@/lib/server-clock'
 import type { OutpassRequest } from '@/lib/types'
 
 export interface QrUnlockCountdown {
@@ -27,10 +28,11 @@ export interface QrUnlockCountdown {
  */
 export function useQrUnlockCountdown(pass: OutpassRequest | null): QrUnlockCountdown {
   const [windowMinutes, setWindowMinutes] = useState(DEFAULT_QR_AVAILABILITY_MINUTES)
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(() => serverNow())
 
   useEffect(() => {
     fetchQrAvailabilityMinutes().then(setWindowMinutes)
+    void syncServerClock().then(() => setNow(serverNow()))
   }, [])
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function useQrUnlockCountdown(pass: OutpassRequest | null): QrUnlockCount
     // (A `const id` after an immediate tick() caused TDZ: "Cannot access before initialization".)
     let intervalId = 0
     const tick = () => {
-      const t = Date.now()
+      const t = serverNow()
       setNow(t)
       if (isQrAvailable(pass, windowMinutes, t) && intervalId) {
         window.clearInterval(intervalId)
@@ -50,7 +52,7 @@ export function useQrUnlockCountdown(pass: OutpassRequest | null): QrUnlockCount
     }
 
     tick()
-    if (!isQrAvailable(pass, windowMinutes, Date.now())) {
+    if (!isQrAvailable(pass, windowMinutes, serverNow())) {
       intervalId = window.setInterval(tick, 1000)
     }
 
