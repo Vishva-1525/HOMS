@@ -18,6 +18,9 @@ HOMS-Portable.zip
 !.env.example
 scripts/users.json
 students.csv
+data/first-year-students-import.json
+data/first-year-students-import.csv
+data/first-year-import-report.json
 
 # Editor directories and files
 .vscode/*
