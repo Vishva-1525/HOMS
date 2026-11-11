@@ -23,7 +23,8 @@
     "import:superior-wardens-csv": "node scripts/import-superior-wardens-from-csv.mjs",
     "import:student-photos": "node scripts/upload-student-photos.mjs",
     "import:local-student-photos": "node scripts/upload-local-student-photos.mjs",
-    "setup:web-push": "node scripts/setup-web-push.mjs"
+    "setup:web-push": "node scripts/setup-web-push.mjs",
+    "import:first-year": "node supabase/migrations/import-first-year-students.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
